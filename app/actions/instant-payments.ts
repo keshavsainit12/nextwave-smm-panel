@@ -62,6 +62,13 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
     }
 
     // Call AccountPe API to create payment link
+    console.log("[v0] Calling AccountPe API with:", {
+      url: `${ACCOUNTPE_API_URL}/create_payment_links`,
+      merchantId: ACCOUNTPE_MERCHANT_ID,
+      amount: params.amount,
+      email: params.email,
+    })
+
     const response = await fetch(`${ACCOUNTPE_API_URL}/create_payment_links`, {
       method: "POST",
       headers: {
@@ -80,12 +87,31 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
       }),
     })
 
+    console.log("[v0] AccountPe API response status:", response.status)
+
     if (!response.ok) {
-      console.error("[v0] AccountPe API error:", response.status)
-      return { success: false, error: "Payment service unavailable" }
+      const errorBody = await response.text()
+      console.error("[v0] AccountPe API error response:", {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorBody,
+      })
+      
+      // Return more specific error based on status code
+      let errorMessage = "Payment service unavailable"
+      if (response.status === 401) {
+        errorMessage = "Authentication failed - Check API credentials"
+      } else if (response.status === 404) {
+        errorMessage = "Payment endpoint not found"
+      } else if (response.status === 500) {
+        errorMessage = "Payment service error - Please try again"
+      }
+      
+      return { success: false, error: errorMessage }
     }
 
     const data = await response.json()
+    console.log("[v0] AccountPe API response data:", data)
 
     if (data.data?.payment_link) {
       // Update transaction with payment link
@@ -97,6 +123,7 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
         transactionId: transaction.id,
       }
     } else {
+      console.error("[v0] No payment link in response:", data)
       return { success: false, error: data.message || "Payment link creation failed" }
     }
   } catch (error) {
