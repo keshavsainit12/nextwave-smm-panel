@@ -114,16 +114,41 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
     console.log("[v0] AccountPe API response data:", data)
 
     if (data.data?.payment_link) {
+      // Payment link successfully created - use it directly
+      const paymentLink = data.data.payment_link
+      
       // Update transaction with payment link
-      await supabase.from("transactions").update({ payment_id: data.data.transaction_id }).eq("id", transaction.id)
+      await supabase
+        .from("transactions")
+        .update({ payment_id: data.data.transaction_id })
+        .eq("id", transaction.id)
 
+      console.log("[v0] Payment link created:", paymentLink)
+      
       return {
         success: true,
-        paymentLink: data.data.payment_link,
+        paymentLink: paymentLink,
+        transactionId: transaction.id,
+      }
+    } else if (data.data?.id) {
+      // If API returns transaction ID but no direct link, construct payment link like Swycher
+      // Format: https://app.swychrconnect.com/payment/{transaction_id}
+      const paymentLink = `https://app.accountpe.com/payin/payment/${data.data.id}`
+      
+      await supabase
+        .from("transactions")
+        .update({ payment_id: data.data.id })
+        .eq("id", transaction.id)
+
+      console.log("[v0] Payment link constructed:", paymentLink)
+      
+      return {
+        success: true,
+        paymentLink: paymentLink,
         transactionId: transaction.id,
       }
     } else {
-      console.error("[v0] No payment link in response:", data)
+      console.error("[v0] No payment ID in response:", data)
       return { success: false, error: data.message || "Payment link creation failed" }
     }
   } catch (error) {
