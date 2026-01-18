@@ -51,27 +51,27 @@ See [SETUP_GUIDE.md](./SETUP_GUIDE.md) for complete setup instructions.
    - Create first admin user
 
 3. **Set environment variables:**
-   ```
+   \`\`\`
    NEXT_PUBLIC_SUPABASE_URL=your_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_key
    SUPABASE_SERVICE_ROLE_KEY=your_secret
    ADMIN_SECRET_PATH=admin-nx-wave-secure
-   ```
+   \`\`\`
 
 4. **Deploy or run locally:**
-   ```bash
+   \`\`\`bash
    npm install
    npm run dev
-   ```
+   \`\`\`
 
 5. **Access admin panel:**
-   ```
+   \`\`\`
    http://localhost:3000/admin-nx-wave-secure
-   ```
+   \`\`\`
 
 ## Project Structure
 
-```
+\`\`\`
 app/
 ├── auth/               # Authentication pages
 ├── dashboard/          # User panel
@@ -85,7 +85,7 @@ lib/
 ├── supabase/           # Supabase clients
 ├── types/              # TypeScript types
 scripts/                # SQL setup scripts
-```
+\`\`\`
 
 ## Admin Panel Access
 

@@ -6,12 +6,11 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
-import { Home, Package, HeadphonesIcon, Gift, Code, LogOut, Wallet, Settings } from "lucide-react"
+import { Home, Package, HeadphonesIcon, Gift, Code, LogOut, Settings } from "lucide-react"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
   { name: "My Orders", href: "/dashboard/orders", icon: Package },
-  { name: "Add Funds", href: "/dashboard/deposits", icon: Wallet, badge: "BONUS" },
   { name: "API Access", href: "/dashboard/api", icon: Code },
   { name: "Support", href: "/dashboard/tickets", icon: HeadphonesIcon },
   { name: "Referrals", href: "/dashboard/referrals", icon: Gift },
@@ -60,8 +59,6 @@ export function DashboardSidebar({ userName = "User", userBalance = 0 }: { userN
     await supabase.auth.signOut()
     router.push("/")
   }
-
-  const displayBalance = typeof userBalance === "number" ? userBalance.toFixed(2) : "0.00"
 
   return (
     <div className="flex h-full w-full flex-col bg-white dark:bg-slate-900 border-r border-slate-200/50 dark:border-slate-800/50">
@@ -118,12 +115,6 @@ export function DashboardSidebar({ userName = "User", userBalance = 0 }: { userN
           )
         })}
       </nav>
-
-      {/* Balance Card */}
-      <div className="p-3 sm:p-4 mx-2 sm:mx-3 mb-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-800">
-        <div className="text-xs text-slate-500 dark:text-slate-400 mb-1 font-medium">Total Balance</div>
-        <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-3">${displayBalance}</div>
-      </div>
 
       {/* Logout */}
       <div className="border-t border-slate-200/50 dark:border-slate-800/50 p-3 sm:p-4">

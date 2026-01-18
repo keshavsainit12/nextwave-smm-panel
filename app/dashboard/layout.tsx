@@ -28,7 +28,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <div className="flex flex-1 flex-col overflow-hidden min-w-0">
         <DashboardHeader user={userProfile} />
         <main className="flex-1 overflow-y-auto">
-          <div className="w-full h-full px-2 py-4 sm:px-4 md:px-6 lg:px-8">{children}</div>
+          <div className="h-full flex justify-center">
+            <div className="w-full max-w-7xl px-2 py-4 sm:px-4 md:px-6 lg:px-8">{children}</div>
+          </div>
         </main>
       </div>
     </div>

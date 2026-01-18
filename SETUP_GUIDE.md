@@ -18,25 +18,25 @@
 Open SQL Editor in Supabase dashboard and run these scripts in order:
 
 **Script 1: Create Tables**
-```
+\`\`\`
 Copy all content from: scripts/001_create_tables.sql
 Paste in SQL Editor
 Click "Run"
-```
+\`\`\`
 
 **Script 2: Create RLS Policies**
-```
+\`\`\`
 Copy all content from: scripts/002_create_rls_policies.sql
 Paste in SQL Editor
 Click "Run"
-```
+\`\`\`
 
 **Script 3: Create Functions & Triggers**
-```
+\`\`\`
 Copy all content from: scripts/003_create_functions.sql
 Paste in SQL Editor
 Click "Run"
-```
+\`\`\`
 
 ### 1.3 Verify Database Setup
 
@@ -63,12 +63,12 @@ After running all scripts, you need to create your first admin user.
 3. Find your user
 4. Copy the User ID
 5. Go to SQL Editor and run:
-```sql
+\`\`\`sql
 UPDATE users SET role = 'admin' WHERE id = 'YOUR_USER_ID_HERE';
-```
+\`\`\`
 
 **Method 2: Direct SQL Insert**
-```sql
+\`\`\`sql
 -- First, create auth user (replace with your details)
 -- This must be done in the Supabase dashboard under Authentication → Users → Add User
 -- Email: admin@yourdomain.com
@@ -76,7 +76,7 @@ UPDATE users SET role = 'admin' WHERE id = 'YOUR_USER_ID_HERE';
 
 -- Then, after user is created, update their role:
 UPDATE users SET role = 'admin' WHERE email = 'admin@yourdomain.com';
-```
+\`\`\`
 
 ## Step 2: Get Supabase Credentials
 
@@ -91,13 +91,13 @@ From your Supabase project:
 
 Set these in v0 (Vars section) or Vercel:
 
-```
+\`\`\`
 NEXT_PUBLIC_SUPABASE_URL=your_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 ADMIN_SECRET_PATH=admin-nx-wave-secure
 NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL=http://localhost:3000/dashboard
-```
+\`\`\`
 
 ## Step 4: Initial Configuration
 

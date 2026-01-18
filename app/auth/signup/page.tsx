@@ -86,31 +86,38 @@ export default function SignupPage() {
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-30" />
+      {/* Enhanced Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-green-600 via-blue-600 to-purple-700">
+        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-20" />
       </div>
 
-      <div className="absolute top-20 left-20 w-72 h-72 bg-blue-400/20 rounded-full mix-blend-multiply filter blur-3xl animate-blob" />
-      <div className="absolute top-40 right-20 w-72 h-72 bg-purple-400/20 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000" />
+      {/* Animated gradient orbs */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-green-400/30 rounded-full mix-blend-multiply filter blur-3xl animate-blob" />
+      <div className="absolute top-1/3 right-0 w-96 h-96 bg-blue-400/30 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000" />
+      <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-purple-400/30 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000" />
 
       <div className="relative w-full max-w-md z-10">
         <div className="mb-8">
-          <Link href="/" className="inline-flex items-center text-sm text-slate-600 hover:text-slate-900">
+          <Link href="/" className="inline-flex items-center text-sm text-white/80 hover:text-white transition-colors">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to home
           </Link>
         </div>
-        <Card className="backdrop-blur-xl bg-white/70 border-white/30 shadow-2xl">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Create an account
-            </CardTitle>
-            <CardDescription>Enter your information to get started</CardDescription>
+        <Card className="backdrop-blur-2xl bg-white/10 border-white/20 shadow-2xl hover:shadow-3xl transition-shadow">
+          <CardHeader className="space-y-1 pb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-blue-400 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                N
+              </div>
+              <span className="text-sm font-semibold text-white/90">NextWave</span>
+            </div>
+            <CardTitle className="text-3xl font-bold text-white">Create account</CardTitle>
+            <CardDescription className="text-white/70">Join NextWave and start managing your services</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSignup} className="space-y-4">
+            <form onSubmit={handleSignup} className="space-y-3">
               <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name</Label>
+                <Label htmlFor="fullName" className="text-white/90">Full Name</Label>
                 <Input
                   id="fullName"
                   type="text"
@@ -119,10 +126,11 @@ export default function SignupPage() {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   disabled={isLoading}
+                  className="bg-white/5 border-white/10 text-white placeholder:text-white/50 focus:bg-white/10 focus:border-white/30"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-white/90">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -131,10 +139,11 @@ export default function SignupPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
+                  className="bg-white/5 border-white/10 text-white placeholder:text-white/50 focus:bg-white/10 focus:border-white/30"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password" className="text-white/90">Password</Label>
                 <Input
                   id="password"
                   type="password"
@@ -142,10 +151,11 @@ export default function SignupPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
+                  className="bg-white/5 border-white/10 text-white placeholder:text-white/50 focus:bg-white/10 focus:border-white/30"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Label htmlFor="confirmPassword" className="text-white/90">Confirm Password</Label>
                 <Input
                   id="confirmPassword"
                   type="password"
@@ -153,10 +163,11 @@ export default function SignupPage() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   disabled={isLoading}
+                  className="bg-white/5 border-white/10 text-white placeholder:text-white/50 focus:bg-white/10 focus:border-white/30"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="referralCode">Referral Code (Optional)</Label>
+                <Label htmlFor="referralCode" className="text-white/90">Referral Code (Optional)</Label>
                 <Input
                   id="referralCode"
                   type="text"
@@ -164,10 +175,11 @@ export default function SignupPage() {
                   value={referralCode}
                   onChange={(e) => setReferralCode(e.target.value)}
                   disabled={isLoading}
+                  className="bg-white/5 border-white/10 text-white placeholder:text-white/50 focus:bg-white/10 focus:border-white/30"
                 />
               </div>
-              {error && <p className="text-sm text-destructive">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              {error && <p className="text-sm text-red-300 bg-red-500/10 p-3 rounded-lg">{error}</p>}
+              <Button type="submit" className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium mt-4" disabled={isLoading}>
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -178,9 +190,9 @@ export default function SignupPage() {
                 )}
               </Button>
             </form>
-            <div className="mt-6 text-center text-sm">
+            <div className="mt-6 text-center text-sm text-white/70">
               Already have an account?{" "}
-              <Link href="/auth/login" className="font-medium text-primary hover:underline">
+              <Link href="/auth/login" className="font-medium text-green-300 hover:text-green-200 transition-colors">
                 Sign in
               </Link>
             </div>

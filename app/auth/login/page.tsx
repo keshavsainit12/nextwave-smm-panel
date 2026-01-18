@@ -45,17 +45,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 overflow-hidden">
-      {/* Background with blur */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-30" />
-      </div>
-
-      {/* Floating orbs */}
-      <div className="absolute top-20 left-20 w-72 h-72 bg-blue-400/20 rounded-full mix-blend-multiply filter blur-3xl animate-blob" />
-      <div className="absolute top-40 right-20 w-72 h-72 bg-purple-400/20 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000" />
-      <div className="absolute bottom-20 left-40 w-72 h-72 bg-pink-400/20 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000" />
-
+    <div className="relative flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 overflow-hidden bg-white">
       {/* Login card */}
       <div className="relative w-full max-w-md z-10">
         <div className="mb-8">
@@ -68,18 +58,22 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        {/* Glass morphism card with transparency */}
-        <Card className="backdrop-blur-xl bg-white/70 border-white/30 shadow-2xl">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Welcome back
-            </CardTitle>
-            <CardDescription>Enter your credentials to access your account</CardDescription>
+        {/* Clean white card with subtle shadow */}
+        <Card className="bg-white border-slate-200 shadow-lg hover:shadow-xl transition-shadow">
+          <CardHeader className="space-y-1 pb-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
+                N
+              </div>
+              <span className="text-lg font-bold text-slate-900">NextWave</span>
+            </div>
+            <CardTitle className="text-3xl font-bold text-slate-900">Welcome back</CardTitle>
+            <CardDescription className="text-slate-600">Enter your credentials to access your account</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-slate-700">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -88,12 +82,13 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
+                  className="bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-300"
                 />
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
-                  <Link href="/auth/forgot-password" className="text-xs text-primary hover:underline">
+                  <Label htmlFor="password" className="text-slate-700">Password</Label>
+                  <Link href="/auth/forgot-password" className="text-xs text-blue-600 hover:text-blue-700 transition-colors font-medium">
                     Forgot password?
                   </Link>
                 </div>
@@ -104,10 +99,11 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
+                  className="bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-300"
                 />
               </div>
-              {error && <p className="text-sm text-destructive">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              {error && <p className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">{error}</p>}
+              <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium shadow-md hover:shadow-lg transition-shadow" disabled={isLoading}>
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -119,32 +115,15 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            <div className="mt-6 text-center text-sm">
+            <div className="mt-6 text-center text-sm text-slate-600">
               Don't have an account?{" "}
-              <Link href="/auth/signup" className="font-medium text-primary hover:underline">
+              <Link href="/auth/signup" className="font-semibold text-blue-600 hover:text-blue-700 transition-colors">
                 Sign up
               </Link>
             </div>
           </CardContent>
         </Card>
       </div>
-
-      <style jsx>{`
-        @keyframes blob {
-          0%, 100% { transform: translate(0px, 0px) scale(1); }
-          33% { transform: translate(30px, -50px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
-        }
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        .animation-delay-4000 {
-          animation-delay: 4s;
-        }
-      `}</style>
     </div>
   )
 }
