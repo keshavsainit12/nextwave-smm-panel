@@ -5,7 +5,7 @@ import { toast } from "sonner"
 
 const ACCOUNTPE_API_URL = "https://api.accountpe.com/api/payin"
 const ACCOUNTPE_MERCHANT_ID = "nextwavedigitalsolutions1"
-const ACCOUNTPE_API_KEY = process.env.ACCOUNTPE_API_KEY || "FMdbnds53@@"
+const ACCOUNTPE_API_KEY = process.env.ACCOUNTPE_API_KEY
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://nextwavesmm.vercel.app"
 
 interface CreateInstantPaymentParams {
@@ -25,6 +25,15 @@ interface PaymentResponse {
 
 export async function createInstantPayment(params: CreateInstantPaymentParams): Promise<PaymentResponse> {
   try {
+    // Check if API key is configured
+    if (!ACCOUNTPE_API_KEY) {
+      console.error("[v0] AccountPe API key is not configured")
+      return {
+        success: false,
+        error: "Payment service not configured. Please contact admin.",
+      }
+    }
+
     const supabase = await createClient()
 
     // Get current user balance
@@ -73,7 +82,8 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${ACCOUNTPE_API_KEY}`,
+        "X-API-Key": ACCOUNTPE_API_KEY,
+        "X-Merchant-Id": ACCOUNTPE_MERCHANT_ID,
       },
       body: JSON.stringify({
         country_code: "CM",
