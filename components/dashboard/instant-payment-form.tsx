@@ -1,7 +1,15 @@
 "use client"
 
+import React from "react"
+
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
+import { Loader2 } from "lucide-react"
+import { createInstantPayment } from "@/app/actions/instant-payments"
+import { toast } from "sonner"
 
 interface InstantPaymentFormProps {
   userId: string
@@ -10,17 +18,55 @@ interface InstantPaymentFormProps {
   currentBalance: number
 }
 
-export function InstantPaymentForm({ currentBalance }: InstantPaymentFormProps) {
+export function InstantPaymentForm({ userId, userEmail, userName, currentBalance }: InstantPaymentFormProps) {
+  const [amount, setAmount] = useState("")
+  const [loading, setLoading] = useState(false)
+
   // Convert XAF to USD
   const balanceInUSD = currentBalance / 600
 
-  const handlePay = () => {
-    // Direct redirect to AccountPe dashboard
-    window.location.href = "https://app.accountpe.com/payin/dashboard"
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!amount || Number(amount) <= 0) {
+      toast.error("Please enter a valid amount")
+      return
+    }
+
+    if (Number(amount) < 100) {
+      toast.error("Minimum deposit amount is XAF 100")
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      const result = await createInstantPayment({
+        userId,
+        amount: Number(amount),
+        email: userEmail,
+        phone: "",
+        userName,
+      })
+
+      if (result.success && result.paymentLink) {
+        toast.success("Redirecting to payment...")
+        setTimeout(() => {
+          window.location.href = result.paymentLink!
+        }, 500)
+      } else {
+        toast.error(result.error || "Failed to create payment")
+      }
+    } catch (error) {
+      console.error("[v0] Payment error:", error)
+      toast.error(error instanceof Error ? error.message : "Payment processing failed")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <div className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <Card className="border-2 border-purple-500/20 bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20">
         <CardContent className="pt-6 space-y-3">
           <div className="flex items-center gap-3">
@@ -42,13 +88,37 @@ export function InstantPaymentForm({ currentBalance }: InstantPaymentFormProps) 
         </CardContent>
       </Card>
 
+      <div className="space-y-2">
+        <Label htmlFor="amount">Amount (XAF - Central African Franc)</Label>
+        <Input
+          id="amount"
+          type="number"
+          step="1"
+          min="100"
+          placeholder="Minimum XAF 100"
+          required
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          disabled={loading}
+        />
+        <p className="text-xs text-muted-foreground">Minimum XAF 100. Your balance will be credited instantly.</p>
+      </div>
+
       <Button
-        onClick={handlePay}
+        type="submit"
         className="w-full bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white"
         size="lg"
+        disabled={loading}
       >
-        Pay Now
+        {loading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Processing...
+          </>
+        ) : (
+          "Proceed to Pay"
+        )}
       </Button>
-    </div>
+    </form>
   )
 }
