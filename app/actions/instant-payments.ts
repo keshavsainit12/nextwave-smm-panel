@@ -1,12 +1,15 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { 
+  ACCOUNTPE_API_URL, 
+  ACCOUNTPE_MERCHANT_ID, 
+  ACCOUNTPE_CREDENTIALS, 
+  ACCOUNTPE_API_KEY, 
+  APP_URL, 
+  parseCredentials 
+} from "@/lib/config"
 import { toast } from "sonner"
-
-const ACCOUNTPE_API_URL = "https://api.accountpe.com/api/payin"
-const ACCOUNTPE_MERCHANT_ID = "nextwavedigitalsolutions1"
-const ACCOUNTPE_API_KEY = process.env.ACCOUNTPE_API_KEY
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://nextwavesmm.vercel.app"
 
 interface CreateInstantPaymentParams {
   userId: string
@@ -23,16 +26,88 @@ interface PaymentResponse {
   error?: string
 }
 
+// Get JWT token from AccountPe /admin/auth endpoint
+async function getAccountPeJWT(): Promise<string | null> {
+  try {
+    console.log("[v0] Parsing AccountPe credentials...")
+    const creds = parseCredentials(ACCOUNTPE_CREDENTIALS)
+    
+    if (!creds) {
+      console.error("[v0] Credentials parsing failed - format invalid")
+      console.error("[v0] ACCOUNTPE_CREDENTIALS value:", ACCOUNTPE_CREDENTIALS ? "SET" : "NOT SET")
+      return null
+    }
+
+    console.log("[v0] Credentials parsed:", {
+      email: creds.email,
+      passwordLength: creds.password?.length,
+    })
+
+    console.log("[v0] Calling AccountPe JWT endpoint:", `${ACCOUNTPE_API_URL}/admin/auth`)
+    
+    const response = await fetch(`${ACCOUNTPE_API_URL}/admin/auth`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: creds.email,
+        password: creds.password,
+      }),
+    })
+
+    console.log("[v0] Auth response status:", response.status)
+
+    if (!response.ok) {
+      const error = await response.text()
+      console.error("[v0] Auth endpoint failed:", {
+        status: response.status,
+        statusText: response.statusText,
+        errorBody: error,
+      })
+      return null
+    }
+
+    const data = await response.json()
+    console.log("[v0] JWT token received successfully")
+
+    return data.token || data.access_token || data.jwt
+  } catch (error) {
+    console.error("[v0] JWT token fetch error:", error)
+    return null
+  }
+}
+
 export async function createInstantPayment(params: CreateInstantPaymentParams): Promise<PaymentResponse> {
   try {
-    // Check if API key is configured
-    if (!ACCOUNTPE_API_KEY) {
-      console.error("[v0] AccountPe API key is not configured")
+    console.log("[v0] Creating instant payment with params:", {
+      userId: params.userId,
+      amount: params.amount,
+      email: params.email,
+    })
+
+    // Check if credentials are configured
+    if (!ACCOUNTPE_CREDENTIALS) {
+      console.error("[v0] CRITICAL: AccountPe credentials NOT configured in environment")
       return {
         success: false,
-        error: "Payment service not configured. Please contact admin.",
+        error: "Payment service not configured. Please set ACCOUNTPE_API_KEY in Vars section.",
       }
     }
+
+    console.log("[v0] Credentials found, attempting JWT authentication...")
+
+    // Get JWT token
+    const jwtToken = await getAccountPeJWT()
+    if (!jwtToken) {
+      console.error("[v0] JWT token retrieval failed - see logs above")
+      return {
+        success: false,
+        error: "Authentication failed - Check API credentials in Vars section",
+      }
+    }
+
+    console.log("[v0] JWT token obtained successfully, proceeding with payment creation...")
 
     const supabase = await createClient()
 
@@ -44,7 +119,7 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
       .single()
 
     if (userError || !userData) {
-      return { success: false, error: "User not found" }
+      throw new Error("User not found")
     }
 
     const balanceBefore = userData.balance || 0
@@ -67,7 +142,7 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
 
     if (txError) {
       console.error("[v0] Transaction creation error:", txError)
-      return { success: false, error: "Failed to create transaction" }
+      throw new Error("Failed to create transaction")
     }
 
     // Call AccountPe API to create payment link
@@ -82,18 +157,19 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-API-Key": ACCOUNTPE_API_KEY,
-        "X-Merchant-Id": ACCOUNTPE_MERCHANT_ID,
+        "Authorization": `Bearer ${jwtToken}`,
+        "Idempotency-Key": transaction.id,
       },
       body: JSON.stringify({
         country_code: "CM",
         name: params.userName,
         email: params.email,
+        mobile: params.phone || "",
         amount: params.amount,
+        currency: "XAF",
         transaction_id: transaction.id,
         pass_digital_charge: true,
-        notify_url: `${APP_URL}/api/webhooks/instant-payment`,
-        redirect_url: `${APP_URL}/dashboard/deposit?status=success`,
+        callback_url: `${APP_URL}/api/webhooks/instant-payment`,
       }),
     })
 
@@ -117,7 +193,7 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
         errorMessage = "Payment service error - Please try again"
       }
       
-      return { success: false, error: errorMessage }
+      throw new Error(errorMessage)
     }
 
     const data = await response.json()
@@ -159,7 +235,7 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
       }
     } else {
       console.error("[v0] No payment ID in response:", data)
-      return { success: false, error: data.message || "Payment link creation failed" }
+      throw new Error(data.message || "Payment link creation failed")
     }
   } catch (error) {
     console.error("[v0] Instant payment error:", error)
