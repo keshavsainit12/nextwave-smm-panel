@@ -35,53 +35,83 @@ export async function updateOrderStatus(orderId: string, status: string, adminNo
 
 export async function cancelOrder(orderId: string, reason: string) {
   try {
+    if (!orderId || orderId.trim() === "") {
+      console.error("[v0] Invalid order ID provided:", orderId)
+      return { error: "Invalid order ID" }
+    }
+
     const supabase = createAdminClient()
 
-    console.log("[v0] Attempting to cancel order:", orderId)
+    console.log("[v0] Attempting to cancel order with ID:", orderId)
 
-    // Get order details for refund - handle error properly
+    // Get order details for refund with error handling
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .select("user_id, total_price, status")
+      .select("id, user_id, total_price, status")
       .eq("id", orderId)
       .single()
 
     if (orderError) {
-      console.error("[v0] Order fetch error:", orderError)
-      return { error: "Order not found" }
+      console.error("[v0] Order fetch error:", {
+        code: orderError.code,
+        message: orderError.message,
+        details: orderError.details,
+        orderId,
+      })
+      
+      if (orderError.code === "PGRST116") {
+        return { error: "Order not found - please refresh the page and try again" }
+      }
+      
+      return { error: "Failed to fetch order: " + orderError.message }
     }
 
     if (!order) {
       console.error("[v0] Order data is null for ID:", orderId)
-      return { error: "Order not found" }
+      return { error: "Order not found - order data is empty" }
     }
 
-    console.log("[v0] Order found:", { orderId, userId: order.user_id, amount: order.total_price })
+    console.log("[v0] Order found successfully:", { orderId, userId: order.user_id, amount: order.total_price, status: order.status })
 
     // Check if order is already cancelled
-    if (order.status === "cancelled") {
+    if (order.status === "cancelled" || order.status === "canceled") {
       return { error: "Order is already cancelled" }
     }
 
-    // Refund user balance
-    const { error: refundError } = await supabase.rpc("increment_balance", {
-      user_id: order.user_id,
-      amount: order.total_price,
-    })
+    // Get current user balance
+    const { data: userData, error: getUserError } = await supabase
+      .from("users")
+      .select("balance")
+      .eq("id", order.user_id)
+      .single()
 
-    if (refundError) {
-      console.error("[v0] Refund error:", refundError)
-      return { error: "Failed to process refund: " + refundError.message }
+    if (getUserError || !userData) {
+      console.error("[v0] Failed to fetch user balance:", getUserError)
+      return { error: "Failed to fetch user for refund" }
     }
 
-    console.log("[v0] Refund processed successfully for user:", order.user_id)
+    // Calculate new balance
+    const newBalance = (userData.balance || 0) + order.total_price
+
+    // Update user balance
+    const { error: updateBalanceError } = await supabase
+      .from("users")
+      .update({ balance: newBalance })
+      .eq("id", order.user_id)
+
+    if (updateBalanceError) {
+      console.error("[v0] Balance update error:", updateBalanceError)
+      return { error: "Failed to process refund: " + updateBalanceError.message }
+    }
+
+    console.log("[v0] Balance refunded successfully for user:", order.user_id, "new balance:", newBalance)
 
     // Update order status
     const { error: updateError } = await supabase
       .from("orders")
       .update({
         status: "cancelled",
-        admin_notes: reason,
+        admin_notes: reason || "Cancelled by admin",
         updated_at: new Date().toISOString(),
       })
       .eq("id", orderId)
@@ -93,12 +123,25 @@ export async function cancelOrder(orderId: string, reason: string) {
 
     console.log("[v0] Order cancelled successfully:", orderId)
 
+    // Log activity
+    await supabase.from("activity_logs").insert({
+      user_id: order.user_id,
+      action: "order_cancelled",
+      entity_type: "order",
+      entity_id: orderId,
+      details: {
+        reason,
+        refund_amount: order.total_price,
+      },
+      ip_address: "admin",
+    }).catch((err) => console.log("[v0] Activity log error (non-critical):", err))
+
     revalidatePath("/admin-panel-2024")
     revalidatePath("/admin-panel-2024/orders")
 
     return { success: true }
   } catch (error: any) {
-    console.error("[v0] Cancel order error:", error)
+    console.error("[v0] Cancel order exception:", error)
     return { error: error.message || "Failed to cancel order" }
   }
 }
