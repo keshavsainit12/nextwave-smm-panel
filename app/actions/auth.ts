@@ -3,6 +3,7 @@
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
+import { COMPANY_NAME, EMAIL_CONFIG } from "@/lib/constants/company"
 
 export async function signupUser(formData: {
   email: string
@@ -47,6 +48,8 @@ export async function signupUser(formData: {
       email_confirm: true, // Skip email verification - user can login immediately
       user_metadata: {
         full_name: formData.fullName,
+        company: COMPANY_NAME,
+        signup_source: "email",
       },
     })
 
@@ -195,6 +198,8 @@ export async function createAdminUser(email: string, password: string, fullName:
       email_confirm: true,
       user_metadata: {
         full_name: fullName,
+        company: COMPANY_NAME,
+        signup_source: "oauth_google",
       },
     })
 
