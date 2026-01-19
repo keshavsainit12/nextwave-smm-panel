@@ -71,13 +71,13 @@ export function CryptoDepositList({ deposits }: { deposits: any[] }) {
             <TableRow key={deposit.id}>
               <TableCell>
                 <div>
-                  <div className="font-medium">{deposit.users?.full_name || deposit.users?.email?.split("@")[0]}</div>
-                  <div className="text-xs text-muted-foreground">{deposit.users?.email}</div>
+                  <div className="font-medium">{deposit.user_id?.full_name || deposit.user_id?.email?.split("@")[0]}</div>
+                  <div className="text-xs text-muted-foreground">{deposit.user_id?.email}</div>
                 </div>
               </TableCell>
               <TableCell>
-                <div className="font-medium">{deposit.crypto_currencies?.symbol}</div>
-                <div className="text-xs text-muted-foreground">{deposit.crypto_currencies?.name}</div>
+                <div className="font-medium">{deposit.crypto_currency_id?.symbol}</div>
+                <div className="text-xs text-muted-foreground">{deposit.crypto_currency_id?.name}</div>
               </TableCell>
               <TableCell className="font-mono font-semibold text-green-600">${deposit.amount}</TableCell>
               <TableCell className="font-mono text-sm">{deposit.crypto_amount}</TableCell>

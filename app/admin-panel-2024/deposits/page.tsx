@@ -7,10 +7,10 @@ import { AlertTriangle } from "lucide-react"
 export default async function AdminDepositsPage() {
   const supabase = createAdminClient()
   
-  // Fetch deposits with all related data
+  // Fetch deposits with all related data - specify user_id relationship explicitly
   const { data: deposits, error } = await supabase
     .from("crypto_deposits")
-    .select("*, users(id, email, full_name), crypto_currencies(id, name, symbol)")
+    .select("*, user_id(id, email, full_name), crypto_currency_id(id, name, symbol)")
     .order("created_at", { ascending: false })
 
   console.log("[v0] Admin deposits query result:", { depositsCount: deposits?.length, error })
