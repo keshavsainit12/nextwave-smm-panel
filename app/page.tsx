@@ -17,14 +17,14 @@ export default function LandingPage() {
       </div>
 
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-20 sm:h-24 md:h-28 items-center justify-between px-3 sm:px-4">
+        <div className="container flex h-14 sm:h-16 md:h-16 items-center justify-between px-3 sm:px-4">
           <Link href="/" className="flex items-center">
             <Image
               src="/logo.png"
               alt="NextWave SMM"
               width={600}
               height={150}
-              className="w-48 sm:w-56 md:w-64 lg:w-72 h-auto"
+              className="w-40 sm:w-48 md:w-56 lg:w-64 h-auto"
               priority
             />
           </Link>

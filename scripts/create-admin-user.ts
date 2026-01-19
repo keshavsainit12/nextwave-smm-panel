@@ -60,8 +60,8 @@ async function createAdminUser() {
     console.log("Password: admin@123")
     console.log("Role: admin")
     console.log("Balance: $10,000")
-    console.log("\nAdmin can login at: https://v0-smm-panel-eosin.vercel.app/auth/login")
-    console.log("Admin panel: https://v0-smm-panel-eosin.vercel.app/admin-panel-2024")
+    console.log("\nAdmin can login at: https://nextwavesmm.vercel.app/auth/login")
+    console.log("Admin panel: https://nextwavesmm.vercel.app/admin-panel-2024")
   } catch (error) {
     console.error("Failed to create admin user:", error)
     process.exit(1)

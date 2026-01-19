@@ -3,6 +3,7 @@
 import type React from "react"
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -85,39 +86,42 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 overflow-hidden">
-      {/* Enhanced Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-green-600 via-blue-600 to-purple-700">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-20" />
+    <div className="relative flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 overflow-hidden bg-transparent">
+      {/* Animated blob background */}
+      <div className="fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-500/20 rounded-full mix-blend-multiply filter blur-3xl opacity-60 animate-blob"></div>
+        <div className="absolute top-1/3 -right-4 w-72 h-72 bg-blue-500/20 rounded-full mix-blend-multiply filter blur-3xl opacity-60 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-8 left-1/3 w-72 h-72 bg-pink-500/20 rounded-full mix-blend-multiply filter blur-3xl opacity-60 animate-blob animation-delay-4000"></div>
       </div>
-
-      {/* Animated gradient orbs */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-green-400/30 rounded-full mix-blend-multiply filter blur-3xl animate-blob" />
-      <div className="absolute top-1/3 right-0 w-96 h-96 bg-blue-400/30 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000" />
-      <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-purple-400/30 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000" />
 
       <div className="relative w-full max-w-md z-10">
         <div className="mb-8">
-          <Link href="/" className="inline-flex items-center text-sm text-white/80 hover:text-white transition-colors">
+          <Link href="/" className="inline-flex items-center text-sm text-slate-600 hover:text-slate-900 transition-colors">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to home
           </Link>
         </div>
-        <Card className="backdrop-blur-2xl bg-white/10 border-white/20 shadow-2xl hover:shadow-3xl transition-shadow">
-          <CardHeader className="space-y-1 pb-4">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-blue-400 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                N
-              </div>
-              <span className="text-sm font-semibold text-white/90">NextWave</span>
+        <Card className="bg-white/90 backdrop-blur border-slate-200/50 shadow-2xl hover:shadow-3xl transition-all duration-300">
+          <CardHeader className="space-y-4 pb-6">
+            <div className="flex justify-center">
+              <Image
+                src="/logo.png"
+                alt="NextWave SMM"
+                width={600}
+                height={150}
+                className="w-40 sm:w-44 h-auto"
+                priority
+              />
             </div>
-            <CardTitle className="text-3xl font-bold text-white">Create account</CardTitle>
-            <CardDescription className="text-white/70">Join NextWave and start managing your services</CardDescription>
+            <div className="space-y-2 text-center">
+              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Create account</CardTitle>
+              <CardDescription className="text-slate-600">Join NextWave and start managing your services</CardDescription>
+            </div>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSignup} className="space-y-3">
               <div className="space-y-2">
-                <Label htmlFor="fullName" className="text-white/90">Full Name</Label>
+                <Label htmlFor="fullName" className="text-slate-700 font-medium">Full Name</Label>
                 <Input
                   id="fullName"
                   type="text"
@@ -126,11 +130,11 @@ export default function SignupPage() {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   disabled={isLoading}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-white/50 focus:bg-white/10 focus:border-white/30"
+                  className="bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-400 focus:ring-purple-500/20 rounded-lg transition-all"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-white/90">Email</Label>
+                <Label htmlFor="email" className="text-slate-700 font-medium">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -139,35 +143,37 @@ export default function SignupPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-white/50 focus:bg-white/10 focus:border-white/30"
+                  className="bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-400 focus:ring-purple-500/20 rounded-lg transition-all"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-white/90">Password</Label>
+                <Label htmlFor="password" className="text-slate-700 font-medium">Password</Label>
                 <Input
                   id="password"
                   type="password"
+                  placeholder="••••••••"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-white/50 focus:bg-white/10 focus:border-white/30"
+                  className="bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-400 focus:ring-purple-500/20 rounded-lg transition-all"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="text-white/90">Confirm Password</Label>
+                <Label htmlFor="confirmPassword" className="text-slate-700 font-medium">Confirm Password</Label>
                 <Input
                   id="confirmPassword"
                   type="password"
+                  placeholder="••••••••"
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   disabled={isLoading}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-white/50 focus:bg-white/10 focus:border-white/30"
+                  className="bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-400 focus:ring-purple-500/20 rounded-lg transition-all"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="referralCode" className="text-white/90">Referral Code (Optional)</Label>
+                <Label htmlFor="referralCode" className="text-slate-700 font-medium">Referral Code (Optional)</Label>
                 <Input
                   id="referralCode"
                   type="text"
@@ -175,11 +181,11 @@ export default function SignupPage() {
                   value={referralCode}
                   onChange={(e) => setReferralCode(e.target.value)}
                   disabled={isLoading}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-white/50 focus:bg-white/10 focus:border-white/30"
+                  className="bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-400 focus:ring-purple-500/20 rounded-lg transition-all"
                 />
               </div>
-              {error && <p className="text-sm text-red-300 bg-red-500/10 p-3 rounded-lg">{error}</p>}
-              <Button type="submit" className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium mt-4" disabled={isLoading}>
+              {error && <p className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">{error}</p>}
+              <Button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium shadow-lg hover:shadow-xl transition-all mt-2" disabled={isLoading}>
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -190,9 +196,9 @@ export default function SignupPage() {
                 )}
               </Button>
             </form>
-            <div className="mt-6 text-center text-sm text-white/70">
+            <div className="mt-6 text-center text-sm text-slate-600">
               Already have an account?{" "}
-              <Link href="/auth/login" className="font-medium text-green-300 hover:text-green-200 transition-colors">
+              <Link href="/auth/login" className="font-semibold text-purple-600 hover:text-purple-700 transition-colors">
                 Sign in
               </Link>
             </div>

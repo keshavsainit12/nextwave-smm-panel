@@ -101,7 +101,7 @@ export function DashboardHeader({ user }: { user: any }) {
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/50 bg-white/80 backdrop-blur-xl">
-      <div className="flex h-16 sm:h-18 md:h-20 items-center justify-between px-2 sm:px-6">
+      <div className="flex h-14 sm:h-14 md:h-14 items-center justify-between px-2 sm:px-6">
         <div className="flex items-center gap-2 sm:gap-3">
           <Sheet>
             <SheetTrigger asChild>
