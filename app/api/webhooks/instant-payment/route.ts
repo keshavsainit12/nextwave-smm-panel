@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextRequest, NextResponse } from "next/server"
 import crypto from "crypto"
+import { revalidatePath } from "next/cache"
 
 export async function POST(req: NextRequest) {
   try {
@@ -96,11 +97,28 @@ export async function POST(req: NextRequest) {
         ip_address: req.ip || "unknown",
       })
 
+      // Revalidate admin dashboard and deposits page
+      try {
+        revalidatePath("/admin-panel-2024")
+        revalidatePath("/admin-panel-2024/deposits")
+        console.log("[v0] Admin pages revalidated after deposit completion")
+      } catch (err) {
+        console.log("[v0] Note: Could not revalidate admin pages (expected in non-Next.js context):", err)
+      }
+
       return NextResponse.json({ success: true, message: "Payment processed successfully" })
     } else if (body.status === -1) {
       // Payment failed
       console.log("[v0] Payment failed:", transaction.id)
       await supabase.from("transactions").update({ status: "failed" }).eq("id", transaction.id)
+
+      // Revalidate pages on failure too
+      try {
+        revalidatePath("/admin-panel-2024/deposits")
+        console.log("[v0] Admin pages revalidated after deposit failure")
+      } catch (err) {
+        console.log("[v0] Note: Could not revalidate admin pages (expected in non-Next.js context):", err)
+      }
 
       return NextResponse.json({ success: true, message: "Payment failed" })
     } else {

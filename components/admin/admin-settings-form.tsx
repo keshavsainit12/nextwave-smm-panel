@@ -21,15 +21,21 @@ export default function AdminSettingsPage({ userId, userEmail }: AdminSettingsPa
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-  const [loading, setLoading] = useState(false)
+  const [currentUsername, setCurrentUsername] = useState("admin202502")
+  const [newUsername, setNewUsername] = useState("")
+  const [loadingPassword, setLoadingPassword] = useState(false)
+  const [loadingUsername, setLoadingUsername] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [usernameError, setUsernameError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [usernameSuccess, setUsernameSuccess] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     setSuccess(false)
-    setLoading(true)
+    setLoadingPassword(true)
 
     try {
       const result = await changeAdminPassword({
@@ -55,7 +61,52 @@ export default function AdminSettingsPage({ userId, userEmail }: AdminSettingsPa
       setError(errorMessage)
       toast.error(errorMessage)
     } finally {
-      setLoading(false)
+      setLoadingPassword(false)
+    }
+  }
+
+  const handleChangeUsername = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setUsernameError(null)
+    setUsernameSuccess(false)
+    setLoadingUsername(true)
+
+    try {
+      if (!newUsername.trim()) {
+        throw new Error("New username is required")
+      }
+
+      if (newUsername.length < 3) {
+        throw new Error("Username must be at least 3 characters")
+      }
+
+      if (newUsername === currentUsername) {
+        throw new Error("New username must be different from current username")
+      }
+
+      const response = await fetch("/api/admin/change-username", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ newUsername }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to change username")
+      }
+
+      toast.success("Username changed successfully")
+      setCurrentUsername(newUsername)
+      setNewUsername("")
+      setUsernameSuccess(true)
+      setTimeout(() => setUsernameSuccess(false), 5000)
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "An error occurred"
+      setUsernameError(errorMessage)
+      toast.error(errorMessage)
+    } finally {
+      setLoadingUsername(false)
     }
   }
 
@@ -77,6 +128,10 @@ export default function AdminSettingsPage({ userId, userEmail }: AdminSettingsPa
           <div>
             <Label className="text-muted-foreground text-sm">Admin Email</Label>
             <p className="font-medium mt-1">{userEmail}</p>
+          </div>
+          <div>
+            <Label className="text-muted-foreground text-sm">Admin Username</Label>
+            <p className="font-medium mt-1">{currentUsername}</p>
           </div>
           <div>
             <Label className="text-muted-foreground text-sm">User ID</Label>
@@ -122,7 +177,7 @@ export default function AdminSettingsPage({ userId, userEmail }: AdminSettingsPa
                 placeholder="Enter your current password"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                disabled={loading}
+                disabled={loadingPassword}
                 required
               />
               <p className="text-xs text-muted-foreground">We need your current password to verify your identity</p>
@@ -137,7 +192,7 @@ export default function AdminSettingsPage({ userId, userEmail }: AdminSettingsPa
                 placeholder="Enter your new password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                disabled={loading}
+                disabled={loadingPassword}
                 required
               />
               <p className="text-xs text-muted-foreground">Minimum 6 characters</p>
@@ -152,7 +207,7 @@ export default function AdminSettingsPage({ userId, userEmail }: AdminSettingsPa
                 placeholder="Confirm your new password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                disabled={loading}
+                disabled={loadingPassword}
                 required
               />
             </div>
@@ -171,9 +226,9 @@ export default function AdminSettingsPage({ userId, userEmail }: AdminSettingsPa
               <Button
                 type="submit"
                 className="bg-blue-600 hover:bg-blue-700 text-white"
-                disabled={loading || !currentPassword || !newPassword || !confirmPassword}
+                disabled={loadingPassword || !currentPassword || !newPassword || !confirmPassword}
               >
-                {loading ? (
+                {loadingPassword ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Updating Password...
@@ -191,7 +246,97 @@ export default function AdminSettingsPage({ userId, userEmail }: AdminSettingsPa
                   setConfirmPassword("")
                   setError(null)
                 }}
-                disabled={loading}
+                disabled={loadingPassword}
+              >
+                Clear
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Change Username */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Change Username</CardTitle>
+          <CardDescription>Update your admin login username</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleChangeUsername} className="space-y-6">
+            {/* Success Alert */}
+            {usernameSuccess && (
+              <Alert className="border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/20">
+                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <AlertTitle className="text-green-900 dark:text-green-100">Success</AlertTitle>
+                <AlertDescription className="text-green-800 dark:text-green-200">
+                  Your username has been changed successfully.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Error Alert */}
+            {usernameError && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{usernameError}</AlertDescription>
+              </Alert>
+            )}
+
+            {/* Current Username Display */}
+            <div className="space-y-2">
+              <Label className="text-muted-foreground text-sm">Current Username</Label>
+              <p className="font-medium text-base">{currentUsername}</p>
+            </div>
+
+            {/* New Username */}
+            <div className="space-y-2">
+              <Label htmlFor="new-username">New Username</Label>
+              <Input
+                id="new-username"
+                type="text"
+                placeholder="Enter new username"
+                value={newUsername}
+                onChange={(e) => setNewUsername(e.target.value)}
+                disabled={loadingUsername}
+                required
+              />
+              <p className="text-xs text-muted-foreground">Minimum 3 characters. Use letters, numbers, and underscores.</p>
+            </div>
+
+            {/* Info Alert */}
+            <Alert className="border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/20">
+              <AlertTriangle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <AlertTitle className="text-blue-900 dark:text-blue-100">Note</AlertTitle>
+              <AlertDescription className="text-blue-800 dark:text-blue-200">
+                You'll use this new username when logging into the admin panel. The email remains the same.
+              </AlertDescription>
+            </Alert>
+
+            {/* Buttons */}
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="submit"
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+                disabled={loadingUsername || !newUsername}
+              >
+                {loadingUsername ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Updating Username...
+                  </>
+                ) : (
+                  "Change Username"
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setNewUsername("")
+                  setUsernameError(null)
+                }}
+                disabled={loadingUsername}
               >
                 Clear
               </Button>

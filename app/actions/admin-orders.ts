@@ -37,21 +37,47 @@ export async function cancelOrder(orderId: string, reason: string) {
   try {
     const supabase = createAdminClient()
 
-    // Get order details for refund
-    const { data: order } = await supabase.from("orders").select("user_id, total_price").eq("id", orderId).single()
+    console.log("[v0] Attempting to cancel order:", orderId)
 
-    if (!order) {
+    // Get order details for refund - handle error properly
+    const { data: order, error: orderError } = await supabase
+      .from("orders")
+      .select("user_id, total_price, status")
+      .eq("id", orderId)
+      .single()
+
+    if (orderError) {
+      console.error("[v0] Order fetch error:", orderError)
       return { error: "Order not found" }
     }
 
+    if (!order) {
+      console.error("[v0] Order data is null for ID:", orderId)
+      return { error: "Order not found" }
+    }
+
+    console.log("[v0] Order found:", { orderId, userId: order.user_id, amount: order.total_price })
+
+    // Check if order is already cancelled
+    if (order.status === "cancelled") {
+      return { error: "Order is already cancelled" }
+    }
+
     // Refund user balance
-    await supabase.rpc("increment_balance", {
+    const { error: refundError } = await supabase.rpc("increment_balance", {
       user_id: order.user_id,
       amount: order.total_price,
     })
 
+    if (refundError) {
+      console.error("[v0] Refund error:", refundError)
+      return { error: "Failed to process refund: " + refundError.message }
+    }
+
+    console.log("[v0] Refund processed successfully for user:", order.user_id)
+
     // Update order status
-    await supabase
+    const { error: updateError } = await supabase
       .from("orders")
       .update({
         status: "cancelled",
@@ -59,6 +85,13 @@ export async function cancelOrder(orderId: string, reason: string) {
         updated_at: new Date().toISOString(),
       })
       .eq("id", orderId)
+
+    if (updateError) {
+      console.error("[v0] Order update error:", updateError)
+      return { error: "Failed to update order status: " + updateError.message }
+    }
+
+    console.log("[v0] Order cancelled successfully:", orderId)
 
     revalidatePath("/admin-panel-2024")
     revalidatePath("/admin-panel-2024/orders")
