@@ -38,12 +38,15 @@ export function CryptoDepositList({ deposits }: { deposits: any[] }) {
       setLoading(id)
       try {
         const result = await rejectDeposit(id, reason)
-        toast.success("Deposit rejected successfully")
-        router.refresh()
+        if (result.success) {
+          toast.success("Deposit rejected successfully")
+          router.refresh()
+        } else {
+          toast.error(result.error || "Failed to reject deposit")
+        }
       } catch (error: any) {
-        console.error("[v0] Reject error details:", error)
-        const errorMsg = error?.message || "Failed to reject deposit"
-        toast.error(`Reject failed: ${errorMsg}`)
+        console.error("[v0] Reject error:", error)
+        toast.error(error?.message || "Failed to reject deposit")
       } finally {
         setLoading(null)
       }

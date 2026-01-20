@@ -125,55 +125,50 @@ export async function approveDeposit(depositId: string) {
 
 export async function rejectDeposit(depositId: string, reason: string) {
   try {
-    const supabase = await createClient()
+    console.log("[v0] Starting reject deposit:", depositId, reason)
+    
     const adminSupabase = createAdminClient()
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) {
-      console.error("[v0] Unauthorized: No admin user found")
-      throw new Error("Unauthorized")
-    }
-
-    console.log("[v0] Rejecting deposit:", depositId, "Reason:", reason)
-
-    // Get deposit details using admin client (better permissions)
+    // Get deposit details using admin client
     const { data: deposit, error: fetchError } = await adminSupabase
       .from("crypto_deposits")
-      .select("id, transaction_id, user_id, amount, status")
+      .select("id, transaction_id, user_id, status")
       .eq("id", depositId)
       .single()
 
-    if (fetchError || !deposit) {
-      console.error("[v0] Deposit fetch error:", fetchError)
-      throw new Error(`Deposit not found: ${fetchError?.message || "Unknown error"}`)
+    if (fetchError) {
+      console.error("[v0] Fetch error:", fetchError.message)
+      return { success: false, error: "Deposit not found" }
+    }
+
+    if (!deposit) {
+      console.error("[v0] Deposit is null")
+      return { success: false, error: "Deposit not found" }
     }
 
     if (deposit.status !== "pending") {
-      console.error("[v0] Cannot reject non-pending deposit. Status:", deposit.status)
-      throw new Error(`Cannot reject deposit with status: ${deposit.status}`)
+      console.error("[v0] Deposit status is not pending:", deposit.status)
+      return { success: false, error: `Cannot reject - deposit status is ${deposit.status}` }
     }
 
-    // Update deposit status using admin client
-    const { error: updateDepositError } = await adminSupabase
+    // Update deposit status
+    const { error: updateError } = await adminSupabase
       .from("crypto_deposits")
       .update({
         status: "rejected",
         admin_notes: reason,
-        reviewed_by: user.id,
         reviewed_at: new Date().toISOString(),
       })
       .eq("id", depositId)
 
-    if (updateDepositError) {
-      console.error("[v0] Deposit update error:", updateDepositError)
-      throw new Error(`Failed to reject deposit: ${updateDepositError.message}`)
+    if (updateError) {
+      console.error("[v0] Update error:", updateError.message)
+      return { success: false, error: `Update failed: ${updateError.message}` }
     }
 
-    // Update transaction status if transaction_id exists
+    // Update transaction if exists
     if (deposit.transaction_id) {
-      const { error: updateTxError } = await adminSupabase
+      const { error: txError } = await adminSupabase
         .from("transactions")
         .update({
           status: "failed",
@@ -181,18 +176,16 @@ export async function rejectDeposit(depositId: string, reason: string) {
         })
         .eq("id", deposit.transaction_id)
 
-      if (updateTxError) {
-        console.error("[v0] Transaction update error:", updateTxError)
-        console.warn("[v0] Failed to update transaction but deposit rejected successfully")
-        // Don't throw - deposit was already rejected
+      if (txError) {
+        console.warn("[v0] Transaction update warning:", txError.message)
       }
     }
 
-    console.log("[v0] Deposit successfully rejected")
+    console.log("[v0] Deposit rejected successfully")
     revalidatePath("/admin-panel-2024/deposits")
     return { success: true }
-  } catch (error) {
-    console.error("[v0] Reject deposit error:", error)
-    throw error
+  } catch (error: any) {
+    console.error("[v0] Reject catch error:", error?.message || error)
+    return { success: false, error: error?.message || "Unknown error occurred" }
   }
 }
