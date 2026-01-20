@@ -34,7 +34,7 @@ const navigation = [
   { name: "Transaction History", href: "/admin-panel-2024/transaction-history", icon: Receipt },
   { name: "Process Payments", href: "/admin-panel-2024/process-payments", icon: Zap },
   { name: "Services", href: "/admin-panel-2024/services", icon: ShoppingCart },
-  { name: "Manage Icons", href: "/admin-panel-2024/manage-icons", icon: ImageIcon },
+  { name: "Icon Manager", href: "/admin-panel-2024/icon-manager", icon: ImageIcon },
   { name: "Auto-Update Icons", href: "/admin-panel-2024/auto-update-icons", icon: Wand2 },
   { name: "Crypto Settings", href: "/admin-panel-2024/crypto", icon: Bitcoin },
   { name: "API Providers", href: "/admin-panel-2024/api-providers", icon: Plug },
