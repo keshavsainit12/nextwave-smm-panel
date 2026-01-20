@@ -127,6 +127,22 @@ export default function TermsOfServicePage() {
               Website: www.nextwavesmm.com
             </p>
           </section>
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold mb-4">Contact Information</h2>
+            <p>
+              If you have any questions about these Terms of Service, please contact us at:
+            </p>
+            <p className="mt-4 font-semibold">
+              Email: <a href="mailto:nextwavedigitalsolutions1@gmail.com" className="text-blue-600 hover:text-blue-700">
+                nextwavedigitalsolutions1@gmail.com
+              </a>
+            </p>
+            <p className="mt-2">
+              Website: <a href="https://nextwavesmm.com" className="text-blue-600 hover:text-blue-700">
+                nextwavesmm.com
+              </a>
+            </p>
+          </section>
         </div>
       </div>
     </div>

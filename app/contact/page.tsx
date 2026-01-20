@@ -153,6 +153,45 @@ export default function ContactPage() {
               </Button>
             </Link>
           </section>
+          {/* Email Cards */}
+          <div className="grid md:grid-cols-2 gap-6 mt-12">
+            <Card className="border-slate-200">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-4">
+                  <Mail className="w-6 h-6 text-blue-600 mt-1 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold mb-2">Email Support</h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Reach out to our support team with any questions or concerns.
+                    </p>
+                    <a 
+                      href="mailto:nextwavedigitalsolutions1@gmail.com" 
+                      className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+                    >
+                      nextwavedigitalsolutions1@gmail.com
+                    </a>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-200">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-4">
+                  <MessageSquare className="w-6 h-6 text-purple-600 mt-1 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold mb-2">Quick Response</h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      We typically respond to all inquiries within 24 hours.
+                    </p>
+                    <p className="text-blue-600 font-medium text-sm">
+                      Support Hours: 24/7
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>

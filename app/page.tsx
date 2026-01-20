@@ -267,11 +267,27 @@ export default function LandingPage() {
             </div>
             <div>
               <h3 className="font-semibold mb-4">Support</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>Help Center</li>
-                <li>API Documentation</li>
-                <li>FAQs</li>
-                <li>Contact Support</li>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <a href="mailto:nextwavedigitalsolutions1@gmail.com" className="text-muted-foreground hover:text-foreground transition-colors">
+                    Email Support
+                  </a>
+                </li>
+                <li>
+                  <Link href="/contact" className="text-muted-foreground hover:text-foreground transition-colors">
+                    Help Center
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/contact" className="text-muted-foreground hover:text-foreground transition-colors">
+                    API Documentation
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/contact" className="text-muted-foreground hover:text-foreground transition-colors">
+                    FAQs
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>
