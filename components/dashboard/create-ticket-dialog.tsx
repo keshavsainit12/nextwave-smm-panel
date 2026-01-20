@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -24,6 +24,7 @@ import { toast } from "sonner"
 export function CreateTicketDialog() {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const formRef = useRef<HTMLFormElement>(null)
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -39,7 +40,9 @@ export function CreateTicketDialog() {
       if (result && result.success) {
         toast.success("Ticket created successfully!")
         setOpen(false)
-        e.currentTarget.reset()
+        if (formRef.current) {
+          formRef.current.reset()
+        }
         router.refresh()
       } else {
         toast.error("Failed to create ticket. Please try again.")
@@ -65,7 +68,7 @@ export function CreateTicketDialog() {
           <DialogTitle>Create Support Ticket</DialogTitle>
           <DialogDescription>Describe your issue and we'll help you resolve it</DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="subject">Subject</Label>
             <Input id="subject" name="subject" placeholder="Brief description of your issue" required />

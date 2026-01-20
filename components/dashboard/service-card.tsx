@@ -14,12 +14,26 @@ export function ServiceCard({ service }: { service: any }) {
 
   return (
     <>
-      <Card className="hover:shadow-lg transition-shadow">
+      <Card className="hover:shadow-lg transition-shadow overflow-hidden">
         <CardHeader>
-          <div className="flex items-start justify-between gap-2">
+          <div className="flex items-start justify-between gap-3">
             <div className="flex-1">
-              <CardTitle className="text-lg line-clamp-2">{service.name}</CardTitle>
-              <CardDescription className="mt-1">{service.service_categories?.name || "Uncategorized"}</CardDescription>
+              <div className="flex items-center gap-3 mb-2">
+                {service.icon && (
+                  <img
+                    src={service.icon || "/placeholder.svg"}
+                    alt={service.name}
+                    className="h-10 w-10 rounded-lg object-contain bg-muted p-1"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none"
+                    }}
+                  />
+                )}
+                <div className="flex-1">
+                  <CardTitle className="text-lg line-clamp-2">{service.name}</CardTitle>
+                  <CardDescription className="mt-0.5">{service.service_categories?.name || "Uncategorized"}</CardDescription>
+                </div>
+              </div>
             </div>
             <div className="flex flex-col gap-1">
               {(service.has_refill || service.refill) && (

@@ -87,24 +87,50 @@ export async function POST(req: NextRequest) {
     }
 
     if (body.status === 1 || body.status === "1" || body.status === "success") {
-      // Payment successful
+      // CRITICAL: Check if already completed to prevent double charge
+      if (transaction.status === "completed") {
+        console.log("[v0] DUPLICATE WEBHOOK - Transaction already completed, skipping to prevent double charge:", {
+          transactionId: transaction.id,
+          userId: transaction.user_id,
+          amount: transaction.amount,
+        })
+        return NextResponse.json({ success: true, message: "Already processed - duplicate webhook ignored" })
+      }
+
+      // Payment successful - NOW update status
       console.log("[v0] Payment successful, updating wallet:", {
         userId: transaction.user_id,
         amount: transaction.amount,
         transactionId: transaction.id,
       })
 
-      // Update transaction status
-      const { error: txError } = await supabase
+      // Update transaction status FIRST with atomic check
+      const { data: updateResult, error: txError } = await supabase
         .from("transactions")
-        .update({ status: "completed" })
+        .update({ status: "completed", updated_at: new Date().toISOString() })
         .eq("id", transaction.id)
+        .eq("status", "pending")  // ATOMIC: Only update if still pending
+        .select()
+        .single()
 
-      if (txError) {
-        console.error("[v0] Transaction update error:", txError.message)
+      if (txError || !updateResult) {
+        console.error("[v0] Transaction status update failed (may already be completed):", txError)
+        // If update failed, check if it's already completed
+        const { data: checkTx } = await supabase
+          .from("transactions")
+          .select("status")
+          .eq("id", transaction.id)
+          .single()
+
+        if (checkTx?.status === "completed") {
+          console.log("[v0] Transaction already completed by another webhook call")
+          return NextResponse.json({ success: true, message: "Already completed" })
+        }
+
+        return NextResponse.json({ success: false, error: "Failed to update transaction" }, { status: 500 })
       }
 
-      // Update user balance
+      // THEN update user balance
       const { data: user, error: userError } = await supabase
         .from("users")
         .select("balance")
@@ -121,13 +147,26 @@ export async function POST(req: NextRequest) {
         const amountToAdd = Number(transaction.amount) || 0
         const newBalance = currentBalance + amountToAdd
 
+        console.log("[v0] Crediting wallet:", {
+          userId: transaction.user_id,
+          currentBalance,
+          amountToAdd,
+          newBalance,
+        })
+
         const { error: balanceError } = await supabase
           .from("users")
-          .update({ balance: newBalance })
+          .update({ balance: newBalance, updated_at: new Date().toISOString() })
           .eq("id", transaction.user_id)
 
         if (balanceError) {
           console.error("[v0] Balance update error:", balanceError.message)
+          // Revert transaction status if balance update fails
+          await supabase
+            .from("transactions")
+            .update({ status: "pending" })
+            .eq("id", transaction.id)
+            .catch((err) => console.log("[v0] Revert failed:", err))
           return NextResponse.json({ success: false, error: "Balance update failed" }, { status: 500 })
         }
 
@@ -165,6 +204,7 @@ export async function POST(req: NextRequest) {
         revalidatePath("/admin-panel-2024/transaction-history")
         revalidatePath("/dashboard/deposit")
         revalidatePath("/dashboard")
+        revalidatePath("/dashboard/transaction-history")
         console.log("[v0] All pages revalidated after deposit completion")
       } catch (err) {
         console.log("[v0] Note: Could not revalidate pages:", err)
@@ -172,12 +212,12 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({ success: true, message: "Payment processed successfully" })
     } else if (body.status === -1 || body.status === "-1" || body.status === "failed") {
-      // Payment failed
-      console.log("[v0] Payment failed:", transaction.id)
-      
+      // FAILED: Do NOT credit wallet
+      console.log("[v0] Payment failed - NOT crediting wallet:", transaction.id)
+
       const { error } = await supabase
         .from("transactions")
-        .update({ status: "failed" })
+        .update({ status: "failed", updated_at: new Date().toISOString() })
         .eq("id", transaction.id)
 
       if (error) {
@@ -186,6 +226,8 @@ export async function POST(req: NextRequest) {
 
       try {
         revalidatePath("/dashboard/deposit")
+        revalidatePath("/dashboard/transaction-history")
+        revalidatePath("/admin-panel-2024/transaction-history")
         console.log("[v0] Pages revalidated after deposit failure")
       } catch (err) {
         console.log("[v0] Note: Could not revalidate pages:", err)
@@ -195,10 +237,10 @@ export async function POST(req: NextRequest) {
     } else {
       // Payment pending
       console.log("[v0] Payment pending:", transaction.id)
-      
+
       const { error } = await supabase
         .from("transactions")
-        .update({ status: "pending" })
+        .update({ status: "pending", updated_at: new Date().toISOString() })
         .eq("id", transaction.id)
 
       if (error) {

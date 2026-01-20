@@ -296,6 +296,7 @@ export function DesktopDashboard({
                 >
                   {categoriesWithServices.map((category) => (
                     <option key={category.id} value={category.id}>
+                      {category.icon ? "📁 " : ""}
                       {category.name}
                     </option>
                   ))}
@@ -332,6 +333,7 @@ export function DesktopDashboard({
                     >
                       {filteredServices.map((service) => (
                         <option key={service.id} value={service.id}>
+                          {service.icon ? "🎯 " : ""}
                           {service.name} - ${Number(service.price || service.base_price || 0).toFixed(2)}/1k
                         </option>
                       ))}

@@ -111,9 +111,21 @@ export function UserOrderList({ orders }: { orders: any[] }) {
         {orders.map((order) => (
           <TableRow key={order.id}>
             <TableCell>
-              <div>
-                <div className="font-medium">{order.services?.name || "N/A"}</div>
-                <div className="text-xs text-muted-foreground">{order.services?.platform}</div>
+              <div className="flex items-center gap-2">
+                {order.services?.icon && (
+                  <img
+                    src={order.services.icon || "/placeholder.svg"}
+                    alt={order.services.name}
+                    className="h-6 w-6 rounded object-contain bg-muted p-0.5 flex-shrink-0"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none"
+                    }}
+                  />
+                )}
+                <div>
+                  <div className="font-medium">{order.services?.name || "N/A"}</div>
+                  <div className="text-xs text-muted-foreground">{order.services?.platform}</div>
+                </div>
               </div>
             </TableCell>
             <TableCell>

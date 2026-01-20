@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { AdminStatsCards } from "@/components/admin/admin-stats-cards"
 import { RevenueChart } from "@/components/admin/revenue-chart"
 import { RecentOrders } from "@/components/admin/recent-orders"
+import { RecentTransactions } from "@/components/admin/recent-transactions"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
@@ -61,12 +62,20 @@ export default async function AdminDashboardPage() {
           </h1>
           <p className="text-gray-600 mt-2 text-lg">Welcome back! Here's what's happening today.</p>
         </div>
-        <Link href="/admin-panel-2024/transaction-history">
-          <Button className="flex items-center gap-2">
-            View All Transactions
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/admin-panel-2024/transaction-history">
+            <Button variant="outline" className="flex items-center gap-2 bg-transparent">
+              View All Transactions
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </Link>
+          <Link href="/admin-panel-2024/manage-transactions">
+            <Button className="flex items-center gap-2">
+              Manage Transactions
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <AdminStatsCards
@@ -84,6 +93,10 @@ export default async function AdminDashboardPage() {
           <RevenueChart />
         </div>
         <RecentOrders />
+      </div>
+
+      <div className="grid gap-8 lg:grid-cols-2">
+        <RecentTransactions />
       </div>
     </div>
   )

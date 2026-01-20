@@ -36,13 +36,27 @@ export function ServiceCatalog({ services, categories }: { services: any[]; cate
       </div>
 
       <Tabs defaultValue="all" className="w-full">
-        <TabsList className="w-full justify-start overflow-x-auto flex-nowrap">
-          <TabsTrigger value="all">All Services ({services.length})</TabsTrigger>
+        <TabsList className="w-full justify-start overflow-x-auto flex-nowrap bg-muted/50 p-1 h-auto">
+          <TabsTrigger value="all" className="flex items-center gap-2">
+            <span>All Services ({services.length})</span>
+          </TabsTrigger>
           {categories.map((cat) => {
             const count = services.filter((s) => s.category_id === cat.id).length
             return (
-              <TabsTrigger key={cat.id} value={cat.id}>
-                {cat.name} ({count})
+              <TabsTrigger key={cat.id} value={cat.id} className="flex items-center gap-2">
+                {cat.icon && (
+                  <img
+                    src={cat.icon || "/placeholder.svg"}
+                    alt={cat.name}
+                    className="h-5 w-5 rounded object-contain"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none"
+                    }}
+                  />
+                )}
+                <span>
+                  {cat.name} ({count})
+                </span>
               </TabsTrigger>
             )
           })}

@@ -111,11 +111,23 @@ export function ServiceList({ services }: { services: any[] }) {
               return (
                 <TableRow key={service.id}>
                   <TableCell className="font-medium">
-                    <div>
-                      <div className="max-w-[300px] truncate">{service.name}</div>
-                      {service.external_service_id && (
-                        <div className="text-xs text-muted-foreground">ID: {service.external_service_id}</div>
+                    <div className="flex items-center gap-2">
+                      {service.icon && (
+                        <img
+                          src={service.icon || "/placeholder.svg"}
+                          alt={service.name}
+                          className="h-8 w-8 rounded object-contain bg-muted p-1"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none"
+                          }}
+                        />
                       )}
+                      <div>
+                        <div className="max-w-[250px] truncate">{service.name}</div>
+                        {service.external_service_id && (
+                          <div className="text-xs text-muted-foreground">ID: {service.external_service_id}</div>
+                        )}
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell>{service.service_categories?.name || "N/A"}</TableCell>

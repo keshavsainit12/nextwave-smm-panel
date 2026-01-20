@@ -16,7 +16,7 @@ export function RecentOrders() {
       const supabase = createClient()
       const { data } = await supabase
         .from("orders")
-        .select("*, services(name), users(email, full_name)")
+        .select("*, services(name, icon), users(email, full_name)")
         .order("created_at", { ascending: false })
         .limit(10)
 
@@ -68,10 +68,20 @@ export function RecentOrders() {
             <div className="text-center py-8 text-muted-foreground">No recent orders</div>
           ) : (
             orders.map((order) => (
-              <div key={order.id} className="flex items-center justify-between border-b pb-3 last:border-0">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">{order.services?.name || "Unknown Service"}</p>
-                  <p className="text-xs text-muted-foreground">
+              <div key={order.id} className="flex items-center justify-between border-b pb-3 last:border-0 gap-3">
+                {order.services?.icon && (
+                  <img
+                    src={order.services.icon || "/placeholder.svg"}
+                    alt={order.services.name}
+                    className="h-8 w-8 rounded object-contain bg-muted p-1 flex-shrink-0"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none"
+                    }}
+                  />
+                )}
+                <div className="space-y-1 flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{order.services?.name || "Unknown Service"}</p>
+                  <p className="text-xs text-muted-foreground truncate">
                     {order.users?.full_name || order.users?.email} • $
                     {(order.total_price || order.price || 0).toFixed(2)}
                   </p>

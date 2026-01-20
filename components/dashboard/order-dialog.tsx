@@ -69,8 +69,17 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-h-[90vh] w-full max-w-[95vw] overflow-y-auto sm:max-w-[550px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <ShoppingCart className="h-5 w-5" />
+          <DialogTitle className="flex items-center gap-3">
+            {service.icon && (
+              <img
+                src={service.icon || "/placeholder.svg"}
+                alt={service.name}
+                className="h-8 w-8 rounded object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none"
+                }}
+              />
+            )}
             <span className="line-clamp-1">{service.name}</span>
           </DialogTitle>
           <DialogDescription>
