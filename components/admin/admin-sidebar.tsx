@@ -25,11 +25,13 @@ import {
   Activity,
   Menu,
   Receipt,
+  Zap,
 } from "lucide-react"
 
 const navigation = [
   { name: "Dashboard", href: "/admin-panel-2024", icon: LayoutDashboard },
   { name: "Transaction History", href: "/admin-panel-2024/transaction-history", icon: Receipt },
+  { name: "Process Payments", href: "/admin-panel-2024/process-payments", icon: Zap },
   { name: "Services", href: "/admin-panel-2024/services", icon: ShoppingCart },
   { name: "Crypto Settings", href: "/admin-panel-2024/crypto", icon: Bitcoin },
   { name: "API Providers", href: "/admin-panel-2024/api-providers", icon: Plug },
@@ -42,7 +44,7 @@ const navigation = [
   { name: "Settings", href: "/admin-panel-2024/settings", icon: Settings },
 ]
 
-function SidebarContent({ pathname, handleLogout }: { pathname: string; handleLogout: () => Promise<void> }) {
+function SidebarContent({ pathname, handleLogout, onClose }: { pathname: string; handleLogout: () => Promise<void>; onClose?: () => void }) {
   return (
     <>
       <div className="flex h-20 items-center justify-center border-b bg-white/50 backdrop-blur-sm px-6">
@@ -56,6 +58,7 @@ function SidebarContent({ pathname, handleLogout }: { pathname: string; handleLo
             <Link
               key={item.name}
               href={item.href}
+              onClick={onClose}
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
                 isActive
@@ -73,7 +76,10 @@ function SidebarContent({ pathname, handleLogout }: { pathname: string; handleLo
         <Button
           variant="outline"
           className="w-full justify-start bg-transparent hover:bg-red-50 hover:text-red-600 hover:border-red-300"
-          onClick={handleLogout}
+          onClick={() => {
+            onClose?.()
+            handleLogout()
+          }}
         >
           <LogOut className="mr-2 h-4 w-4" />
           Logout
@@ -127,7 +133,7 @@ export function AdminSidebar() {
                   <span className="text-xs text-slate-500 dark:text-slate-400">Super Admin</span>
                 </div>
               </div>
-              <SidebarContent pathname={pathname} handleLogout={handleLogout} />
+              <SidebarContent pathname={pathname} handleLogout={handleLogout} onClose={() => setOpen(false)} />
             </div>
           </SheetContent>
         </Sheet>

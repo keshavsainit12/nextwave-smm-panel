@@ -19,15 +19,13 @@ export default async function AdminDashboardPage() {
     { count: pendingDeposits },
     { data: ordersData },
     { data: activeUsersData },
-    { data: depositData },
   ] = await Promise.all([
-    supabase.from("users").select("*", { count: "exact", head: true }),
-    supabase.from("orders").select("*", { count: "exact", head: true }),
-    supabase.from("orders").select("*", { count: "exact", head: true }).in("status", ["pending", "processing"]),
-    supabase.from("crypto_deposits").select("*", { count: "exact", head: true }).eq("status", "pending"),
-    supabase.from("orders").select("id, price, quantity, status, services(provider_price)").eq("status", "completed"),
-    supabase.from("users").select("id").gte("last_login", thirtyDaysAgo.toISOString()).limit(1000),
-    supabase.from("crypto_deposits").select("amount, status"),
+    supabase.from("users").select("id", { count: "exact", head: true }).limit(0),
+    supabase.from("orders").select("id", { count: "exact", head: true }).limit(0),
+    supabase.from("orders").select("id", { count: "exact", head: true }).in("status", ["pending", "processing"]).limit(0),
+    supabase.from("crypto_deposits").select("id", { count: "exact", head: true }).eq("status", "pending").limit(0),
+    supabase.from("orders").select("id, price, quantity, services!inner(provider_price)", { head: false }).eq("status", "completed").limit(500),
+    supabase.from("users").select("id", { count: "exact", head: false }).gte("last_login", thirtyDaysAgo.toISOString()).limit(100),
   ])
 
   // Calculate Order Revenue & Profit (Only from completed orders)
@@ -46,30 +44,13 @@ export default async function AdminDashboardPage() {
 
   const orderProfit = orderRevenue - orderCost
 
-  // Calculate Deposit Revenue (Only approved deposits)
-  const depositRevenue = depositData?.reduce((sum, deposit) => {
-    if (deposit.status === "approved") {
-      return sum + Number(deposit.amount || 0)
-    }
-    return sum
-  }, 0) || 0
+  // Total Revenue = Order Revenue only (deposits tracked separately)
+  const totalRevenue = orderRevenue
 
-  // Total Revenue = Orders + Deposits
-  const totalRevenue = orderRevenue + depositRevenue
-
-  // Total Profit = Order Profit (deposits don't have costs)
+  // Total Profit = Order Profit
   const totalProfit = orderProfit
 
   const activeUsersCount = activeUsersData?.length || 0
-
-  console.log("[v0] Admin Dashboard Calculations:", {
-    orderRevenue: orderRevenue.toFixed(2),
-    orderCost: orderCost.toFixed(2),
-    orderProfit: orderProfit.toFixed(2),
-    depositRevenue: depositRevenue.toFixed(2),
-    totalRevenue: totalRevenue.toFixed(2),
-    totalProfit: totalProfit.toFixed(2),
-  })
 
   return (
     <div className="space-y-8">

@@ -17,22 +17,20 @@ export default async function TicketDetailPage({ params }: { params: { id: strin
     notFound()
   }
 
-  const { data: ticket } = await supabase
+  // Fetch ticket with messages in single query
+  const { data: ticket, error: ticketError } = await supabase
     .from("support_tickets")
-    .select("*")
+    .select("*, ticket_messages(id, message, is_admin, created_at, user_id, users!inner(full_name, email))")
     .eq("id", params.id)
     .eq("user_id", user.id)
     .single()
 
-  if (!ticket) {
+  if (ticketError || !ticket) {
+    console.error("[v0] Ticket fetch error:", ticketError)
     notFound()
   }
 
-  const { data: messages } = await supabase
-    .from("ticket_messages")
-    .select("*, users(full_name, email)")
-    .eq("ticket_id", params.id)
-    .order("created_at", { ascending: true })
+  const messages = ticket.ticket_messages || []
 
   return (
     <div className="min-h-screen bg-[#f6f6f8] p-4 pb-24 md:pb-6">
@@ -49,11 +47,14 @@ export default async function TicketDetailPage({ params }: { params: { id: strin
               <h1 className="text-3xl font-bold tracking-tight">{ticket.subject}</h1>
               <p className="text-muted-foreground">Ticket #{ticket.id.slice(0, 8)}</p>
             </div>
-            <Badge
-              variant={ticket.status === "open" ? "secondary" : ticket.status === "closed" ? "outline" : "default"}
-            >
-              {ticket.status}
-            </Badge>
+            <div className="flex gap-2">
+              <Badge
+                variant={ticket.status === "open" ? "secondary" : ticket.status === "closed" ? "outline" : "default"}
+              >
+                {ticket.status}
+              </Badge>
+              <Badge variant="outline">{ticket.priority}</Badge>
+            </div>
           </div>
         </div>
 
@@ -62,7 +63,7 @@ export default async function TicketDetailPage({ params }: { params: { id: strin
             <CardTitle>Conversation</CardTitle>
           </CardHeader>
           <CardContent>
-            <TicketMessages ticketId={ticket.id} messages={messages || []} />
+            <TicketMessages ticketId={ticket.id} messages={messages} />
           </CardContent>
         </Card>
       </div>

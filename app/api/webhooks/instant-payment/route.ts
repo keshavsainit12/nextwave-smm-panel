@@ -8,9 +8,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
 
     console.log("[v0] Instant payment webhook received:", {
-      transactionId: body.transactionId,
+      transactionId: body.transactionId || body.transaction_id,
       status: body.status,
       amount: body.amount,
+      allBody: JSON.stringify(body),
     })
 
     const supabase = await createClient()
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
       secret = password
     }
 
-    // Verify webhook signature
+    // Verify webhook signature if present
     const receivedSignature = req.headers.get("x-accountpe-signature")
     if (receivedSignature) {
       const bodyString = JSON.stringify(body)
@@ -42,89 +43,167 @@ export async function POST(req: NextRequest) {
       console.log("[v0] Webhook signature verified successfully")
     }
 
-    // Update transaction status
-    const { data: transaction } = await supabase
-      .from("transactions")
-      .select("*")
-      .eq("payment_id", body.transactionId)
-      .single()
+    // Get the transaction ID from webhook payload (try multiple field names)
+    const webhookTransactionId = body.transactionId || body.transaction_id || body.id
+
+    // Try to find transaction by payment_id first (original transaction ID we sent)
+    let transaction = null
+    let searchField = "payment_id"
+    
+    if (webhookTransactionId) {
+      const { data } = await supabase
+        .from("transactions")
+        .select("*")
+        .eq("payment_id", webhookTransactionId)
+        .single()
+      
+      if (data) {
+        transaction = data
+        console.log("[v0] Transaction found by payment_id:", transaction.id)
+      }
+    }
+
+    // If not found by payment_id, try by notes (fallback)
+    if (!transaction && webhookTransactionId) {
+      const { data } = await supabase
+        .from("transactions")
+        .select("*")
+        .eq("id", webhookTransactionId)
+        .single()
+      
+      if (data) {
+        transaction = data
+        searchField = "transaction_id (direct)"
+        console.log("[v0] Transaction found by direct ID:", transaction.id)
+      }
+    }
 
     if (!transaction) {
-      console.error("[v0] Transaction not found:", body.transactionId)
+      console.error("[v0] Transaction not found:", {
+        webhookTransactionId,
+        searchedBy: searchField,
+      })
       return NextResponse.json({ success: false, error: "Transaction not found" }, { status: 404 })
     }
 
-    if (body.status === 1) {
+    if (body.status === 1 || body.status === "1" || body.status === "success") {
       // Payment successful
       console.log("[v0] Payment successful, updating wallet:", {
         userId: transaction.user_id,
         amount: transaction.amount,
+        transactionId: transaction.id,
       })
 
-      // Update transaction
-      await supabase.from("transactions").update({ status: "completed" }).eq("id", transaction.id)
+      // Update transaction status
+      const { error: txError } = await supabase
+        .from("transactions")
+        .update({ status: "completed" })
+        .eq("id", transaction.id)
+
+      if (txError) {
+        console.error("[v0] Transaction update error:", txError.message)
+      }
 
       // Update user balance
-      const { data: user } = await supabase
+      const { data: user, error: userError } = await supabase
         .from("users")
         .select("balance")
         .eq("id", transaction.user_id)
         .single()
 
+      if (userError) {
+        console.error("[v0] User fetch error:", userError.message)
+        return NextResponse.json({ success: false, error: "User not found" }, { status: 404 })
+      }
+
       if (user) {
-        const newBalance = (user.balance || 0) + transaction.amount
-        await supabase.from("users").update({ balance: newBalance }).eq("id", transaction.user_id)
+        const currentBalance = Number(user.balance) || 0
+        const amountToAdd = Number(transaction.amount) || 0
+        const newBalance = currentBalance + amountToAdd
+
+        const { error: balanceError } = await supabase
+          .from("users")
+          .update({ balance: newBalance })
+          .eq("id", transaction.user_id)
+
+        if (balanceError) {
+          console.error("[v0] Balance update error:", balanceError.message)
+          return NextResponse.json({ success: false, error: "Balance update failed" }, { status: 500 })
+        }
 
         console.log("[v0] Wallet credited successfully:", {
           userId: transaction.user_id,
-          amount: transaction.amount,
-          newBalance: newBalance,
+          amountAdded: amountToAdd,
+          balanceBefore: currentBalance,
+          balanceAfter: newBalance,
         })
       }
 
       // Log activity
-      await supabase.from("activity_logs").insert({
-        user_id: transaction.user_id,
-        action: "deposit",
-        entity_type: "transaction",
-        entity_id: transaction.id,
-        details: {
-          amount: transaction.amount,
-          method: "instant_payment",
-          status: "completed",
-          transactionId: body.transactionId,
-        },
-        ip_address: req.ip || "unknown",
-      })
+      try {
+        await supabase.from("activity_logs").insert({
+          user_id: transaction.user_id,
+          action: "deposit",
+          entity_type: "transaction",
+          entity_id: transaction.id,
+          details: {
+            amount: transaction.amount,
+            method: "instant_payment",
+            status: "completed",
+            transactionId: webhookTransactionId,
+          },
+          ip_address: req.ip || "unknown",
+        })
+      } catch (logErr) {
+        console.warn("[v0] Activity log error:", logErr)
+      }
 
       // Revalidate admin dashboard and deposits page
       try {
         revalidatePath("/admin-panel-2024")
         revalidatePath("/admin-panel-2024/deposits")
-        console.log("[v0] Admin pages revalidated after deposit completion")
+        revalidatePath("/admin-panel-2024/transaction-history")
+        revalidatePath("/dashboard/deposit")
+        revalidatePath("/dashboard")
+        console.log("[v0] All pages revalidated after deposit completion")
       } catch (err) {
-        console.log("[v0] Note: Could not revalidate admin pages (expected in non-Next.js context):", err)
+        console.log("[v0] Note: Could not revalidate pages:", err)
       }
 
       return NextResponse.json({ success: true, message: "Payment processed successfully" })
-    } else if (body.status === -1) {
+    } else if (body.status === -1 || body.status === "-1" || body.status === "failed") {
       // Payment failed
       console.log("[v0] Payment failed:", transaction.id)
-      await supabase.from("transactions").update({ status: "failed" }).eq("id", transaction.id)
+      
+      const { error } = await supabase
+        .from("transactions")
+        .update({ status: "failed" })
+        .eq("id", transaction.id)
 
-      // Revalidate pages on failure too
+      if (error) {
+        console.error("[v0] Transaction update error:", error.message)
+      }
+
       try {
-        revalidatePath("/admin-panel-2024/deposits")
-        console.log("[v0] Admin pages revalidated after deposit failure")
+        revalidatePath("/dashboard/deposit")
+        console.log("[v0] Pages revalidated after deposit failure")
       } catch (err) {
-        console.log("[v0] Note: Could not revalidate admin pages (expected in non-Next.js context):", err)
+        console.log("[v0] Note: Could not revalidate pages:", err)
       }
 
       return NextResponse.json({ success: true, message: "Payment failed" })
     } else {
       // Payment pending
       console.log("[v0] Payment pending:", transaction.id)
-      await supabase.from("transactions").update({ status: "pending" }).eq("id", transaction.id)
+      
+      const { error } = await supabase
+        .from("transactions")
+        .update({ status: "pending" })
+        .eq("id", transaction.id)
+
+      if (error) {
+        console.error("[v0] Transaction update error:", error.message)
+      }
 
       return NextResponse.json({ success: true, message: "Payment pending" })
     }

@@ -124,7 +124,7 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
 
     const balanceBefore = userData.balance || 0
 
-    // Create transaction record
+    // Create transaction record - with payment_id field for webhook to find it later
     const { data: transaction, error: txError } = await supabase
       .from("transactions")
       .insert({
@@ -136,6 +136,7 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
         notes: `XAF Payment - ${params.userName}`,
         balance_before: balanceBefore,
         balance_after: balanceBefore + params.amount,
+        payment_id: "", // Will be set after AccountPe API call
       })
       .select()
       .single()
@@ -144,6 +145,11 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
       console.error("[v0] Transaction creation error:", txError)
       throw new Error("Failed to create transaction")
     }
+
+    console.log("[v0] Transaction created successfully:", {
+      transactionId: transaction.id,
+      amount: transaction.amount,
+    })
 
     // Call AccountPe API to create payment link
     console.log("[v0] Calling AccountPe API with:", {
@@ -202,14 +208,26 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
     if (data.data?.payment_link) {
       // Payment link successfully created - use it directly
       const paymentLink = data.data.payment_link
+      const accountPeTransactionId = data.data.transaction_id || data.data.id
       
-      // Update transaction with payment link
-      await supabase
+      // Update transaction with payment link and AccountPe transaction ID
+      const { error: updateError } = await supabase
         .from("transactions")
-        .update({ payment_id: data.data.transaction_id })
+        .update({ 
+          payment_id: accountPeTransactionId,
+          notes: `XAF Payment - ${params.userName} [AccountPe: ${accountPeTransactionId}]`
+        })
         .eq("id", transaction.id)
 
-      console.log("[v0] Payment link created:", paymentLink)
+      if (updateError) {
+        console.error("[v0] Transaction update error:", updateError)
+      }
+
+      console.log("[v0] Payment link created successfully:", {
+        paymentLink: paymentLink,
+        accountPeTransactionId: accountPeTransactionId,
+        ourTransactionId: transaction.id,
+      })
       
       return {
         success: true,
@@ -221,12 +239,23 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
       // Format: https://app.swychrconnect.com/payment/{transaction_id}
       const paymentLink = `https://app.accountpe.com/payin/payment/${data.data.id}`
       
-      await supabase
+      const { error: updateError } = await supabase
         .from("transactions")
-        .update({ payment_id: data.data.id })
+        .update({ 
+          payment_id: data.data.id,
+          notes: `XAF Payment - ${params.userName} [AccountPe: ${data.data.id}]`
+        })
         .eq("id", transaction.id)
 
-      console.log("[v0] Payment link constructed:", paymentLink)
+      if (updateError) {
+        console.error("[v0] Transaction update error:", updateError)
+      }
+
+      console.log("[v0] Payment link constructed:", {
+        paymentLink: paymentLink,
+        accountPeTransactionId: data.data.id,
+        ourTransactionId: transaction.id,
+      })
       
       return {
         success: true,

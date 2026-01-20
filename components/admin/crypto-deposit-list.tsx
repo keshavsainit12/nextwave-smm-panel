@@ -20,12 +20,16 @@ export function CryptoDepositList({ deposits }: { deposits: any[] }) {
     if (confirm("Approve this deposit and credit user balance?")) {
       setLoading(id)
       try {
-        await approveDeposit(id)
-        toast.success("Deposit approved! User balance updated.")
-        router.refresh()
-      } catch (error) {
+        const result = await approveDeposit(id)
+        if (result.success) {
+          toast.success("Deposit approved! User balance updated.")
+          router.refresh()
+        } else {
+          toast.error(result.error || "Failed to approve deposit")
+        }
+      } catch (error: any) {
         console.error("[v0] Approve error:", error)
-        toast.error("Failed to approve deposit")
+        toast.error(error?.message || "Failed to approve deposit")
       } finally {
         setLoading(null)
       }

@@ -437,6 +437,20 @@ export function MobileHighTrustDashboard({
                 )}
 
                 <div className="flex flex-col gap-2">
+                  <label className="text-slate-900 text-sm font-semibold">Target URL / Username *</label>
+                  <input
+                    type="text"
+                    placeholder="https://instagram.com/username or post URL"
+                    required
+                    value={link}
+                    onChange={(e) => setLink(e.target.value)}
+                    disabled={loading}
+                    className="form-input flex w-full rounded-xl text-slate-900 border border-slate-200 h-12 px-4 text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+                  />
+                  <p className="text-[10px] text-slate-500 font-medium">Enter the profile or post URL you want to boost</p>
+                </div>
+
+                <div className="flex flex-col gap-2">
                   <div className="flex justify-between items-center">
                     <p className="text-slate-900 text-sm font-semibold">Quantity</p>
                     <p className="text-xs text-slate-500">

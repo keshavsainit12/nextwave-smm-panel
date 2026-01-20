@@ -98,21 +98,53 @@ export function AdminTicketList({ tickets }: { tickets: any[] }) {
       </Table>
 
       <Dialog open={!!selectedTicket} onOpenChange={() => setSelectedTicket(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{selectedTicket?.subject}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="bg-muted/50 rounded-lg p-4">
-              <div className="text-sm font-medium mb-1">User Message</div>
-              <p className="text-sm text-muted-foreground">{selectedTicket?.message}</p>
-              <div className="flex gap-2 mt-2 text-xs text-muted-foreground">
-                <span>Priority: {selectedTicket?.priority}</span>
-                <span>•</span>
-                <span>Status: {selectedTicket?.status}</span>
+            {/* Conversation Thread */}
+            <div className="bg-muted/30 rounded-lg p-4 space-y-4 max-h-96 overflow-y-auto">
+              {/* Initial User Message */}
+              <div className="bg-white dark:bg-slate-900 rounded-lg p-4 border-l-4 border-blue-500">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-sm font-medium">User Message</span>
+                  <span className="text-xs text-muted-foreground">{selectedTicket?.users?.full_name || selectedTicket?.users?.email}</span>
+                </div>
+                <p className="text-sm text-slate-900 dark:text-slate-100">{selectedTicket?.message}</p>
+                <div className="flex gap-2 mt-2 text-xs text-muted-foreground">
+                  <span>Priority: {selectedTicket?.priority}</span>
+                  <span>•</span>
+                  <span>Status: {selectedTicket?.status}</span>
+                </div>
               </div>
+
+              {/* All Messages/Replies */}
+              {selectedTicket?.ticket_messages && selectedTicket.ticket_messages.length > 0 ? (
+                selectedTicket.ticket_messages.map((msg: any) => (
+                  <div
+                    key={msg.id}
+                    className={`rounded-lg p-4 border-l-4 ${
+                      msg.is_admin
+                        ? "bg-green-50 dark:bg-green-950/30 border-green-500"
+                        : "bg-blue-50 dark:bg-blue-950/30 border-blue-500"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-sm font-medium">{msg.is_admin ? "Admin Reply" : "User Message"}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(msg.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="text-sm text-slate-900 dark:text-slate-100">{msg.message}</p>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4 text-sm text-muted-foreground">No messages yet</div>
+              )}
             </div>
 
+            {/* Reply Form */}
             {selectedTicket?.status !== "closed" && (
               <div className="space-y-2">
                 <Label htmlFor="reply">Your Reply</Label>
@@ -123,15 +155,27 @@ export function AdminTicketList({ tickets }: { tickets: any[] }) {
                   onChange={(e) => setReply(e.target.value)}
                   rows={4}
                   disabled={loading}
+                  className="min-h-24"
                 />
-                <div className="flex gap-2">
-                  <Button onClick={handleReply} disabled={loading || !reply.trim()} className="flex-1">
+                <div className="flex gap-2 flex-wrap">
+                  <Button onClick={handleReply} disabled={loading || !reply.trim()} className="flex-1 min-w-32">
                     {loading ? "Sending..." : "Send Reply"}
                   </Button>
-                  <Button variant="outline" onClick={() => handleClose(selectedTicket.id)} disabled={loading}>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleClose(selectedTicket.id)}
+                    disabled={loading}
+                    className="flex-1 min-w-32"
+                  >
                     Close Ticket
                   </Button>
                 </div>
+              </div>
+            )}
+
+            {selectedTicket?.status === "closed" && (
+              <div className="text-center py-4 text-sm text-muted-foreground bg-muted/50 rounded-lg">
+                This ticket is closed. No further replies can be added.
               </div>
             )}
           </div>

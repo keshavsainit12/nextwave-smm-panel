@@ -6,11 +6,12 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
-import { Home, Package, HeadphonesIcon, Gift, Code, LogOut, Settings } from "lucide-react"
+import { Home, Package, HeadphonesIcon, Gift, Code, LogOut, Settings, Receipt } from "lucide-react"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
   { name: "My Orders", href: "/dashboard/orders", icon: Package },
+  { name: "Transaction History", href: "/dashboard/transaction-history", icon: Receipt },
   { name: "API Access", href: "/dashboard/api", icon: Code },
   { name: "Support", href: "/dashboard/tickets", icon: HeadphonesIcon },
   { name: "Referrals", href: "/dashboard/referrals", icon: Gift },

@@ -25,19 +25,100 @@ export default async function TransactionHistoryPage() {
     )
   }
 
-  // Fetch all deposits for current user with pagination
-  const { data: depositHistory } = await supabase
+  // Fetch crypto deposits
+  const { data: cryptoDeposits, error: cryptoError } = await supabase
     .from("crypto_deposits")
-    .select("*, crypto_currency_id(symbol, name), transactions(id, status, notes)")
+    .select("*, crypto_currency_id(symbol, name)")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
 
+  if (cryptoError) {
+    console.error("[v0] Crypto deposits fetch error:", cryptoError)
+  }
+
+  // Fetch instant payment transactions (deposits)
+  const { data: instantPayments, error: instantError } = await supabase
+    .from("transactions")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("type", "deposit")
+    .eq("payment_method", "instant_xaf")
+    .order("created_at", { ascending: false })
+
+  if (instantError) {
+    console.error("[v0] Instant payments fetch error:", instantError)
+  }
+
+  // Fetch order transactions (debits/charges)
+  const { data: orderTransactions, error: orderError } = await supabase
+    .from("transactions")
+    .select("*, orders(id, service_id, services(name), quantity, price, status)")
+    .eq("user_id", user.id)
+    .eq("type", "order")
+    .order("created_at", { ascending: false })
+
+  if (orderError) {
+    console.error("[v0] Order transactions fetch error:", orderError)
+  }
+
+  // Fetch refund transactions
+  const { data: refundTransactions, error: refundError } = await supabase
+    .from("transactions")
+    .select("*, orders(id)")
+    .eq("user_id", user.id)
+    .eq("type", "refund")
+    .order("created_at", { ascending: false })
+
+  if (refundError) {
+    console.error("[v0] Refund transactions fetch error:", refundError)
+  }
+
+  // Combine all transaction types
+  const allTransactions = [
+    ...(cryptoDeposits || []).map((d) => ({
+      ...d,
+      transaction_type: "crypto_deposit",
+      id: d.id,
+      created_at: d.created_at,
+      status: d.status,
+      amount: Number(d.amount),
+    })),
+    ...(instantPayments || []).map((t) => ({
+      ...t,
+      transaction_type: "instant_payment",
+      id: t.id,
+      created_at: t.created_at,
+      status: t.status,
+      amount: Number(t.amount),
+    })),
+    ...(orderTransactions || []).map((t) => ({
+      ...t,
+      transaction_type: "order_debit",
+      id: t.id,
+      created_at: t.created_at,
+      status: t.status,
+      amount: Number(t.amount), // This will be negative
+    })),
+    ...(refundTransactions || []).map((t) => ({
+      ...t,
+      transaction_type: "refund",
+      id: t.id,
+      created_at: t.created_at,
+      status: t.status,
+      amount: Number(t.amount),
+    })),
+  ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
   // Calculate stats
-  const totalDeposits = depositHistory?.length || 0
-  const approvedDeposits = depositHistory?.filter((d) => d.status === "approved") || []
-  const totalApproved = approvedDeposits.reduce((sum, d) => sum + Number(d.amount || 0), 0)
-  const pendingDeposits = depositHistory?.filter((d) => d.status === "pending") || []
-  const rejectedDeposits = depositHistory?.filter((d) => d.status === "rejected") || []
+  const totalTransactions = allTransactions.length
+  const depositTransactions = allTransactions.filter((t) => t.transaction_type.includes("deposit") || t.transaction_type.includes("payment")) || []
+  const totalDeposited = depositTransactions.reduce((sum, t) => sum + (t.amount > 0 ? t.amount : 0), 0)
+  const orderTransactionsUsed = allTransactions.filter((t) => t.transaction_type === "order_debit") || []
+  const totalSpent = orderTransactionsUsed.reduce((sum, t) => sum + Math.abs(t.amount), 0)
+  const pendingTransactions = allTransactions.filter((t) => t.status === "pending") || []
+  const rejectedTransactions = allTransactions.filter((t) => t.status === "rejected" || t.status === "failed") || []
+  const approvedTransactions = allTransactions.filter((t) => t.status === "approved" || t.status === "completed") || []
+  const totalApproved = approvedTransactions.reduce((sum, t) => sum + (t.amount > 0 ? t.amount : 0), 0)
 
   return (
     <div className="space-y-6">
@@ -50,41 +131,43 @@ export default async function TransactionHistoryPage() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Deposits</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Transactions</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalDeposits}</div>
-            <p className="text-xs text-muted-foreground mt-1">All time</p>
+            <div className="text-2xl font-bold">{totalTransactions}</div>
+            <p className="text-xs text-muted-foreground mt-1">All activity</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Approved</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Deposited</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">${totalApproved.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground mt-1">{approvedDeposits.length} transactions</p>
+            <div className="text-2xl font-bold text-green-600">+${totalDeposited.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground mt-1">{depositTransactions.length} deposits</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Pending</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Spent</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{pendingDeposits.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">Awaiting approval</p>
+            <div className="text-2xl font-bold text-red-600">-${totalSpent.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground mt-1">{orderTransactionsUsed.length} orders</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Rejected</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Balance Change</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{rejectedDeposits.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">Declined deposits</p>
+            <div className={`text-2xl font-bold ${totalDeposited - totalSpent >= 0 ? "text-green-600" : "text-red-600"}`}>
+              {totalDeposited - totalSpent >= 0 ? "+" : ""} ${(totalDeposited - totalSpent).toFixed(2)}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Net change</p>
           </CardContent>
         </Card>
       </div>
@@ -102,87 +185,101 @@ export default async function TransactionHistoryPage() {
       <Card>
         <CardHeader>
           <CardTitle>All Transactions</CardTitle>
-          <CardDescription>Complete list of all your deposit transactions</CardDescription>
+          <CardDescription>Complete list of all your activity including deposits, orders, and refunds</CardDescription>
         </CardHeader>
         <CardContent>
-          {depositHistory && depositHistory.length > 0 ? (
+          {allTransactions && allTransactions.length > 0 ? (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Transaction ID</TableHead>
-                    <TableHead>Cryptocurrency</TableHead>
-                    <TableHead>Amount (USD)</TableHead>
-                    <TableHead>Crypto Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Submitted</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Type</TableHead>
                     <TableHead>Details</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {depositHistory.map((deposit) => (
-                    <TableRow key={deposit.id} className="hover:bg-muted/50">
-                      <TableCell>
-                        <div className="font-mono text-xs font-semibold">{deposit.id.substring(0, 12)}...</div>
+                  {allTransactions.map((transaction) => (
+                    <TableRow key={`${transaction.transaction_type}-${transaction.id}`} className="hover:bg-muted/50">
+                      <TableCell className="text-sm whitespace-nowrap">
+                        {formatDistance(new Date(transaction.created_at), new Date(), { addSuffix: true })}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div>
-                            <div className="font-medium">{deposit.crypto_currency_id?.symbol}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {deposit.crypto_currency_id?.name}
-                            </div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-mono font-semibold">
-                        <span className="text-green-600">+${Number(deposit.amount).toFixed(2)}</span>
-                      </TableCell>
-                      <TableCell className="font-mono text-sm text-muted-foreground">
-                        {deposit.crypto_amount}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {deposit.status === "approved" && (
-                            <>
-                              <CheckCircle className="h-4 w-4 text-green-600" />
-                              <Badge variant="default">Approved</Badge>
-                            </>
-                          )}
-                          {deposit.status === "rejected" && (
-                            <>
-                              <XCircle className="h-4 w-4 text-red-600" />
-                              <Badge variant="destructive">Rejected</Badge>
-                            </>
-                          )}
-                          {deposit.status === "pending" && (
-                            <>
-                              <Clock className="h-4 w-4 text-yellow-600" />
-                              <Badge variant="secondary">Pending</Badge>
-                            </>
-                          )}
-                        </div>
+                        {transaction.transaction_type === "crypto_deposit" && (
+                          <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
+                            Crypto Deposit
+                          </Badge>
+                        )}
+                        {transaction.transaction_type === "instant_payment" && (
+                          <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+                            Instant Payment
+                          </Badge>
+                        )}
+                        {transaction.transaction_type === "order_debit" && (
+                          <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100">
+                            Order Purchase
+                          </Badge>
+                        )}
+                        {transaction.transaction_type === "refund" && (
+                          <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100">
+                            Refund
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell className="text-sm">
-                        {formatDistance(new Date(deposit.created_at), new Date(), { addSuffix: true })}
+                        {transaction.transaction_type === "crypto_deposit" && (
+                          <div className="text-xs">
+                            <div className="font-semibold">{transaction.crypto_currency_id?.symbol}</div>
+                            <div className="text-muted-foreground">{transaction.crypto_currency_id?.name}</div>
+                          </div>
+                        )}
+                        {transaction.transaction_type === "instant_payment" && (
+                          <div className="text-xs">
+                            <div className="font-semibold">XAF Instant</div>
+                            <div className="text-muted-foreground">AccountPe</div>
+                          </div>
+                        )}
+                        {transaction.transaction_type === "order_debit" && (
+                          <div className="text-xs">
+                            <div className="font-semibold">{transaction.orders?.services?.name}</div>
+                            <div className="text-muted-foreground">{transaction.orders?.quantity?.toLocaleString()} units</div>
+                          </div>
+                        )}
+                        {transaction.transaction_type === "refund" && (
+                          <div className="text-xs">
+                            <div className="font-semibold">Order Refund</div>
+                            <div className="text-muted-foreground">ID: {transaction.orders?.id?.substring(0, 8)}</div>
+                          </div>
+                        )}
                       </TableCell>
-                      <TableCell className="text-xs">
-                        <div className="space-y-1">
-                          {deposit.status === "approved" && deposit.reviewed_at && (
-                            <div className="text-green-600 dark:text-green-400 font-medium">
-                              Approved {formatDistance(new Date(deposit.reviewed_at), new Date(), { addSuffix: true })}
-                            </div>
+                      <TableCell className="font-mono font-semibold">
+                        {transaction.transaction_type === "order_debit" ? (
+                          <span className="text-red-600">-${Math.abs(transaction.amount).toFixed(2)}</span>
+                        ) : (
+                          <span className="text-green-600">+${transaction.amount.toFixed(2)}</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {(transaction.status === "approved" || transaction.status === "completed") && (
+                            <>
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                              <Badge variant="default" className="text-xs">Completed</Badge>
+                            </>
                           )}
-                          {deposit.status === "rejected" && deposit.admin_notes && (
-                            <div className="text-red-600 dark:text-red-400">
-                              <div className="font-medium">Reason:</div>
-                              <div>{deposit.admin_notes}</div>
-                            </div>
+                          {(transaction.status === "rejected" || transaction.status === "failed") && (
+                            <>
+                              <XCircle className="h-4 w-4 text-red-600" />
+                              <Badge variant="destructive" className="text-xs">Failed</Badge>
+                            </>
                           )}
-                          {deposit.status === "pending" && (
-                            <div className="text-yellow-600 dark:text-yellow-400 font-medium">
-                              Your deposit is being reviewed by our team
-                            </div>
+                          {transaction.status === "pending" && (
+                            <>
+                              <Clock className="h-4 w-4 text-yellow-600" />
+                              <Badge variant="secondary" className="text-xs">Pending</Badge>
+                            </>
                           )}
                         </div>
                       </TableCell>
@@ -195,7 +292,7 @@ export default async function TransactionHistoryPage() {
             <div className="text-center py-12">
               <ArrowUpRight className="h-12 w-12 mx-auto text-muted-foreground opacity-50 mb-4" />
               <p className="text-lg font-medium text-muted-foreground">No transactions yet</p>
-              <p className="text-sm text-muted-foreground">Start by making your first deposit</p>
+              <p className="text-sm text-muted-foreground">Start by making your first deposit or order</p>
             </div>
           )}
         </CardContent>

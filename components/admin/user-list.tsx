@@ -31,11 +31,15 @@ export function UserList({ users }: { users: any[] }) {
   const handleBan = async (userId: string, email: string) => {
     if (confirm(`Ban user ${email}? They won't be able to login.`)) {
       try {
-        await banUser(userId)
-        toast.success("User banned successfully")
-        router.refresh()
-      } catch (error) {
-        toast.error("Failed to ban user")
+        const result = await banUser(userId)
+        if (result.success) {
+          toast.success("User banned successfully")
+          router.refresh()
+        } else {
+          toast.error(result.error || "Failed to ban user")
+        }
+      } catch (error: any) {
+        toast.error(error?.message || "Failed to ban user")
       }
     }
   }
@@ -43,11 +47,15 @@ export function UserList({ users }: { users: any[] }) {
   const handleDelete = async (userId: string, email: string) => {
     if (confirm(`Delete user ${email}? This action cannot be undone!`)) {
       try {
-        await deleteUser(userId)
-        toast.success("User deleted successfully")
-        router.refresh()
-      } catch (error) {
-        toast.error("Failed to delete user")
+        const result = await deleteUser(userId)
+        if (result.success) {
+          toast.success("User deleted successfully")
+          router.refresh()
+        } else {
+          toast.error(result.error || "Failed to delete user")
+        }
+      } catch (error: any) {
+        toast.error(error?.message || "Failed to delete user")
       }
     }
   }

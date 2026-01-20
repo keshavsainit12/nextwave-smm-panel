@@ -261,6 +261,10 @@ export function MobileOrdersHistory({ orders }: { orders: Order[] }) {
                 <p className="text-sm font-bold">{selectedOrder.services?.name}</p>
               </div>
               <div>
+                <p className="text-xs text-[#616f89] uppercase font-bold">Username / Link</p>
+                <p className="text-sm font-bold break-all">{selectedOrder.link || "N/A"}</p>
+              </div>
+              <div>
                 <p className="text-xs text-[#616f89] uppercase font-bold">Quantity</p>
                 <p className="text-sm font-bold">{selectedOrder.quantity?.toLocaleString()}</p>
               </div>

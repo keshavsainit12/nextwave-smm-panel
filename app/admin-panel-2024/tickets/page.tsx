@@ -5,10 +5,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default async function AdminTicketsPage() {
   const supabase = createAdminClient()
-  const { data: tickets } = await supabase
+  
+  const { data: tickets, error: ticketsError } = await supabase
     .from("support_tickets")
-    .select("*, users(email, full_name)")
+    .select("*, users(email, full_name), ticket_messages(id, message, is_admin, created_at, user_id)")
     .order("created_at", { ascending: false })
+
+  if (ticketsError) {
+    console.error("[v0] Tickets fetch error:", ticketsError)
+  }
 
   const openCount = tickets?.filter((t) => t.status === "open").length || 0
   const repliedCount = tickets?.filter((t) => t.status === "replied").length || 0

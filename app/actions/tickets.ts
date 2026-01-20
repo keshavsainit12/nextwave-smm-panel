@@ -56,24 +56,46 @@ export async function createTicket(formData: FormData) {
 }
 
 export async function addTicketMessage(ticketId: string, message: string) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-  if (!user) throw new Error("Unauthorized")
+    if (!user) {
+      throw new Error("Unauthorized")
+    }
 
-  await supabase.from("ticket_messages").insert({
-    ticket_id: ticketId,
-    user_id: user.id,
-    message,
-    is_admin: false,
-  })
+    console.log("[v0] Adding message to ticket:", ticketId)
 
-  await supabase
-    .from("support_tickets")
-    .update({ status: "replied", updated_at: new Date().toISOString() })
-    .eq("id", ticketId)
+    const { error: insertError } = await supabase.from("ticket_messages").insert({
+      ticket_id: ticketId,
+      user_id: user.id,
+      message,
+      is_admin: false,
+    })
 
-  revalidatePath(`/dashboard/tickets/${ticketId}`)
+    if (insertError) {
+      console.error("[v0] Insert message error:", insertError)
+      throw insertError
+    }
+
+    const { error: updateError } = await supabase
+      .from("support_tickets")
+      .update({ status: "replied", updated_at: new Date().toISOString() })
+      .eq("id", ticketId)
+
+    if (updateError) {
+      console.error("[v0] Update ticket error:", updateError)
+      throw updateError
+    }
+
+    console.log("[v0] Message added successfully")
+    revalidatePath(`/dashboard/tickets/${ticketId}`)
+    revalidatePath("/dashboard/tickets")
+    revalidatePath("/admin-panel-2024/tickets")
+  } catch (error) {
+    console.error("[v0] Add ticket message error:", error)
+    throw error
+  }
 }

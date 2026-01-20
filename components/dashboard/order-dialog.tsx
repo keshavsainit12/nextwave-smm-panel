@@ -67,7 +67,7 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[550px]">
+      <DialogContent className="max-h-[90vh] w-full max-w-[95vw] overflow-y-auto sm:max-w-[550px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ShoppingCart className="h-5 w-5" />
@@ -79,7 +79,7 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="link">Target Link/URL *</Label>
+            <Label htmlFor="link">Target Link/Username *</Label>
             <Input
               id="link"
               placeholder="https://instagram.com/username or post URL"
@@ -143,11 +143,11 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
             </Alert>
           )}
 
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
+          <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+            <Button type="button" variant="outline" onClick={onClose} disabled={loading} className="w-full sm:w-auto bg-transparent">
               Cancel
             </Button>
-            <Button type="submit" disabled={loading} className="gap-2">
+            <Button type="submit" disabled={loading} className="w-full gap-2 sm:w-auto">
               {loading ? (
                 <>Processing...</>
               ) : (
