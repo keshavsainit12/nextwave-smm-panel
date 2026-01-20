@@ -11,7 +11,7 @@ export default async function AdminTransactionHistoryPage() {
   // Fetch all orders - ONLY COMPLETED ONES
   const { data: orders } = await supabase
     .from("orders")
-    .select("*, services(name, category, base_price), users(email, full_name, balance)")
+    .select("*, services(name, category, provider_price), users(email, full_name, balance)")
     .eq("status", "completed")
     .order("created_at", { ascending: false })
     .limit(100)
@@ -36,15 +36,13 @@ export default async function AdminTransactionHistoryPage() {
 
   // Calculate summary stats - ALL FROM COMPLETED/APPROVED ONLY
   const totalOrderRevenue = orders?.reduce((sum, o) => {
-    const price = Number(o.price || 0)
-    const quantity = Number(o.quantity || 0)
-    return sum + (price * quantity)
+    return sum + Number(o.price || 0)
   }, 0) || 0
   
   const totalOrderCost = orders?.reduce((sum, o) => {
-    const baseCost = Number(o.services?.base_price || 0)
+    const providerPrice = Number(o.services?.provider_price || 0)
     const quantity = Number(o.quantity || 0)
-    return sum + (baseCost * quantity)
+    return sum + ((quantity / 1000) * providerPrice)
   }, 0) || 0
   
   const totalOrderProfit = totalOrderRevenue - totalOrderCost
@@ -137,11 +135,10 @@ export default async function AdminTransactionHistoryPage() {
               <TableBody>
                 {orders && orders.length > 0 ? (
                   orders.map((order) => {
-                    const quantity = Number(order.quantity || 1)
-                    const price = Number(order.price || 0)
-                    const baseCost = Number(order.services?.base_price || 0)
-                    const revenue = price * quantity
-                    const cost = baseCost * quantity
+                    const revenue = Number(order.price || 0)
+                    const providerPrice = Number(order.services?.provider_price || 0)
+                    const quantity = Number(order.quantity || 0)
+                    const cost = (quantity / 1000) * providerPrice
                     const profit = revenue - cost
 
                     return (

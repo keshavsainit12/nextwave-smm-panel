@@ -25,24 +25,23 @@ export default async function AdminDashboardPage() {
     supabase.from("orders").select("*", { count: "exact", head: true }),
     supabase.from("orders").select("*", { count: "exact", head: true }).in("status", ["pending", "processing"]),
     supabase.from("crypto_deposits").select("*", { count: "exact", head: true }).eq("status", "pending"),
-    supabase.from("orders").select("id, price, quantity, status, services(base_price)").eq("status", "completed"),
+    supabase.from("orders").select("id, price, quantity, status, services(provider_price)").eq("status", "completed"),
     supabase.from("users").select("id").gte("last_login", thirtyDaysAgo.toISOString()).limit(1000),
     supabase.from("crypto_deposits").select("amount, status"),
   ])
 
   // Calculate Order Revenue & Profit (Only from completed orders)
+  // Revenue = orders.price (this is TOTAL PRICE already - what customer PAID)
   const orderRevenue = ordersData?.reduce((sum, order) => {
-    const price = Number(order.price || 0)
-    const quantity = Number(order.quantity || 0)
-    const totalOrderPrice = price * quantity
-    return sum + totalOrderPrice
+    return sum + Number(order.price || 0)
   }, 0) || 0
 
+  // Cost = provider_price per 1K × (quantity / 1000) = what API CHARGED you
   const orderCost = ordersData?.reduce((sum, order) => {
-    const baseCost = Number(order.services?.base_price || 0)
+    const providerPrice = Number(order.services?.provider_price || 0)
     const quantity = Number(order.quantity || 0)
-    const totalOrderCost = baseCost * quantity
-    return sum + totalOrderCost
+    const cost = (quantity / 1000) * providerPrice
+    return sum + cost
   }, 0) || 0
 
   const orderProfit = orderRevenue - orderCost
