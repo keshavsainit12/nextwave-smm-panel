@@ -1,33 +1,30 @@
 "use client"
 
+import { SelectItem } from "@/components/ui/select"
+import { SelectContent } from "@/components/ui/select"
+import { SelectValue } from "@/components/ui/select"
+import { SelectTrigger } from "@/components/ui/select"
+import { Select } from "@/components/ui/select"
 import React, { useState } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Upload, Loader2, Plus, ImageIcon } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { updateServiceIcon, updateCategoryIcon } from "@/app/actions/icons"
 
-export function IconUploadDialog({
-  type = "service",
-  itemId,
-  itemName,
-  items,
-  onClose,
-}: {
+interface IconUploadDialogProps {
   type?: "service" | "category"
-  itemId?: string
-  itemName?: string
-  items: { id: string; name: string }[]
-  onClose: () => void
-}) {
+  items: { id: string, name: string }[]
+}
+
+export function IconUploadDialog({ type = "service", items }: IconUploadDialogProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [selectedItem, setSelectedItem] = useState(itemId || "default")
   const [iconUrl, setIconUrl] = useState("")
+  const [selectedItem, setSelectedItem] = useState("")
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -56,6 +53,8 @@ export function IconUploadDialog({
       setLoading(false)
     }
   }
+
+  const onClose = () => setOpen(false)
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
