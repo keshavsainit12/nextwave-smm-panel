@@ -9,6 +9,15 @@ export default async function AdminTransactionHistoryPage() {
   let orders = null
   let cryptoDeposits = null
   let instantPayments = null
+  let totalRevenue = 0
+  let totalProfit = 0
+  let totalOrderRevenue = 0
+  let totalOrderCost = 0
+  let totalCryptoDepositAmount = 0
+  let totalInstantPaymentAmount = 0
+  let totalDepositAmount = 0
+  let completedInstantPayments: any[] = []
+  let approvedCryptoDeposits: any[] = []
 
   try {
     const supabase = createAdminClient()
@@ -63,28 +72,27 @@ export default async function AdminTransactionHistoryPage() {
     }
 
     // Calculate summary stats - ALL FROM COMPLETED/APPROVED ONLY
-    const totalOrderRevenue = orders?.reduce((sum, o) => {
+    totalOrderRevenue = orders?.reduce((sum, o) => {
       return sum + Number(o.price || 0)
     }, 0) || 0
 
-    const totalOrderCost = orders?.reduce((sum, o) => {
+    totalOrderCost = orders?.reduce((sum, o) => {
       const providerPrice = Number(o.services?.provider_price || 0)
       const quantity = Number(o.quantity || 0)
       return sum + ((quantity / 1000) * providerPrice)
     }, 0) || 0
 
-    const totalOrderProfit = totalOrderRevenue - totalOrderCost
+    totalProfit = totalOrderRevenue - totalOrderCost
 
-    const totalCryptoDepositAmount = cryptoDeposits?.reduce((sum, d) => sum + Number(d.amount || 0), 0) || 0
+    totalCryptoDepositAmount = cryptoDeposits?.reduce((sum, d) => sum + Number(d.amount || 0), 0) || 0
 
-    const totalInstantPaymentAmount = instantPayments?.reduce((sum, t) => sum + Number(t.amount || 0), 0) || 0
+    totalInstantPaymentAmount = instantPayments?.reduce((sum, t) => sum + Number(t.amount || 0), 0) || 0
 
-    const totalDepositAmount = totalCryptoDepositAmount + totalInstantPaymentAmount
-    const totalRevenue = totalOrderRevenue + totalDepositAmount
-    const totalProfit = totalOrderProfit
+    totalDepositAmount = totalCryptoDepositAmount + totalInstantPaymentAmount
+    totalRevenue = totalOrderRevenue + totalDepositAmount
 
-    const completedInstantPayments = instantPayments || []
-    const approvedCryptoDeposits = cryptoDeposits || []
+    completedInstantPayments = instantPayments || []
+    approvedCryptoDeposits = cryptoDeposits || []
 
     console.log("[v0] Transaction history summary:", {
       orders: orders?.length || 0,
