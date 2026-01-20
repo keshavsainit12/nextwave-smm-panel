@@ -26,7 +26,6 @@ import {
   Receipt,
   Zap,
   ImageIcon,
-  Wand2,
 } from "lucide-react"
 
 const navigation = [
@@ -35,7 +34,6 @@ const navigation = [
   { name: "Process Payments", href: "/admin-panel-2024/process-payments", icon: Zap },
   { name: "Services", href: "/admin-panel-2024/services", icon: ShoppingCart },
   { name: "Icon Manager", href: "/admin-panel-2024/icon-manager", icon: ImageIcon },
-  { name: "Auto-Update Icons", href: "/admin-panel-2024/auto-update-icons", icon: Wand2 },
   { name: "Crypto Settings", href: "/admin-panel-2024/crypto", icon: Bitcoin },
   { name: "API Providers", href: "/admin-panel-2024/api-providers", icon: Plug },
   { name: "Users", href: "/admin-panel-2024/users", icon: Users },

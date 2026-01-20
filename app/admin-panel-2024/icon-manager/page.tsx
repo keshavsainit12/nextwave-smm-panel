@@ -1,122 +1,120 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import { useRouter } from 'next/navigation'
-import { updateServiceIcon, updateCategoryIcon } from '@/app/actions/icons'
-import { Loader2, Plus, Trash2, RefreshCw } from 'lucide-react'
+import { Loader2, Upload, Trash2, RefreshCw } from 'lucide-react'
+import { createBrowserClient } from '@supabase/ssr'
 
 export default function IconManagerPage() {
-  const [services, setServices] = useState<any[]>([])
   const [categories, setCategories] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [updating, setUpdating] = useState(false)
-  const [selectedService, setSelectedService] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('')
-  const [serviceIconUrl, setServiceIconUrl] = useState('')
-  const [categoryIconUrl, setCategoryIconUrl] = useState('')
-  const router = useRouter()
+  const [updating, setUpdating] = useState<string | null>(null)
+  const [urls, setUrls] = useState<Record<string, string>>({})
 
-  // Load data on mount
-  useState(() => {
-    loadData()
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+
+  useEffect(() => {
+    loadCategories()
   }, [])
 
-  const loadData = async () => {
+  async function loadCategories() {
     try {
-      const response = await fetch('/api/icons/list')
-      const data = await response.json()
-      setServices(data.services || [])
-      setCategories(data.categories || [])
-    } catch (error) {
-      console.error('[v0] Failed to load icon data:', error)
-      toast.error('Failed to load data')
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('service_categories')
+        .select('id, name, icon, display_order')
+        .order('display_order', { ascending: true })
+
+      if (error) throw error
+      setCategories(data || [])
+    } catch (error: any) {
+      console.error('[v0] Error loading categories:', error)
+      toast.error('Failed to load categories')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleUpdateServiceIcon = async () => {
-    if (!selectedService || !serviceIconUrl) {
-      toast.error('Please select a service and provide a URL')
+  async function updateCategoryIcon(categoryId: string, iconUrl: string) {
+    if (!iconUrl.trim()) {
+      toast.error('Please enter a URL')
       return
     }
 
-    setUpdating(true)
+    setUpdating(categoryId)
     try {
-      await updateServiceIcon(selectedService, serviceIconUrl)
-      toast.success('Service icon updated!')
-      setServiceIconUrl('')
-      setSelectedService('')
-      router.refresh()
-      loadData()
+      // 1. Update category icon
+      const { error: categoryError } = await supabase
+        .from('service_categories')
+        .update({ icon: iconUrl })
+        .eq('id', categoryId)
+
+      if (categoryError) throw categoryError
+
+      // 2. Automatically update all services in this category with the same icon
+      const { error: servicesError } = await supabase
+        .from('services')
+        .update({ icon: iconUrl })
+        .eq('category_id', categoryId)
+
+      if (servicesError) throw servicesError
+
+      toast.success('Icon updated! All services in this category now have the new icon.')
+      
+      // Refresh categories and clear input
+      await loadCategories()
+      setUrls(prev => ({ ...prev, [categoryId]: '' }))
     } catch (error: any) {
+      console.error('[v0] Error updating icon:', error)
       toast.error(error.message || 'Failed to update icon')
     } finally {
-      setUpdating(false)
+      setUpdating(null)
     }
   }
 
-  const handleUpdateCategoryIcon = async () => {
-    if (!selectedCategory || !categoryIconUrl) {
-      toast.error('Please select a category and provide a URL')
-      return
-    }
-
-    setUpdating(true)
+  async function deleteIcon(categoryId: string) {
+    setUpdating(categoryId)
     try {
-      await updateCategoryIcon(selectedCategory, categoryIconUrl)
-      toast.success('Category icon updated!')
-      setCategoryIconUrl('')
-      setSelectedCategory('')
-      router.refresh()
-      loadData()
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to update icon')
-    } finally {
-      setUpdating(false)
-    }
-  }
+      // 1. Remove category icon
+      const { error: categoryError } = await supabase
+        .from('service_categories')
+        .update({ icon: null })
+        .eq('id', categoryId)
 
-  const handleDeleteServiceIcon = async (id: string) => {
-    setUpdating(true)
-    try {
-      await updateServiceIcon(id, '')
-      toast.success('Service icon removed!')
-      router.refresh()
-      loadData()
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to remove icon')
-    } finally {
-      setUpdating(false)
-    }
-  }
+      if (categoryError) throw categoryError
 
-  const handleDeleteCategoryIcon = async (id: string) => {
-    setUpdating(true)
-    try {
-      await updateCategoryIcon(id, '')
-      toast.success('Category icon removed!')
-      router.refresh()
-      loadData()
+      // 2. Remove icons from all services in this category
+      const { error: servicesError } = await supabase
+        .from('services')
+        .update({ icon: null })
+        .eq('category_id', categoryId)
+
+      if (servicesError) throw servicesError
+
+      toast.success('Icon deleted from category and all related services!')
+      await loadCategories()
     } catch (error: any) {
-      toast.error(error.message || 'Failed to remove icon')
+      console.error('[v0] Error deleting icon:', error)
+      toast.error(error.message || 'Failed to delete icon')
     } finally {
-      setUpdating(false)
+      setUpdating(null)
     }
   }
 
   if (loading) {
     return (
-      <div className="p-6 flex items-center justify-center min-h-screen">
+      <div className="p-6 flex items-center justify-center min-h-[400px]">
         <div className="text-center space-y-3">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto" />
-          <p className="text-muted-foreground">Loading...</p>
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-500" />
+          <p className="text-muted-foreground">Loading categories...</p>
         </div>
       </div>
     )
@@ -126,270 +124,133 @@ export default function IconManagerPage() {
     <div className="space-y-6 p-4 md:p-6">
       <div>
         <h1 className="text-3xl font-bold">Icon Manager</h1>
-        <p className="text-muted-foreground mt-2">Add, update, or remove icons for services and categories</p>
+        <p className="text-gray-600 mt-2">
+          Update category icons. All services in the category will automatically get the same icon.
+        </p>
       </div>
 
-      <Tabs defaultValue="services" className="w-full">
-        <TabsList>
-          <TabsTrigger value="services">Services ({services.length})</TabsTrigger>
-          <TabsTrigger value="categories">Categories ({categories.length})</TabsTrigger>
-          <TabsTrigger value="guide">How to Use</TabsTrigger>
-        </TabsList>
-
-        {/* Services Tab */}
-        <TabsContent value="services" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Update Service Icon</CardTitle>
-              <CardDescription>Select a service and provide a new icon URL</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Select Service</Label>
-                <select
-                  value={selectedService}
-                  onChange={(e) => setSelectedService(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg p-2"
-                >
-                  <option value="">Choose a service...</option>
-                  {services.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} {s.icon ? '✓' : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Icon URL</Label>
-                <Input
-                  placeholder="/images/image-1.jpg"
-                  value={serviceIconUrl}
-                  onChange={(e) => setServiceIconUrl(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">Paste your Blob CDN URL here</p>
-              </div>
-
-              {serviceIconUrl && (
-                <div className="p-3 bg-gray-100 rounded-lg border flex items-center justify-center h-24">
-                  <img
-                    src={serviceIconUrl || "/placeholder.svg"}
-                    alt="Preview"
-                    className="h-16 w-16 object-contain"
-                    onError={() => toast.error('Invalid image URL')}
-                  />
-                </div>
-              )}
-
-              <Button onClick={handleUpdateServiceIcon} disabled={updating} className="w-full gap-2">
-                {updating ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Updating...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-4 w-4" />
-                    Update Icon
-                  </>
-                )}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Services List */}
-          <Card>
-            <CardHeader>
-              <CardTitle>All Services</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 max-h-[500px] overflow-y-auto">
-              {services.map((service) => (
-                <div key={service.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    {service.icon && (
-                      <img
-                        src={service.icon || "/placeholder.svg"}
-                        alt={service.name}
-                        className="h-8 w-8 rounded object-contain"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none'
-                        }}
-                      />
-                    )}
-                    <div>
-                      <p className="font-medium">{service.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {service.icon ? 'Icon: ' + service.icon.substring(0, 40) + '...' : 'No icon'}
-                      </p>
-                    </div>
-                  </div>
-                  {service.icon && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleDeleteServiceIcon(service.id)}
-                      disabled={updating}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Categories Tab */}
-        <TabsContent value="categories" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Update Category Icon</CardTitle>
-              <CardDescription>Select a category and provide a new icon URL</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Select Category</Label>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg p-2"
-                >
-                  <option value="">Choose a category...</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} {c.icon ? '✓' : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Icon URL</Label>
-                <Input
-                  placeholder="/images/image-2.jpg"
-                  value={categoryIconUrl}
-                  onChange={(e) => setCategoryIconUrl(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">Paste your Blob CDN URL here</p>
-              </div>
-
-              {categoryIconUrl && (
-                <div className="p-3 bg-gray-100 rounded-lg border flex items-center justify-center h-24">
-                  <img
-                    src={categoryIconUrl || "/placeholder.svg"}
-                    alt="Preview"
-                    className="h-16 w-16 object-contain"
-                    onError={() => toast.error('Invalid image URL')}
-                  />
-                </div>
-              )}
-
-              <Button onClick={handleUpdateCategoryIcon} disabled={updating} className="w-full gap-2">
-                {updating ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Updating...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-4 w-4" />
-                    Update Icon
-                  </>
-                )}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Categories List */}
-          <Card>
-            <CardHeader>
-              <CardTitle>All Categories</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 max-h-[500px] overflow-y-auto">
-              {categories.map((category) => (
-                <div key={category.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center gap-3">
+      <div className="grid gap-4">
+        {categories && categories.length > 0 ? (
+          categories.map(category => (
+            <Card key={category.id} className="overflow-hidden">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
                     {category.icon && (
-                      <img
-                        src={category.icon || "/placeholder.svg"}
-                        alt={category.name}
-                        className="h-8 w-8 rounded object-contain"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none'
-                        }}
-                      />
+                      <div className="p-3 bg-muted rounded-lg">
+                        <img
+                          src={category.icon || "/placeholder.svg"}
+                          alt={category.name}
+                          className="h-10 w-10 object-contain"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none'
+                          }}
+                        />
+                      </div>
                     )}
                     <div>
-                      <p className="font-medium">{category.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {category.icon ? 'Icon: ' + category.icon.substring(0, 40) + '...' : 'No icon'}
-                      </p>
+                      <CardTitle className="text-xl">{category.name}</CardTitle>
+                      {category.icon ? (
+                        <Badge className="mt-2 bg-green-100 text-green-700">✓ Icon Set</Badge>
+                      ) : (
+                        <Badge variant="secondary" className="mt-2">No Icon</Badge>
+                      )}
                     </div>
                   </div>
-                  {category.icon && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleDeleteCategoryIcon(category.id)}
-                      disabled={updating}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
                 </div>
-              ))}
-            </CardContent>
-          </Card>
-        </TabsContent>
+              </CardHeader>
 
-        {/* Guide Tab */}
-        <TabsContent value="guide">
-          <Card>
-            <CardHeader>
-              <CardTitle>How to Change Icons</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h3 className="font-semibold mb-2">Step 1: Get a New GIF Icon</h3>
-                <p className="text-sm text-muted-foreground">
-                  Find or create an animated GIF file for your icon
-                </p>
-              </div>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor={`url-${category.id}`}>GIF URL from Vercel Blob</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id={`url-${category.id}`}
+                      placeholder="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-instagram-Y6Ka1ocAALzf5J8Hu64Toiy50JdPFd.gif"
+                      value={urls[category.id] || ''}
+                      onChange={(e) => setUrls(prev => ({ ...prev, [category.id]: e.target.value }))}
+                      disabled={updating === category.id}
+                    />
+                    <Button
+                      onClick={() => updateCategoryIcon(category.id, urls[category.id] || '')}
+                      disabled={updating === category.id || !urls[category.id]?.trim()}
+                      className="gap-2"
+                    >
+                      {updating === category.id ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Updating...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-4 w-4" />
+                          Update Icon
+                        </>
+                      )}
+                    </Button>
+                    {category.icon && (
+                      <Button
+                        variant="destructive"
+                        onClick={() => deleteIcon(category.id)}
+                        disabled={updating === category.id}
+                        className="gap-2"
+                      >
+                        {updating === category.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </div>
 
-              <div>
-                <h3 className="font-semibold mb-2">Step 2: Upload to Vercel Blob</h3>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Go to your Vercel Dashboard → Storage → Blob → Upload the GIF file
-                </p>
-                <p className="text-xs bg-blue-50 p-2 rounded border border-blue-200">
-                  Copy the CDN URL (looks like: /images/image-3.jpg)
-                </p>
-              </div>
+                {urls[category.id] && (
+                  <div className="space-y-2">
+                    <Label>Preview</Label>
+                    <div className="p-4 bg-muted rounded-lg flex items-center justify-center h-24">
+                      <img
+                        src={urls[category.id] || "/placeholder.svg"}
+                        alt="Preview"
+                        className="h-16 w-16 object-contain"
+                        onError={() => toast.error('Invalid image URL')}
+                      />
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          <div className="text-center py-12 text-muted-foreground">
+            No categories found
+          </div>
+        )}
+      </div>
 
-              <div>
-                <h3 className="font-semibold mb-2">Step 3: Update in Icon Manager</h3>
-                <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
-                  <li>Go back to Services or Categories tab</li>
-                  <li>Select the service/category you want to update</li>
-                  <li>Paste the Blob CDN URL in the Icon URL field</li>
-                  <li>Click "Update Icon" button</li>
-                  <li>Done! Icon will update everywhere in your app</li>
-                </ol>
-              </div>
-
-              <div className="bg-green-50 p-3 rounded border border-green-200">
-                <p className="text-sm font-semibold text-green-900">Pro Tips:</p>
-                <ul className="text-xs text-green-800 mt-2 space-y-1">
-                  <li>✓ Icons automatically update on all pages</li>
-                  <li>✓ You can change icons anytime without code changes</li>
-                  <li>✓ Use the preview to check before saving</li>
-                  <li>✓ Delete icons by clicking the trash icon</li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      <Card className="bg-blue-50 border-blue-200">
+        <CardHeader>
+          <CardTitle>How It Works</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <div>
+            <p className="font-semibold mb-1">1. Upload GIF to Vercel Blob</p>
+            <p className="text-muted-foreground">Upload your animated GIF and copy its CDN URL</p>
+          </div>
+          <div>
+            <p className="font-semibold mb-1">2. Paste URL Here</p>
+            <p className="text-muted-foreground">Paste the Blob URL in the input field above</p>
+          </div>
+          <div>
+            <p className="font-semibold mb-1">3. Click Update Icon</p>
+            <p className="text-muted-foreground">The category icon and ALL services in this category get updated automatically</p>
+          </div>
+          <div>
+            <p className="font-semibold mb-1">4. Users See It Instantly</p>
+            <p className="text-muted-foreground">Icons appear in service cards, tabs, dropdowns, and orders immediately</p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
