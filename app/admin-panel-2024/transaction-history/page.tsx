@@ -8,51 +8,47 @@ import { DollarSign, TrendingUp, ShoppingCart, Zap } from "lucide-react"
 export default async function AdminTransactionHistoryPage() {
   const supabase = createAdminClient()
 
-  // Fetch all orders with details
+  // Fetch all orders - ONLY COMPLETED ONES
   const { data: orders } = await supabase
     .from("orders")
     .select("*, services(name, category), users(email, full_name, balance)")
+    .eq("status", "completed")
     .order("created_at", { ascending: false })
     .limit(100)
 
-  // Fetch all crypto deposits
+  // Fetch all crypto deposits - ONLY APPROVED ONES
   const { data: cryptoDeposits } = await supabase
     .from("crypto_deposits")
     .select("*, crypto_currency_id(symbol, name), users(email, full_name)")
+    .eq("status", "approved")
     .order("created_at", { ascending: false })
     .limit(100)
 
-  // Fetch all instant payment transactions
+  // Fetch all instant payment transactions - ONLY COMPLETED ONES
   const { data: instantPayments } = await supabase
     .from("transactions")
     .select("*, users(email, full_name)")
     .eq("type", "deposit")
     .eq("payment_method", "instant_xaf")
+    .eq("status", "completed")
     .order("created_at", { ascending: false })
     .limit(100)
 
-  // Calculate summary stats
-  const completedOrders = orders?.filter((o) => o.status === "completed") || []
-  const totalOrderRevenue = completedOrders.reduce((sum, o) => sum + Number(o.total_price || 0), 0)
-  const totalOrderCost = completedOrders.reduce((sum, o) => sum + Number(o.base_price || 0), 0)
+  // Calculate summary stats - ALL FROM COMPLETED/APPROVED ONLY
+  const totalOrderRevenue = orders?.reduce((sum, o) => sum + Number(o.total_price || 0), 0) || 0
+  const totalOrderCost = orders?.reduce((sum, o) => sum + Number(o.base_price || 0), 0) || 0
   const totalOrderProfit = totalOrderRevenue - totalOrderCost
 
-  const approvedCryptoDeposits = cryptoDeposits?.filter((d) => d.status === "approved") || []
-  const totalCryptoDepositAmount = approvedCryptoDeposits.reduce((sum, d) => sum + Number(d.amount || 0), 0)
+  const totalCryptoDepositAmount = cryptoDeposits?.reduce((sum, d) => sum + Number(d.amount || 0), 0) || 0
 
-  const completedInstantPayments = instantPayments?.filter((t) => t.status === "completed") || []
-  const totalInstantPaymentAmount = completedInstantPayments.reduce((sum, t) => sum + Number(t.amount || 0), 0)
+  const totalInstantPaymentAmount = instantPayments?.reduce((sum, t) => sum + Number(t.amount || 0), 0) || 0
 
   const totalDepositAmount = totalCryptoDepositAmount + totalInstantPaymentAmount
   const totalRevenue = totalOrderRevenue + totalDepositAmount
   const totalProfit = totalOrderProfit
 
-  // Fetch all deposits
-  const { data: deposits } = await supabase
-    .from("deposits")
-    .select("*, crypto_currency_id(symbol, name), users(email, full_name)")
-    .order("created_at", { ascending: false })
-    .limit(100)
+  const completedInstantPayments = instantPayments || []
+  const approvedCryptoDeposits = cryptoDeposits || []
 
   return (
     <div className="space-y-6">
@@ -103,16 +99,16 @@ export default async function AdminTransactionHistoryPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${totalCryptoDepositAmount.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">{approvedCryptoDeposits.length} approved</p>
+            <p className="text-xs text-muted-foreground">{cryptoDeposits?.length || 0} approved</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Orders Table */}
+      {/* Orders Table - ONLY COMPLETED */}
       <Card>
         <CardHeader>
-          <CardTitle>Order Transactions</CardTitle>
-          <CardDescription>All user service orders with revenue and profit breakdown</CardDescription>
+          <CardTitle>Completed Order Transactions</CardTitle>
+          <CardDescription>All completed user service orders with revenue and profit breakdown</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -177,11 +173,11 @@ export default async function AdminTransactionHistoryPage() {
         </CardContent>
       </Card>
 
-      {/* Deposits Table - Combined Crypto + Instant Payments */}
+      {/* Deposits Table - Combined Crypto + Instant Payments - ONLY APPROVED/COMPLETED */}
       <Card>
         <CardHeader>
-          <CardTitle>All Deposit Transactions</CardTitle>
-          <CardDescription>Cryptocurrency deposits and instant payment transactions combined</CardDescription>
+          <CardTitle>Approved Deposit Transactions</CardTitle>
+          <CardDescription>All approved cryptocurrency and completed instant payment deposits</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">

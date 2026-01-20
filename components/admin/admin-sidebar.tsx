@@ -30,10 +30,11 @@ import {
 const navigation = [
   { name: "Dashboard", href: "/admin-panel-2024", icon: LayoutDashboard },
   { name: "Transaction History", href: "/admin-panel-2024/transaction-history", icon: Receipt },
+  { name: "Services", href: "/admin-panel-2024/services", icon: ShoppingCart },
   { name: "Crypto Settings", href: "/admin-panel-2024/crypto", icon: Bitcoin },
   { name: "API Providers", href: "/admin-panel-2024/api-providers", icon: Plug },
   { name: "Users", href: "/admin-panel-2024/users", icon: Users },
-  { name: "Orders", href: "/admin-panel-2024/orders", icon: ShoppingCart },
+  { name: "Orders", href: "/admin-panel-2024/orders", icon: TrendingUp },
   { name: "Deposits", href: "/admin-panel-2024/deposits", icon: TrendingUp },
   { name: "Tickets", href: "/admin-panel-2024/tickets", icon: Ticket },
   { name: "Coupons", href: "/admin-panel-2024/coupons", icon: Gift },

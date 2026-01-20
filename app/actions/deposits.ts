@@ -123,38 +123,66 @@ export async function approveDeposit(depositId: string) {
 }
 
 export async function rejectDeposit(depositId: string, reason: string) {
-  const supabase = await createClient()
+  try {
+    const supabase = await createClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) throw new Error("Unauthorized")
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) {
+      console.error("[v0] Unauthorized: No admin user found")
+      throw new Error("Unauthorized")
+    }
 
-  // Get deposit details
-  const { data: deposit } = await supabase.from("crypto_deposits").select("transaction_id").eq("id", depositId).single()
+    console.log("[v0] Rejecting deposit:", depositId, "Reason:", reason)
 
-  if (!deposit) throw new Error("Deposit not found")
+    // Get deposit details
+    const { data: deposit, error: fetchError } = await supabase
+      .from("crypto_deposits")
+      .select("transaction_id")
+      .eq("id", depositId)
+      .single()
 
-  // Update deposit status
-  await supabase
-    .from("crypto_deposits")
-    .update({
-      status: "rejected",
-      admin_notes: reason,
-      reviewed_by: user.id,
-      reviewed_at: new Date().toISOString(),
-    })
-    .eq("id", depositId)
+    if (fetchError || !deposit) {
+      console.error("[v0] Deposit fetch error:", fetchError)
+      throw new Error("Deposit not found")
+    }
 
-  // Update transaction status
-  await supabase
-    .from("transactions")
-    .update({
-      status: "failed",
-      notes: `Rejected: ${reason}`,
-    })
-    .eq("id", deposit.transaction_id)
+    // Update deposit status
+    const { error: updateDepositError } = await supabase
+      .from("crypto_deposits")
+      .update({
+        status: "rejected",
+        admin_notes: reason,
+        reviewed_by: user.id,
+        reviewed_at: new Date().toISOString(),
+      })
+      .eq("id", depositId)
 
-  revalidatePath("/admin-panel-2024/deposits")
-  return { success: true }
+    if (updateDepositError) {
+      console.error("[v0] Deposit update error:", updateDepositError)
+      throw new Error(updateDepositError.message || "Failed to update deposit")
+    }
+
+    // Update transaction status
+    const { error: updateTxError } = await supabase
+      .from("transactions")
+      .update({
+        status: "failed",
+        notes: `Rejected: ${reason}`,
+      })
+      .eq("id", deposit.transaction_id)
+
+    if (updateTxError) {
+      console.error("[v0] Transaction update error:", updateTxError)
+      throw new Error(updateTxError.message || "Failed to update transaction")
+    }
+
+    console.log("[v0] Deposit successfully rejected")
+    revalidatePath("/admin-panel-2024/deposits")
+    return { success: true }
+  } catch (error) {
+    console.error("[v0] Reject deposit error:", error)
+    throw error
+  }
 }
