@@ -25,20 +25,24 @@ export default async function AdminDashboardPage() {
     supabase.from("orders").select("*", { count: "exact", head: true }),
     supabase.from("orders").select("*", { count: "exact", head: true }).in("status", ["pending", "processing"]),
     supabase.from("crypto_deposits").select("*", { count: "exact", head: true }).eq("status", "pending"),
-    supabase.from("orders").select("total_price, base_price, status").eq("status", "completed"),
+    supabase.from("orders").select("id, price, quantity, status, services(base_price)").eq("status", "completed"),
     supabase.from("users").select("id").gte("last_login", thirtyDaysAgo.toISOString()).limit(1000),
     supabase.from("crypto_deposits").select("amount, status"),
   ])
 
   // Calculate Order Revenue & Profit (Only from completed orders)
   const orderRevenue = ordersData?.reduce((sum, order) => {
-    const price = Number(order.total_price || 0)
-    return sum + price
+    const price = Number(order.price || 0)
+    const quantity = Number(order.quantity || 0)
+    const totalOrderPrice = price * quantity
+    return sum + totalOrderPrice
   }, 0) || 0
 
   const orderCost = ordersData?.reduce((sum, order) => {
-    const baseCost = Number(order.base_price || 0)
-    return sum + baseCost
+    const baseCost = Number(order.services?.base_price || 0)
+    const quantity = Number(order.quantity || 0)
+    const totalOrderCost = baseCost * quantity
+    return sum + totalOrderCost
   }, 0) || 0
 
   const orderProfit = orderRevenue - orderCost

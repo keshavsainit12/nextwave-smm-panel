@@ -11,7 +11,7 @@ export default async function AdminTransactionHistoryPage() {
   // Fetch all orders - ONLY COMPLETED ONES
   const { data: orders } = await supabase
     .from("orders")
-    .select("*, services(name, category), users(email, full_name, balance)")
+    .select("*, services(name, category, base_price), users(email, full_name, balance)")
     .eq("status", "completed")
     .order("created_at", { ascending: false })
     .limit(100)
@@ -35,8 +35,18 @@ export default async function AdminTransactionHistoryPage() {
     .limit(100)
 
   // Calculate summary stats - ALL FROM COMPLETED/APPROVED ONLY
-  const totalOrderRevenue = orders?.reduce((sum, o) => sum + Number(o.total_price || 0), 0) || 0
-  const totalOrderCost = orders?.reduce((sum, o) => sum + Number(o.base_price || 0), 0) || 0
+  const totalOrderRevenue = orders?.reduce((sum, o) => {
+    const price = Number(o.price || 0)
+    const quantity = Number(o.quantity || 0)
+    return sum + (price * quantity)
+  }, 0) || 0
+  
+  const totalOrderCost = orders?.reduce((sum, o) => {
+    const baseCost = Number(o.services?.base_price || 0)
+    const quantity = Number(o.quantity || 0)
+    return sum + (baseCost * quantity)
+  }, 0) || 0
+  
   const totalOrderProfit = totalOrderRevenue - totalOrderCost
 
   const totalCryptoDepositAmount = cryptoDeposits?.reduce((sum, d) => sum + Number(d.amount || 0), 0) || 0
@@ -127,8 +137,11 @@ export default async function AdminTransactionHistoryPage() {
               <TableBody>
                 {orders && orders.length > 0 ? (
                   orders.map((order) => {
-                    const revenue = Number(order.total_price || 0)
-                    const cost = Number(order.base_price || 0)
+                    const quantity = Number(order.quantity || 1)
+                    const price = Number(order.price || 0)
+                    const baseCost = Number(order.services?.base_price || 0)
+                    const revenue = price * quantity
+                    const cost = baseCost * quantity
                     const profit = revenue - cost
 
                     return (
