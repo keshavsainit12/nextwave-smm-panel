@@ -7,7 +7,6 @@ import { Sheet } from "@/components/ui/sheet"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { toast } from "react-toastify"
@@ -26,6 +25,7 @@ import {
   Menu,
   Receipt,
   Zap,
+  ImageIcon,
 } from "lucide-react"
 
 const navigation = [
@@ -33,6 +33,7 @@ const navigation = [
   { name: "Transaction History", href: "/admin-panel-2024/transaction-history", icon: Receipt },
   { name: "Process Payments", href: "/admin-panel-2024/process-payments", icon: Zap },
   { name: "Services", href: "/admin-panel-2024/services", icon: ShoppingCart },
+  { name: "Manage Icons", href: "/admin-panel-2024/manage-icons", icon: ImageIcon },
   { name: "Crypto Settings", href: "/admin-panel-2024/crypto", icon: Bitcoin },
   { name: "API Providers", href: "/admin-panel-2024/api-providers", icon: Plug },
   { name: "Users", href: "/admin-panel-2024/users", icon: Users },
@@ -114,7 +115,7 @@ export function AdminSidebar() {
     <>
       {/* Mobile Header with Hamburger Menu */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between h-16 px-3 sm:px-4 bg-white/90 backdrop-blur-md border-b shadow-sm">
-        <Image src="/logo.png" alt="NextWave SMM" width={160} height={40} className="h-10 w-auto" priority />
+        <ImageIcon src="/logo.png" alt="NextWave SMM" width={160} height={40} className="h-10 w-auto" priority />
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" size="icon" className="lg:hidden bg-transparent hover:bg-slate-100">
