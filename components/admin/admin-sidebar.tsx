@@ -1,9 +1,16 @@
 "use client"
 
+import { Avatar } from "@/components/ui/avatar"
+import { SheetContent } from "@/components/ui/sheet"
+import { SheetTrigger } from "@/components/ui/sheet"
+import { Sheet } from "@/components/ui/sheet"
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
+import { toast } from "react-toastify"
 import {
   LayoutDashboard,
   Bitcoin,
@@ -17,15 +24,12 @@ import {
   LogOut,
   Activity,
   Menu,
+  Receipt,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { toast } from "sonner"
-import { useState } from "react"
-import { Avatar } from "@/components/ui/avatar"
 
 const navigation = [
   { name: "Dashboard", href: "/admin-panel-2024", icon: LayoutDashboard },
+  { name: "Transaction History", href: "/admin-panel-2024/transaction-history", icon: Receipt },
   { name: "Crypto Settings", href: "/admin-panel-2024/crypto", icon: Bitcoin },
   { name: "API Providers", href: "/admin-panel-2024/api-providers", icon: Plug },
   { name: "Users", href: "/admin-panel-2024/users", icon: Users },

@@ -24,6 +24,7 @@ export function CryptoDepositList({ deposits }: { deposits: any[] }) {
         toast.success("Deposit approved! User balance updated.")
         router.refresh()
       } catch (error) {
+        console.error("[v0] Approve error:", error)
         toast.error("Failed to approve deposit")
       } finally {
         setLoading(null)
@@ -33,13 +34,14 @@ export function CryptoDepositList({ deposits }: { deposits: any[] }) {
 
   const handleReject = async (id: string) => {
     const reason = prompt("Rejection reason:")
-    if (reason) {
+    if (reason && reason.trim()) {
       setLoading(id)
       try {
         await rejectDeposit(id, reason)
         toast.success("Deposit rejected")
         router.refresh()
       } catch (error) {
+        console.error("[v0] Reject error:", error)
         toast.error("Failed to reject deposit")
       } finally {
         setLoading(null)
@@ -100,6 +102,7 @@ export function CryptoDepositList({ deposits }: { deposits: any[] }) {
                         ? "destructive"
                         : "secondary"
                   }
+                  className="capitalize"
                 >
                   {deposit.status}
                 </Badge>
@@ -108,7 +111,7 @@ export function CryptoDepositList({ deposits }: { deposits: any[] }) {
                 {formatDistance(new Date(deposit.created_at), new Date(), { addSuffix: true })}
               </TableCell>
               <TableCell className="text-right">
-                {deposit.status === "pending" && (
+                {deposit.status === "pending" ? (
                   <div className="flex justify-end gap-2">
                     <Button
                       size="sm"
@@ -126,12 +129,35 @@ export function CryptoDepositList({ deposits }: { deposits: any[] }) {
                       disabled={loading === deposit.id}
                     >
                       <X className="mr-1 h-3 w-3" />
-                      Reject
+                      {loading === deposit.id ? "Processing..." : "Reject"}
                     </Button>
                   </div>
-                )}
-                {deposit.status === "rejected" && deposit.admin_notes && (
-                  <div className="text-xs text-muted-foreground">Reason: {deposit.admin_notes}</div>
+                ) : deposit.status === "rejected" ? (
+                  <div className="text-xs text-right">
+                    {deposit.admin_notes && (
+                      <div className="text-red-600 dark:text-red-400 font-medium">
+                        Reason: {deposit.admin_notes}
+                      </div>
+                    )}
+                    {deposit.reviewed_at && (
+                      <div className="text-muted-foreground text-xs mt-1">
+                        {formatDistance(new Date(deposit.reviewed_at), new Date(), { addSuffix: true })}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-xs text-right">
+                    {deposit.reviewed_at && (
+                      <div className="text-green-600 dark:text-green-400 font-medium">
+                        Approved {formatDistance(new Date(deposit.reviewed_at), new Date(), { addSuffix: true })}
+                      </div>
+                    )}
+                    {deposit.reviewed_by && (
+                      <div className="text-muted-foreground text-xs mt-1">
+                        By: {deposit.reviewed_by.substring(0, 8)}...
+                      </div>
+                    )}
+                  </div>
                 )}
               </TableCell>
             </TableRow>
