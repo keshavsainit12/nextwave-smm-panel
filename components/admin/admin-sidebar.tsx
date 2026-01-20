@@ -106,19 +106,20 @@ export function AdminSidebar() {
 
   return (
     <>
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between h-16 px-4 bg-white/80 backdrop-blur-md border-b shadow-sm">
+      {/* Mobile Header with Hamburger Menu */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between h-16 px-3 sm:px-4 bg-white/90 backdrop-blur-md border-b shadow-sm">
         <Image src="/logo.png" alt="NextWave SMM" width={160} height={40} className="h-10 w-auto" priority />
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <Button variant="outline" size="icon" className="lg:hidden bg-transparent">
+            <Button variant="outline" size="icon" className="lg:hidden bg-transparent hover:bg-slate-100">
               <Menu className="h-5 w-5" />
               <span className="sr-only">Toggle menu</span>
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-72 p-0 bg-white/95 backdrop-blur-lg">
             <div className="flex h-full flex-col">
-              <div className="flex items-center justify-center py-4">
-                <Avatar className="h-10 w-10 bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
+              <div className="flex items-center gap-3 border-b py-4 px-6">
+                <Avatar className="h-10 w-10 bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                   A
                 </Avatar>
                 <div className="flex flex-col">
@@ -132,16 +133,15 @@ export function AdminSidebar() {
         </Sheet>
       </div>
 
-      <div className="hidden lg:flex w-64 flex-col border-r bg-white/70 backdrop-blur-lg shadow-xl">
-        <div className="flex items-center justify-between py-4">
-          <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10 bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
-              A
-            </Avatar>
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-slate-900 dark:text-white">Admin</span>
-              <span className="text-xs text-slate-500 dark:text-slate-400">Super Admin</span>
-            </div>
+      {/* Desktop Sidebar - visible on lg and larger screens */}
+      <div className="hidden lg:flex w-64 h-screen flex-col border-r bg-white/70 backdrop-blur-lg shadow-xl sticky top-0">
+        <div className="flex items-center gap-3 py-4 px-6 border-b">
+          <Avatar className="h-10 w-10 bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+            A
+          </Avatar>
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold text-slate-900 dark:text-white">Admin</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">Super Admin</span>
           </div>
         </div>
         <SidebarContent pathname={pathname} handleLogout={handleLogout} />
