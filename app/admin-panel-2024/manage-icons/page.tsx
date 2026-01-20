@@ -1,12 +1,11 @@
 'use client'
 
-import { createAdminClient } from "@/lib/supabase/admin"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { IconUploadDialog } from "@/components/admin/icon-upload-dialog"
-import { Plus } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
+import { fetchIconsData } from "@/app/actions/fetch-icons"
 
 export default function ManageIconsPage() {
   const [categories, setCategories] = useState<any[]>([])
@@ -15,23 +14,29 @@ export default function ManageIconsPage() {
 
   useEffect(() => {
     async function loadData() {
-      const supabase = createAdminClient()
-
-      const [{ data: servicesData }, { data: categoriesData }] = await Promise.all([
-        supabase.from("services").select("id, name, icon, service_categories(name)"),
-        supabase.from("service_categories").select("id, name, icon"),
-      ])
-
-      setServices(servicesData || [])
-      setCategories(categoriesData || [])
-      setLoading(false)
+      try {
+        const data = await fetchIconsData()
+        setServices(data.services)
+        setCategories(data.categories)
+      } catch (error) {
+        console.error("[v0] Failed to fetch icons data:", error)
+      } finally {
+        setLoading(false)
+      }
     }
 
     loadData()
   }, [])
 
   if (loading) {
-    return <div className="p-6">Loading...</div>
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-3">
+          <div className="h-8 w-8 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin mx-auto" />
+          <p className="text-muted-foreground">Loading icons...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
