@@ -1,4 +1,4 @@
-'use client';
+'use client'
 
 import { createAdminClient } from "@/lib/supabase/admin"
 import { Button } from "@/components/ui/button"
@@ -6,14 +6,33 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { IconUploadDialog } from "@/components/admin/icon-upload-dialog"
 import { Plus } from "lucide-react"
 import Link from "next/link"
+import { useEffect, useState } from "react"
 
-export default async function ManageIconsPage() {
-  const supabase = createAdminClient()
+export default function ManageIconsPage() {
+  const [categories, setCategories] = useState<any[]>([])
+  const [services, setServices] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const [{ data: services }, { data: categories }] = await Promise.all([
-    supabase.from("services").select("id, name, icon, service_categories(name)"),
-    supabase.from("service_categories").select("id, name, icon"),
-  ])
+  useEffect(() => {
+    async function loadData() {
+      const supabase = createAdminClient()
+
+      const [{ data: servicesData }, { data: categoriesData }] = await Promise.all([
+        supabase.from("services").select("id, name, icon, service_categories(name)"),
+        supabase.from("service_categories").select("id, name, icon"),
+      ])
+
+      setServices(servicesData || [])
+      setCategories(categoriesData || [])
+      setLoading(false)
+    }
+
+    loadData()
+  }, [])
+
+  if (loading) {
+    return <div className="p-6">Loading...</div>
+  }
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -31,6 +50,7 @@ export default async function ManageIconsPage() {
                 <CardTitle>Category Icons</CardTitle>
                 <CardDescription>Animated icons displayed in category tabs and dropdowns</CardDescription>
               </div>
+              <IconUploadDialog type="category" itemId="" itemName="" />
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -58,7 +78,7 @@ export default async function ManageIconsPage() {
                         )}
                       </div>
                     </div>
-                    <IconUploadDialog open={false} onClose={() => {}} type="category" items={categories} />
+                    <IconUploadDialog type="category" itemId={cat.id} itemName={cat.name} />
                   </div>
                 ))}
               </div>
@@ -76,6 +96,7 @@ export default async function ManageIconsPage() {
                 <CardTitle>Service Icons</CardTitle>
                 <CardDescription>Animated icons displayed next to service names and in cards</CardDescription>
               </div>
+              <IconUploadDialog type="service" itemId="" itemName="" />
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -104,7 +125,7 @@ export default async function ManageIconsPage() {
                         )}
                       </div>
                     </div>
-                    <IconUploadDialog open={false} onClose={() => {}} type="service" items={services} />
+                    <IconUploadDialog type="service" itemId={service.id} itemName={service.name} />
                   </div>
                 ))}
               </div>
@@ -133,9 +154,9 @@ export default async function ManageIconsPage() {
               </p>
             </div>
             <div>
-              <p className="font-semibold mb-1">3. Click Upload Icon</p>
+              <p className="font-semibold mb-1">3. Click Upload Icon Button</p>
               <p className="text-muted-foreground">
-                Click the upload button, select the service/category, paste the URL, and save.
+                Click the "Upload Icon" button next to each service/category, paste the URL, and save.
               </p>
             </div>
             <div className="pt-2">

@@ -1,31 +1,32 @@
 "use client"
 
-import React from "react"
-
-import { useState } from "react"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import React, { useState } from "react"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Upload, Loader2, Check, ImageIcon } from "lucide-react"
+import { Upload, Loader2, Plus, ImageIcon } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { updateServiceIcon, updateCategoryIcon } from "@/app/actions/icons"
 
 export function IconUploadDialog({
-  open,
-  onClose,
   type = "service",
+  itemId,
+  itemName,
   items,
+  onClose,
 }: {
-  open: boolean
-  onClose: () => void
   type?: "service" | "category"
-  items: any[]
+  itemId?: string
+  itemName?: string
+  items: { id: string; name: string }[]
+  onClose: () => void
 }) {
+  const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [selectedItem, setSelectedItem] = useState("")
+  const [selectedItem, setSelectedItem] = useState(itemId || "default")
   const [iconUrl, setIconUrl] = useState("")
   const router = useRouter()
 
@@ -44,10 +45,10 @@ export function IconUploadDialog({
         await updateCategoryIcon(selectedItem, iconUrl)
       }
 
-      toast.success(`Icon updated successfully!`)
+      toast.success("Icon updated successfully!")
       setSelectedItem("")
       setIconUrl("")
-      onClose()
+      setOpen(false)
       router.refresh()
     } catch (error: any) {
       toast.error(error.message || "Failed to update icon")
@@ -57,7 +58,13 @@ export function IconUploadDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" className="gap-2">
+          <Plus className="h-4 w-4" />
+          Upload Icon
+        </Button>
+      </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
