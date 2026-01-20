@@ -2,76 +2,93 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import { Loader2, Upload, Trash2, RefreshCw } from 'lucide-react'
-import { createBrowserClient } from '@supabase/ssr'
+import { Loader2, Upload, Trash2, Eye } from 'lucide-react'
+import Link from 'next/link'
+
+const MAIN_CATEGORIES = [
+  'Instagram',
+  'TikTok',
+  'Twitter',
+  'Facebook',
+  'YouTube',
+  'Discord',
+  'Telegram',
+  'LinkedIn',
+  'Spotify',
+]
 
 export default function IconManagerPage() {
-  const [categories, setCategories] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [updating, setUpdating] = useState<string | null>(null)
+  const [icons, setIcons] = useState<Record<string, string>>({})
   const [urls, setUrls] = useState<Record<string, string>>({})
+  const [updating, setUpdating] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-
+  // Load existing icons
   useEffect(() => {
-    loadCategories()
+    async function loadIcons() {
+      try {
+        const response = await fetch('/api/icons/list')
+        const data = await response.json()
+
+        const iconMap: Record<string, string> = {}
+        MAIN_CATEGORIES.forEach(name => {
+          const category = data.categories.find((c: any) => c.name === name)
+          if (category?.icon) {
+            iconMap[name] = category.icon
+          }
+        })
+
+        setIcons(iconMap)
+        setLoading(false)
+      } catch (error) {
+        console.error('[v0] Error loading icons:', error)
+        toast.error('Failed to load icons')
+        setLoading(false)
+      }
+    }
+
+    loadIcons()
   }, [])
 
-  async function loadCategories() {
-    try {
-      setLoading(true)
-      const { data, error } = await supabase
-        .from('service_categories')
-        .select('id, name, icon, display_order')
-        .order('display_order', { ascending: true })
-
-      if (error) throw error
-      setCategories(data || [])
-    } catch (error: any) {
-      console.error('[v0] Error loading categories:', error)
-      toast.error('Failed to load categories')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function updateCategoryIcon(categoryId: string, iconUrl: string) {
-    if (!iconUrl.trim()) {
+  const handleUpdate = async (categoryName: string) => {
+    const url = urls[categoryName]
+    if (!url) {
       toast.error('Please enter a URL')
       return
     }
 
-    setUpdating(categoryId)
+    setUpdating(categoryName)
     try {
-      // 1. Update category icon
-      const { error: categoryError } = await supabase
-        .from('service_categories')
-        .update({ icon: iconUrl })
-        .eq('id', categoryId)
+      const response = await fetch('/api/icons/update-category', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          categoryName,
+          iconUrl: url,
+        }),
+      })
 
-      if (categoryError) throw categoryError
+      const result = await response.json()
 
-      // 2. Automatically update all services in this category with the same icon
-      const { error: servicesError } = await supabase
-        .from('services')
-        .update({ icon: iconUrl })
-        .eq('category_id', categoryId)
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to update icon')
+      }
 
-      if (servicesError) throw servicesError
+      // Update local state
+      setIcons(prev => ({
+        ...prev,
+        [categoryName]: url,
+      }))
+      setUrls(prev => ({
+        ...prev,
+        [categoryName]: '',
+      }))
 
-      toast.success('Icon updated! All services in this category now have the new icon.')
-      
-      // Refresh categories and clear input
-      await loadCategories()
-      setUrls(prev => ({ ...prev, [categoryId]: '' }))
+      toast.success(`${categoryName} icon updated! All related services and categories updated automatically.`)
     } catch (error: any) {
       console.error('[v0] Error updating icon:', error)
       toast.error(error.message || 'Failed to update icon')
@@ -80,29 +97,29 @@ export default function IconManagerPage() {
     }
   }
 
-  async function deleteIcon(categoryId: string) {
-    setUpdating(categoryId)
+  const handleDelete = async (categoryName: string) => {
+    if (!confirm(`Delete ${categoryName} icon?`)) return
+
+    setUpdating(categoryName)
     try {
-      // 1. Remove category icon
-      const { error: categoryError } = await supabase
-        .from('service_categories')
-        .update({ icon: null })
-        .eq('id', categoryId)
+      const response = await fetch('/api/icons/delete-category', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ categoryName }),
+      })
 
-      if (categoryError) throw categoryError
+      if (!response.ok) {
+        throw new Error('Failed to delete icon')
+      }
 
-      // 2. Remove icons from all services in this category
-      const { error: servicesError } = await supabase
-        .from('services')
-        .update({ icon: null })
-        .eq('category_id', categoryId)
+      setIcons(prev => {
+        const updated = { ...prev }
+        delete updated[categoryName]
+        return updated
+      })
 
-      if (servicesError) throw servicesError
-
-      toast.success('Icon deleted from category and all related services!')
-      await loadCategories()
+      toast.success(`${categoryName} icon deleted!`)
     } catch (error: any) {
-      console.error('[v0] Error deleting icon:', error)
       toast.error(error.message || 'Failed to delete icon')
     } finally {
       setUpdating(null)
@@ -113,8 +130,8 @@ export default function IconManagerPage() {
     return (
       <div className="p-6 flex items-center justify-center min-h-[400px]">
         <div className="text-center space-y-3">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-500" />
-          <p className="text-muted-foreground">Loading categories...</p>
+          <div className="h-8 w-8 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin mx-auto" />
+          <p className="text-muted-foreground">Loading icons...</p>
         </div>
       </div>
     )
@@ -124,133 +141,139 @@ export default function IconManagerPage() {
     <div className="space-y-6 p-4 md:p-6">
       <div>
         <h1 className="text-3xl font-bold">Icon Manager</h1>
-        <p className="text-gray-600 mt-2">
-          Update category icons. All services in the category will automatically get the same icon.
-        </p>
+        <p className="text-gray-600 mt-2">Update icons for each platform. When you update an icon, it automatically applies to all services and categories under that platform.</p>
       </div>
 
       <div className="grid gap-4">
-        {categories && categories.length > 0 ? (
-          categories.map(category => (
-            <Card key={category.id} className="overflow-hidden">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    {category.icon && (
-                      <div className="p-3 bg-muted rounded-lg">
-                        <img
-                          src={category.icon || "/placeholder.svg"}
-                          alt={category.name}
-                          className="h-10 w-10 object-contain"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none'
-                          }}
-                        />
-                      </div>
-                    )}
-                    <div>
-                      <CardTitle className="text-xl">{category.name}</CardTitle>
-                      {category.icon ? (
-                        <Badge className="mt-2 bg-green-100 text-green-700">✓ Icon Set</Badge>
-                      ) : (
-                        <Badge variant="secondary" className="mt-2">No Icon</Badge>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor={`url-${category.id}`}>GIF URL from Vercel Blob</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id={`url-${category.id}`}
-                      placeholder="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-instagram-Y6Ka1ocAALzf5J8Hu64Toiy50JdPFd.gif"
-                      value={urls[category.id] || ''}
-                      onChange={(e) => setUrls(prev => ({ ...prev, [category.id]: e.target.value }))}
-                      disabled={updating === category.id}
+        {MAIN_CATEGORIES.map(categoryName => (
+          <Card key={categoryName} className="overflow-hidden">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {icons[categoryName] && (
+                    <img
+                      src={icons[categoryName] || "/placeholder.svg"}
+                      alt={categoryName}
+                      className="h-12 w-12 rounded-lg object-contain bg-muted p-1"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none'
+                      }}
                     />
-                    <Button
-                      onClick={() => updateCategoryIcon(category.id, urls[category.id] || '')}
-                      disabled={updating === category.id || !urls[category.id]?.trim()}
-                      className="gap-2"
-                    >
-                      {updating === category.id ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Updating...
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="h-4 w-4" />
-                          Update Icon
-                        </>
-                      )}
-                    </Button>
-                    {category.icon && (
-                      <Button
-                        variant="destructive"
-                        onClick={() => deleteIcon(category.id)}
-                        disabled={updating === category.id}
-                        className="gap-2"
-                      >
-                        {updating === category.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                      </Button>
+                  )}
+                  <div>
+                    <CardTitle>{categoryName}</CardTitle>
+                    {icons[categoryName] ? (
+                      <p className="text-xs text-green-600 font-medium mt-1">✓ Icon uploaded</p>
+                    ) : (
+                      <p className="text-xs text-orange-600 font-medium mt-1">⚠ No icon yet</p>
                     )}
                   </div>
                 </div>
 
-                {urls[category.id] && (
-                  <div className="space-y-2">
-                    <Label>Preview</Label>
-                    <div className="p-4 bg-muted rounded-lg flex items-center justify-center h-24">
-                      <img
-                        src={urls[category.id] || "/placeholder.svg"}
-                        alt="Preview"
-                        className="h-16 w-16 object-contain"
-                        onError={() => toast.error('Invalid image URL')}
-                      />
-                    </div>
-                  </div>
+                {icons[categoryName] && (
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => handleDelete(categoryName)}
+                    disabled={updating === categoryName}
+                    className="gap-2"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </Button>
                 )}
-              </CardContent>
-            </Card>
-          ))
-        ) : (
-          <div className="text-center py-12 text-muted-foreground">
-            No categories found
-          </div>
-        )}
+              </div>
+            </CardHeader>
+
+            <CardContent className="space-y-4">
+              {/* URL Input */}
+              <div className="space-y-2">
+                <Label htmlFor={`url-${categoryName}`}>GIF URL from Vercel Blob</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id={`url-${categoryName}`}
+                    placeholder="/images/icons8-instagram.gif"
+                    value={urls[categoryName] || ''}
+                    onChange={(e) => setUrls(prev => ({ ...prev, [categoryName]: e.target.value }))}
+                    disabled={updating === categoryName}
+                  />
+                  <Button
+                    onClick={() => handleUpdate(categoryName)}
+                    disabled={updating === categoryName || !urls[categoryName]}
+                    className="gap-2"
+                  >
+                    {updating === categoryName ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Updating...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-4 w-4" />
+                        Update
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Preview */}
+              {urls[categoryName] && (
+                <div className="space-y-2">
+                  <Label>Preview</Label>
+                  <div className="p-4 bg-muted rounded-lg border flex items-center justify-center h-24">
+                    <img
+                      src={urls[categoryName] || "/placeholder.svg"}
+                      alt="Preview"
+                      className="h-16 w-16 object-contain"
+                      onError={() => toast.error('Invalid image URL')}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    This icon will be applied to all {categoryName} services and categories automatically.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
+      {/* Info Box */}
       <Card className="bg-blue-50 border-blue-200">
         <CardHeader>
-          <CardTitle>How It Works</CardTitle>
+          <CardTitle className="text-lg">How It Works</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
           <div>
             <p className="font-semibold mb-1">1. Upload GIF to Vercel Blob</p>
-            <p className="text-muted-foreground">Upload your animated GIF and copy its CDN URL</p>
+            <p className="text-muted-foreground">
+              First, upload your animated GIF to Vercel Blob storage and copy the URL.
+            </p>
           </div>
           <div>
-            <p className="font-semibold mb-1">2. Paste URL Here</p>
-            <p className="text-muted-foreground">Paste the Blob URL in the input field above</p>
+            <p className="font-semibold mb-1">2. Paste URL Above</p>
+            <p className="text-muted-foreground">
+              Paste the URL for any platform (Instagram, TikTok, etc.) in the input field.
+            </p>
           </div>
           <div>
-            <p className="font-semibold mb-1">3. Click Update Icon</p>
-            <p className="text-muted-foreground">The category icon and ALL services in this category get updated automatically</p>
+            <p className="font-semibold mb-1">3. Click Update</p>
+            <p className="text-muted-foreground">
+              The icon automatically updates for that platform and ALL its services and categories.
+            </p>
           </div>
-          <div>
-            <p className="font-semibold mb-1">4. Users See It Instantly</p>
-            <p className="text-muted-foreground">Icons appear in service cards, tabs, dropdowns, and orders immediately</p>
+          <div className="pt-2 border-t">
+            <p className="text-xs text-blue-700 font-medium">
+              💡 All changes appear instantly for users. No manual work needed!
+            </p>
           </div>
         </CardContent>
       </Card>
+
+      <Link href="/admin-panel-2024">
+        <Button variant="outline">← Back to Admin</Button>
+      </Link>
     </div>
   )
 }
