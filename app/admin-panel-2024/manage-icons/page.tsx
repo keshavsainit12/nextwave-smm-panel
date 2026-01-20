@@ -50,12 +50,9 @@ export default function ManageIconsPage() {
         {/* Category Icons */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Category Icons</CardTitle>
-                <CardDescription>Animated icons displayed in category tabs and dropdowns</CardDescription>
-              </div>
-              <IconUploadDialog type="category" itemId="" itemName="" />
+            <div>
+              <CardTitle>Category Icons</CardTitle>
+              <CardDescription>Animated icons displayed in category tabs and dropdowns</CardDescription>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -96,12 +93,9 @@ export default function ManageIconsPage() {
         {/* Service Icons */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Service Icons</CardTitle>
-                <CardDescription>Animated icons displayed next to service names and in cards</CardDescription>
-              </div>
-              <IconUploadDialog type="service" itemId="" itemName="" />
+            <div>
+              <CardTitle>Service Icons</CardTitle>
+              <CardDescription>Animated icons displayed next to service names and in cards</CardDescription>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
