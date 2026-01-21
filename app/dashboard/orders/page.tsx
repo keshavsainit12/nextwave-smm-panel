@@ -9,15 +9,24 @@ export default async function OrdersPage() {
 
   const { data: orders } = await supabase
     .from("orders")
-    .select("*, services(name, platform, has_refill, service_categories(name))")
+    .select("*, services(id, name, icon, platform, has_refill, category_id, service_categories!inner(id, name, icon))")
     .eq("user_id", user!.id)
     .order("created_at", { ascending: false })
+
+  // Transform orders to use category icon if service icon is missing
+  const transformedOrders = orders?.map((order: any) => ({
+    ...order,
+    services: {
+      ...order.services,
+      icon: order.services?.icon || order.services?.service_categories?.icon,
+    },
+  })) || []
 
   return (
     <>
       {/* Mobile view */}
       <div className="lg:hidden">
-        <MobileOrdersHistory orders={orders || []} />
+        <MobileOrdersHistory orders={transformedOrders} />
       </div>
 
       {/* Desktop view */}
@@ -28,7 +37,7 @@ export default async function OrdersPage() {
         </div>
 
         {/* Desktop order table with all order details */}
-        {orders && orders.length > 0 ? (
+        {transformedOrders && transformedOrders.length > 0 ? (
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
             <table className="w-full">
               <thead className="bg-gray-50 dark:bg-gray-900/50">
@@ -51,9 +60,23 @@ export default async function OrdersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {orders.map((order: any) => (
+                {transformedOrders.map((order: any) => (
                   <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-900/30 transition-colors">
-                    <td className="px-6 py-4 font-medium">{order.services?.name}</td>
+                    <td className="px-6 py-4 font-medium">
+                      <div className="flex items-center gap-3">
+                        {order.services?.icon && (
+                          <img
+                            src={order.services.icon || "/placeholder.svg"}
+                            alt={order.services?.name}
+                            className="h-8 w-8 rounded object-contain bg-muted p-1 flex-shrink-0"
+                            onError={(e) => {
+                              e.currentTarget.style.display = "none"
+                            }}
+                          />
+                        )}
+                        <span>{order.services?.name}</span>
+                      </div>
+                    </td>
                     <td className="px-6 py-4 text-sm">{order.quantity?.toLocaleString()}</td>
                     <td className="px-6 py-4 text-sm font-semibold">${order.price?.toFixed(2)}</td>
                     <td className="px-6 py-4 text-sm">

@@ -74,6 +74,31 @@ export function MobileHighTrustDashboard({
     return categories.filter((category) => services.some((s) => s.category_id === category.id))
   }, [categories, services])
 
+  // Hardcoded icon mapping
+  const iconMap: Record<string, string> = {
+    Instagram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-instagram-Y6Ka1ocAALzf5J8Hu64Toiy50JdPFd.gif",
+    TikTok: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-tiktok-EzflMkAJ5ndq4gRIi5nzmBOoM1OvUF.gif",
+    Facebook: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-facebook-circled-EtRgurnTPAHD2yxFZbazoJxbrZYTq9.gif",
+    YouTube: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-youtube-M93kjqYJSjNU8cGtu7AQA1RKroGXxQ.gif",
+    Twitter: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-twitter-logo.gif",
+    Discord: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-discord-mNk8wSFfWYQoBZCDbcO2VNGpaupSgy.gif",
+    Telegram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-telegram-logo-gdYZ4CI62yYQFzmsC9hgp5SCpNecjH.gif",
+    LinkedIn: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-linkedin-j6nqGqyCXXSRbGjpQ6hLsVTKXmXfdX.gif",
+    Spotify: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-spotify-2iAARTR3O1EPL2XispaD2uZe9tLu3S.gif",
+  }
+
+  const getIconUrl = (categoryName: string): string | undefined => {
+    // Try exact match first
+    if (iconMap[categoryName]) return iconMap[categoryName]
+    // Try matching the start of the category name
+    for (const [key, url] of Object.entries(iconMap)) {
+      if (categoryName.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(categoryName.toLowerCase())) {
+        return url
+      }
+    }
+    return undefined
+  }
+
   const filteredServices = useMemo(() => {
     if (!selectedCategory) return []
     return services.filter((s) => s.category_id === selectedCategory.id)
@@ -333,11 +358,26 @@ export function MobileHighTrustDashboard({
                   position="popper"
                   sideOffset={4}
                 >
-                  {categoriesWithServices.map((category) => (
-                    <SelectItem key={category.id} value={category.id} className="truncate text-ellipsis">
-                      {category.name}
-                    </SelectItem>
-                  ))}
+                  {categoriesWithServices.map((category) => {
+                    const iconUrl = getIconUrl(category.name)
+                    return (
+                      <SelectItem key={category.id} value={category.id} className="truncate text-ellipsis">
+                        <div className="flex items-center gap-2">
+                          {iconUrl && (
+                            <img
+                              src={iconUrl}
+                              alt={category.name}
+                              className="h-5 w-5 rounded object-contain flex-shrink-0"
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none"
+                              }}
+                            />
+                          )}
+                          <span>{category.name}</span>
+                        </div>
+                      </SelectItem>
+                    )
+                  })}
                 </SelectContent>
               </Select>
             </div>
@@ -380,11 +420,26 @@ export function MobileHighTrustDashboard({
                       position="popper"
                       sideOffset={4}
                     >
-                      {filteredServices.map((service) => (
-                        <SelectItem key={service.id} value={service.id} className="truncate text-ellipsis">
-                          {service.name} - ${Number(service.price || service.base_price || 0).toFixed(2)}/1k
-                        </SelectItem>
-                      ))}
+                      {filteredServices.map((service) => {
+                        const iconUrl = getIconUrl(service.name)
+                        return (
+                          <SelectItem key={service.id} value={service.id} className="truncate text-ellipsis">
+                            <div className="flex items-center gap-2">
+                              {iconUrl && (
+                                <img
+                                  src={iconUrl}
+                                  alt={service.name}
+                                  className="h-5 w-5 rounded object-contain flex-shrink-0"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = "none"
+                                  }}
+                                />
+                              )}
+                              <span>{service.name} - ${Number(service.price || service.base_price || 0).toFixed(2)}/1k</span>
+                            </div>
+                          </SelectItem>
+                        )
+                      })}
                     </SelectContent>
                   </Select>
                   {selectedService && (

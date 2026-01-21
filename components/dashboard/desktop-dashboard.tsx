@@ -14,12 +14,18 @@ import {
   Clock,
   DollarSign,
   Check,
-  ChevronDown,
   LinkIcon,
   ShoppingCart,
   ArrowRight,
   Loader2,
 } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export function DesktopDashboard({
   services,
@@ -47,14 +53,28 @@ export function DesktopDashboard({
   const router = useRouter()
   const { toast } = useToast()
 
-  console.log("[v0] Desktop Dashboard Data:", {
-    recentOrdersCount: recentOrders?.length || 0,
-    totalOrders,
-    totalSpent,
-    userBalance,
-    servicesCount: services?.length || 0,
-    categoriesCount: categories?.length || 0,
-  })
+  // Hardcoded icon mapping
+  const iconMap: Record<string, string> = {
+    Instagram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-instagram-Y6Ka1ocAALzf5J8Hu64Toiy50JdPFd.gif",
+    TikTok: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-tiktok-EzflMkAJ5ndq4gRIi5nzmBOoM1OvUF.gif",
+    Facebook: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-facebook-circled-EtRgurnTPAHD2yxFZbazoJxbrZYTq9.gif",
+    YouTube: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-youtube-M93kjqYJSjNU8cGtu7AQA1RKroGXxQ.gif",
+    Twitter: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-twitter-logo.gif",
+    Discord: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-discord-mNk8wSFfWYQoBZCDbcO2VNGpaupSgy.gif",
+    Telegram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-telegram-logo-gdYZ4CI62yYQFzmsC9hgp5SCpNecjH.gif",
+    LinkedIn: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-linkedin-j6nqGqyCXXSRbGjpQ6hLsVTKXmXfdX.gif",
+    Spotify: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-spotify-2iAARTR3O1EPL2XispaD2uZe9tLu3S.gif",
+  }
+
+  const getIconUrl = (name: string): string | undefined => {
+    if (iconMap[name]) return iconMap[name]
+    for (const [key, url] of Object.entries(iconMap)) {
+      if (name.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(name.toLowerCase())) {
+        return url
+      }
+    }
+    return undefined
+  }
 
   const totalPrice = useMemo(() => {
     if (!selectedService) return 0
@@ -277,10 +297,8 @@ export function DesktopDashboard({
                 </span>
               </div>
               <div className="relative">
-                <select
-                  value={selectedCategory?.id || ""}
-                  onChange={(e) => {
-                    const category = categoriesWithServices.find((c) => c.id === e.target.value)
+                <Select value={selectedCategory?.id || ""} onValueChange={(value) => {
+                    const category = categoriesWithServices.find((c) => c.id === value)
                     if (category) {
                       setSelectedCategory(category)
                       const firstService = services.find((s) => s.category_id === category.id)
@@ -291,17 +309,33 @@ export function DesktopDashboard({
                         setSelectedService(null)
                       }
                     }
-                  }}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 md:py-3.5 pl-4 pr-10 appearance-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm md:text-base"
-                >
-                  {categoriesWithServices.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.icon ? "📁 " : ""}
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none w-5 h-5" />
+                  }}>
+                  <SelectTrigger className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 md:py-3.5 pl-4 pr-10 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm md:text-base">
+                    <SelectValue placeholder="Select Category" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    {categoriesWithServices.map((category) => {
+                      const iconUrl = getIconUrl(category.name)
+                      return (
+                        <SelectItem key={category.id} value={category.id}>
+                          <div className="flex items-center gap-2">
+                            {iconUrl && (
+                              <img
+                                src={iconUrl}
+                                alt={category.name}
+                                className="h-4 w-4 rounded object-contain"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = "none"
+                                }}
+                              />
+                            )}
+                            <span>{category.name}</span>
+                          </div>
+                        </SelectItem>
+                      )
+                    })}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -320,25 +354,42 @@ export function DesktopDashboard({
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-slate-700">Select Service</label>
                   <div className="relative">
-                    <select
-                      value={selectedService?.id || ""}
-                      onChange={(e) => {
-                        const service = filteredServices.find((s) => s.id === e.target.value)
-                        if (service) {
-                          setSelectedService(service)
-                          setQuantity(service.min_quantity || 1000)
-                        }
-                      }}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 md:py-3.5 pl-4 pr-10 appearance-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm md:text-base"
-                    >
-                      {filteredServices.map((service) => (
-                        <option key={service.id} value={service.id}>
-                          {service.icon ? "🎯 " : ""}
-                          {service.name} - ${Number(service.price || service.base_price || 0).toFixed(2)}/1k
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none w-5 h-5" />
+                  <Select
+                    value={selectedService?.id || ""}
+                    onValueChange={(value) => {
+                      const service = filteredServices.find((s) => s.id === value)
+                      if (service) {
+                        setSelectedService(service)
+                        setQuantity(service.min_quantity || 1000)
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 md:py-3.5 pl-4 pr-10 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm md:text-base">
+                      <SelectValue placeholder="Select Service" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-72">
+                      {filteredServices.map((service) => {
+                        const iconUrl = getIconUrl(service.name)
+                        return (
+                          <SelectItem key={service.id} value={service.id}>
+                            <div className="flex items-center gap-2">
+                              {iconUrl && (
+                                <img
+                                  src={iconUrl}
+                                  alt={service.name}
+                                  className="h-4 w-4 rounded object-contain"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = "none"
+                                  }}
+                                />
+                              )}
+                              <span>{service.name} - ${Number(service.price || service.base_price || 0).toFixed(2)}/1k</span>
+                            </div>
+                          </SelectItem>
+                        )
+                      })}
+                    </SelectContent>
+                  </Select>
                   </div>
                 </div>
 

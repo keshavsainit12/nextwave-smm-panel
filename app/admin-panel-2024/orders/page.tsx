@@ -8,9 +8,18 @@ export default async function AdminOrdersPage() {
   const supabase = createAdminClient()
   const { data: orders } = await supabase
     .from("orders")
-    .select("*, users(email, full_name), services(name, platform)")
+    .select("*, users(email, full_name), services(name, icon, platform, service_categories(name, icon))")
     .order("created_at", { ascending: false })
     .limit(100)
+
+  // Transform orders to use category icon if service icon is missing
+  const transformedOrders = orders?.map((order: any) => ({
+    ...order,
+    services: {
+      ...order.services,
+      icon: order.services?.icon || order.services?.service_categories?.icon,
+    },
+  })) || []
 
   const statusCounts = {
     pending: orders?.filter((o) => o.status === "pending").length || 0,
@@ -19,7 +28,7 @@ export default async function AdminOrdersPage() {
     partial: orders?.filter((o) => o.status === "partial").length || 0,
   }
 
-  const exportData = orders?.map((order) => ({
+  const exportData = transformedOrders?.map((order) => ({
     order_id: order.id,
     user_email: order.users?.email,
     service: order.services?.name,
@@ -43,7 +52,7 @@ export default async function AdminOrdersPage() {
 
       <Tabs defaultValue="all">
         <TabsList>
-          <TabsTrigger value="all">All Orders ({orders?.length || 0})</TabsTrigger>
+          <TabsTrigger value="all">All Orders ({transformedOrders?.length || 0})</TabsTrigger>
           <TabsTrigger value="pending">Pending ({statusCounts.pending})</TabsTrigger>
           <TabsTrigger value="processing">Processing ({statusCounts.processing})</TabsTrigger>
           <TabsTrigger value="completed">Completed ({statusCounts.completed})</TabsTrigger>
@@ -57,7 +66,7 @@ export default async function AdminOrdersPage() {
               <CardDescription>Complete order history</CardDescription>
             </CardHeader>
             <CardContent>
-              <OrderList orders={orders || []} />
+              <OrderList orders={transformedOrders || []} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -69,7 +78,7 @@ export default async function AdminOrdersPage() {
               <CardDescription>Orders awaiting processing</CardDescription>
             </CardHeader>
             <CardContent>
-              <OrderList orders={orders?.filter((o) => o.status === "pending") || []} />
+              <OrderList orders={transformedOrders?.filter((o) => o.status === "pending") || []} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -81,7 +90,7 @@ export default async function AdminOrdersPage() {
               <CardDescription>Orders currently being fulfilled</CardDescription>
             </CardHeader>
             <CardContent>
-              <OrderList orders={orders?.filter((o) => o.status === "processing") || []} />
+              <OrderList orders={transformedOrders?.filter((o) => o.status === "processing") || []} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -93,7 +102,7 @@ export default async function AdminOrdersPage() {
               <CardDescription>Successfully fulfilled orders</CardDescription>
             </CardHeader>
             <CardContent>
-              <OrderList orders={orders?.filter((o) => o.status === "completed") || []} />
+              <OrderList orders={transformedOrders?.filter((o) => o.status === "completed") || []} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -105,7 +114,7 @@ export default async function AdminOrdersPage() {
               <CardDescription>Orders partially completed</CardDescription>
             </CardHeader>
             <CardContent>
-              <OrderList orders={orders?.filter((o) => o.status === "partial") || []} />
+              <OrderList orders={transformedOrders?.filter((o) => o.status === "partial") || []} />
             </CardContent>
           </Card>
         </TabsContent>
