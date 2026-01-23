@@ -13,74 +13,62 @@ const platformConfig = [
   {
     name: "Instagram",
     color: "from-pink-500 to-orange-400",
-    bgColor: "from-pink-50 to-white",
+    bgColor: "from-pink-100/40 to-orange-100/40",
     borderColor: "border-pink-100",
-    darkBg: "dark:from-pink-900/10 dark:to-slate-800",
+    darkBg: "dark:from-pink-900/5 dark:to-slate-800",
     darkBorder: "dark:border-pink-900/20",
     textColor: "text-pink-600",
     buttonColor: "bg-pink-600 hover:bg-pink-700",
     shadowColor: "shadow-pink-200",
-    icon: "/images/icons8-instagram.gif",
-  },
-  {
-    name: "TikTok",
-    color: "from-blue-600 to-blue-800",
-    bgColor: "from-blue-50 to-white",
-    borderColor: "border-blue-100",
-    darkBg: "dark:from-blue-900/10 dark:to-slate-800",
-    darkBorder: "dark:border-blue-900/20",
-    textColor: "text-blue-600",
-    buttonColor: "bg-blue-600 hover:bg-blue-700",
-    shadowColor: "shadow-blue-200",
-    icon: "/images/icons8-tiktok.gif",
+    icon: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-from-rawpixel-id-3344505-png-26OEaERgfRA2szq1ynwrYmHizPyhpM.png",
   },
   {
     name: "YouTube",
     color: "from-red-600 to-red-700",
-    bgColor: "from-red-50 to-white",
+    bgColor: "from-red-100/40 to-white/40",
     borderColor: "border-red-100",
-    darkBg: "dark:from-red-900/10 dark:to-slate-800",
+    darkBg: "dark:from-red-900/5 dark:to-slate-800",
     darkBorder: "dark:border-red-900/20",
     textColor: "text-red-600",
     buttonColor: "bg-red-600 hover:bg-red-700",
     shadowColor: "shadow-red-200",
-    icon: "/images/icons8-youtube.gif",
+    icon: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/youtube%20%281%29-vLiOrlbLFV57Tue7SrmDV7Frnkb1uZ.png",
   },
   {
     name: "Facebook",
-    color: "from-blue-500 to-blue-600",
-    bgColor: "from-blue-50 to-white",
+    color: "from-blue-600 to-blue-700",
+    bgColor: "from-blue-100/40 to-white/40",
     borderColor: "border-blue-100",
-    darkBg: "dark:from-blue-900/10 dark:to-slate-800",
+    darkBg: "dark:from-blue-900/5 dark:to-slate-800",
     darkBorder: "dark:border-blue-900/20",
     textColor: "text-blue-600",
     buttonColor: "bg-blue-600 hover:bg-blue-700",
     shadowColor: "shadow-blue-200",
-    icon: "/images/icons8-facebook-circled.gif",
+    icon: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/facebook-5KZKPoiTruTw0y6Y5Q58NACnBWPhD9.png",
   },
   {
-    name: "Twitter",
-    color: "from-sky-400 to-sky-500",
-    bgColor: "from-sky-50 to-white",
+    name: "Telegram",
+    color: "from-sky-500 to-sky-600",
+    bgColor: "from-sky-100/40 to-white/40",
     borderColor: "border-sky-100",
-    darkBg: "dark:from-sky-900/10 dark:to-slate-800",
+    darkBg: "dark:from-sky-900/5 dark:to-slate-800",
     darkBorder: "dark:border-sky-900/20",
     textColor: "text-sky-600",
     buttonColor: "bg-sky-600 hover:bg-sky-700",
     shadowColor: "shadow-sky-200",
-    icon: "/images/icons8-twitter-logo.gif",
+    icon: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/telegram-Zsh1cuHtI9tmxUm9E19up6lNY3iSYW.png",
   },
   {
-    name: "Discord",
-    color: "from-indigo-600 to-indigo-700",
-    bgColor: "from-indigo-50 to-white",
-    borderColor: "border-indigo-100",
-    darkBg: "dark:from-indigo-900/10 dark:to-slate-800",
-    darkBorder: "dark:border-indigo-900/20",
-    textColor: "text-indigo-600",
-    buttonColor: "bg-indigo-600 hover:bg-indigo-700",
-    shadowColor: "shadow-indigo-200",
-    icon: "/images/icons8-discord.gif",
+    name: "Twitter",
+    color: "from-black to-slate-800",
+    bgColor: "from-slate-100/40 to-white/40",
+    borderColor: "border-slate-100",
+    darkBg: "dark:from-slate-900/5 dark:to-slate-800",
+    darkBorder: "dark:border-slate-900/20",
+    textColor: "text-slate-900",
+    buttonColor: "bg-slate-900 hover:bg-slate-700",
+    shadowColor: "shadow-slate-200",
+    icon: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/twitter-7UdPUD56etBYgs0HoboaabXKV4Bx0r.png",
   },
 ]
 
@@ -110,11 +98,14 @@ export function ServiceCards({ onSelectCategory, categories, services }: Service
   )
 
   return (
-    <div className="mt-12 px-3 md:px-6">
-      <div className="flex justify-between items-end mb-6">
+    <div className="mt-16 px-3 md:px-6">
+      <div className="flex justify-between items-end mb-8">
         <div>
-          <h2 className="text-xl md:text-2xl font-bold text-slate-900">Hot Services</h2>
-          <p className="text-slate-500 text-sm mt-1">Hand-picked best sellers</p>
+          <div className="flex items-center gap-3 mb-2">
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 font-poppins">Hot Offers</h2>
+            <span className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold font-poppins">🔥 Limited Time</span>
+          </div>
+          <p className="text-slate-500 text-sm mt-2">Hand-picked best sellers</p>
         </div>
       </div>
 

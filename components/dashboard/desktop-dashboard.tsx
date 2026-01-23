@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { placeOrder } from "@/app/actions/orders"
 import Link from "next/link"
+import { ServiceCards } from "./service-cards-section"
 import {
   Info,
   Star,
@@ -53,7 +54,7 @@ export function DesktopDashboard({
   const router = useRouter()
   const { toast } = useToast()
 
-  // Hardcoded icon mapping
+  // Hardcoded icon mapping - Using Blob Storage URLs
   const iconMap: Record<string, string> = {
     Instagram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-instagram-Y6Ka1ocAALzf5J8Hu64Toiy50JdPFd.gif",
     TikTok: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-tiktok-EzflMkAJ5ndq4gRIi5nzmBOoM1OvUF.gif",
@@ -74,6 +75,20 @@ export function DesktopDashboard({
       }
     }
     return undefined
+  }
+
+  const handleSelectCategory = (categoryName: string) => {
+    const selectedCat = categoriesWithServices.find((c) =>
+      c.name.toLowerCase().includes(categoryName.toLowerCase())
+    )
+    if (selectedCat) {
+      setSelectedCategory(selectedCat)
+      const firstService = services.find((s) => s.category_id === selectedCat.id)
+      if (firstService) {
+        setSelectedService(firstService)
+        setQuantity(firstService.min_quantity || 1000)
+      }
+    }
   }
 
   const totalPrice = useMemo(() => {
@@ -207,7 +222,19 @@ export function DesktopDashboard({
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 p-4 md:p-6">
+    <div className="min-h-screen dashboard-animated-bg relative">
+      {/* Animated background orbs */}
+      <div className="dashboard-blur-orb absolute top-10 right-20 w-96 h-96 bg-blue-500/10 pointer-events-none"></div>
+      <div className="dashboard-blur-orb absolute bottom-20 -left-20 w-full h-96 bg-purple-500/10 pointer-events-none" style={{ animationDelay: "3s" }}></div>
+      <div className="relative z-10">
+        <div className="max-w-7xl mx-auto space-y-6 p-4 md:p-6">
+      {/* Hot Services Cards Section */}
+      <ServiceCards
+        onSelectCategory={handleSelectCategory}
+        categories={categories}
+        services={services}
+      />
+
       {/* Stats Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
         {/* Balance Card */}
@@ -321,7 +348,7 @@ export function DesktopDashboard({
                           <div className="flex items-center gap-2">
                             {iconUrl && (
                               <img
-                                src={iconUrl}
+                                src={iconUrl || "/placeholder.svg"}
                                 alt={category.name}
                                 className="h-4 w-4 rounded object-contain"
                                 onError={(e) => {
@@ -375,7 +402,7 @@ export function DesktopDashboard({
                             <div className="flex items-center gap-2">
                               {iconUrl && (
                                 <img
-                                  src={iconUrl}
+                                  src={iconUrl || "/placeholder.svg"}
                                   alt={service.name}
                                   className="h-4 w-4 rounded object-contain"
                                   onError={(e) => {
@@ -599,6 +626,8 @@ export function DesktopDashboard({
               <ArrowRight className="w-4 h-4" />
             </button>
           </Link>
+        </div>
+      </div>
         </div>
       </div>
     </div>

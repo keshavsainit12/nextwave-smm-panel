@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { placeOrder } from "@/app/actions/orders"
 import Link from "next/link"
+import { MobileServiceCarousel } from "./mobile-service-carousel"
 import {
   Wallet,
   ShoppingCart,
@@ -74,7 +75,7 @@ export function MobileHighTrustDashboard({
     return categories.filter((category) => services.some((s) => s.category_id === category.id))
   }, [categories, services])
 
-  // Hardcoded icon mapping
+  // Hardcoded icon mapping - Using Blob Storage URLs
   const iconMap: Record<string, string> = {
     Instagram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-instagram-Y6Ka1ocAALzf5J8Hu64Toiy50JdPFd.gif",
     TikTok: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-tiktok-EzflMkAJ5ndq4gRIi5nzmBOoM1OvUF.gif",
@@ -87,7 +88,7 @@ export function MobileHighTrustDashboard({
     Spotify: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-spotify-2iAARTR3O1EPL2XispaD2uZe9tLu3S.gif",
   }
 
-  const getIconUrl = (categoryName: string): string | undefined => {
+  const getIconUrl = (categoryName: string) => {
     // Try exact match first
     if (iconMap[categoryName]) return iconMap[categoryName]
     // Try matching the start of the category name
@@ -220,438 +221,462 @@ export function MobileHighTrustDashboard({
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24">
-      {/* TopAppBar */}
-      <div className="sticky top-0 z-30 flex items-center bg-white p-4 pb-3 justify-between border-b border-slate-200">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border-2 border-blue-500/20">
-              <img
-                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${userName}`}
-                alt={userName}
-                className="w-full h-full rounded-full"
-              />
-            </div>
-            <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white rounded-full p-0.5 flex items-center justify-center border-2 border-white">
-              <BadgeCheck className="w-3 h-3" />
-            </div>
-          </div>
-          <div>
-            <p className="text-slate-500 text-xs font-medium">Premium Member</p>
-            <h2 className="text-slate-900 text-base font-bold leading-tight tracking-tight">Welcome, {userName}</h2>
-          </div>
-        </div>
-        <div className="flex items-center gap-1">
-          <button className="flex size-10 cursor-pointer items-center justify-center rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors">
-            <Bell className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-
-      <main className="max-w-md mx-auto px-3">
-        {/* Hero Balance Card */}
-        <div className="p-4 @container">
-          <div className="flex flex-col items-stretch justify-start rounded-2xl shadow-lg bg-gradient-to-br from-blue-600 to-blue-800 p-5 text-white">
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex flex-col">
-                <p className="text-white/80 text-sm font-medium leading-normal flex items-center gap-1">
-                  Total Balance
-                  <Info className="w-3.5 h-3.5" />
-                </p>
-                <p className="text-white text-3xl font-bold leading-tight tracking-tight mt-1">
-                  ${userBalance.toFixed(2)}
-                </p>
+    <div className="min-h-screen bg-slate-50 pb-24 dashboard-animated-bg relative">
+      {/* Animated background orbs */}
+      <div className="dashboard-blur-orb absolute top-20 right-10 w-72 h-72 bg-blue-500/10 pointer-events-none"></div>
+      <div className="dashboard-blur-orb absolute bottom-40 left-5 w-96 h-96 bg-purple-500/10 pointer-events-none" style={{ animationDelay: "2s" }}></div>
+      <div className="relative z-10">
+        {/* TopAppBar */}
+        <div className="sticky top-0 z-30 flex items-center bg-white p-4 pb-3 justify-between border-b border-slate-200">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border-2 border-blue-500/20">
+                <img
+                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${userName}`}
+                  alt={userName}
+                  className="w-full h-full rounded-full"
+                />
               </div>
-              <div className="bg-white/20 px-3 py-1.5 rounded-full backdrop-blur-sm">
-                <p className="text-xs font-bold text-white flex items-center gap-1">
-                  <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                  {totalOrders * 10} Pts
-                </p>
+              <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white rounded-full p-0.5 flex items-center justify-center border-2 border-white">
+                <BadgeCheck className="w-3 h-3" />
               </div>
             </div>
-            <div className="flex items-center gap-3 mt-2">
-              <Link href="/dashboard/deposit" className="flex-1">
-                <button className="w-full flex cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-xl h-12 bg-white text-blue-600 text-sm font-bold leading-normal hover:bg-blue-50 transition-colors">
-                  <PlusCircle className="w-5 h-5" />
-                  <span>Add Funds</span>
-                </button>
-              </Link>
-              <Link href="/dashboard/orders">
-                <button className="flex size-12 cursor-pointer items-center justify-center rounded-xl bg-white/20 text-white border border-white/30 backdrop-blur-sm hover:bg-white/30 transition-colors">
-                  <Wallet className="w-5 h-5" />
-                </button>
-              </Link>
+            <div>
+              <p className="text-slate-500 text-xs font-medium">Premium Member</p>
+              <h2 className="text-slate-900 text-base font-bold leading-tight tracking-tight">Welcome, {userName}</h2>
             </div>
+          </div>
+          <div className="flex items-center gap-1">
+            <button className="flex size-10 cursor-pointer items-center justify-center rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors">
+              <Bell className="w-5 h-5" />
+            </button>
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="flex flex-wrap gap-3 px-4 py-2">
-          <div className="flex min-w-[150px] flex-1 flex-col gap-1 rounded-xl p-4 bg-white border border-slate-200 shadow-sm">
-            <div className="flex items-center gap-2 text-slate-500">
-              <ShoppingCart className="w-4 h-4" />
-              <p className="text-xs font-medium uppercase tracking-wider">Active Orders</p>
-            </div>
-            <div className="flex items-end justify-between mt-1">
-              <p className="text-slate-900 text-2xl font-bold leading-none">{totalOrders}</p>
-              <p className="text-emerald-600 text-sm font-bold flex items-center bg-emerald-50 px-1.5 py-0.5 rounded">
-                <TrendingUp className="w-3 h-3 mr-0.5" />+{Math.floor(totalOrders / 10)}
-              </p>
-            </div>
-          </div>
-          <div className="flex min-w-[150px] flex-1 flex-col gap-1 rounded-xl p-4 bg-white border border-slate-200 shadow-sm">
-            <div className="flex items-center gap-2 text-slate-500">
-              <CreditCard className="w-4 h-4" />
-              <p className="text-xs font-medium uppercase tracking-wider">Lifetime Spent</p>
-            </div>
-            <div className="flex items-end justify-between mt-1">
-              <p className="text-slate-900 text-2xl font-bold leading-none">${totalSpent.toFixed(2)}</p>
-              <p className="text-emerald-600 text-sm font-bold flex items-center bg-emerald-50 px-1.5 py-0.5 rounded">
-                12%
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Section Header */}
-        <div className="flex items-center justify-between px-4 pb-3 pt-6">
-          <h2 className="text-slate-900 text-lg font-bold leading-tight tracking-tight">Quick Order</h2>
-          <Link href="/dashboard/orders">
-            <span className="text-blue-600 text-xs font-bold flex items-center gap-1 cursor-pointer hover:text-blue-700 transition-colors">
-              View Orders
-              <ChevronRight className="w-3.5 h-3.5" />
-            </span>
-          </Link>
-        </div>
-
-        <div className="pb-4">
-          {/* Quick Order Module */}
-          <form
-            onSubmit={handleSubmit}
-            className="p-5 bg-white rounded-xl border border-slate-200 shadow-sm space-y-4 overflow-hidden"
-          >
-            <div className="flex flex-col gap-2">
-              <p className="text-slate-900 text-sm font-semibold">Select Category</p>
-              <Select
-                value={selectedCategory?.id || ""}
-                onValueChange={(value) => {
-                  const category = categoriesWithServices.find((c) => c.id === value)
-                  if (category) {
-                    setSelectedCategory(category)
-                    const firstService = services.find((s) => s.category_id === category.id)
-                    if (firstService) {
-                      setSelectedService(firstService)
-                      setQuantity(firstService.min_quantity || 1000)
-                    } else {
-                      setSelectedService(null)
-                    }
+        <main className="max-w-md mx-auto px-3">
+          {/* Mobile Service Carousel - Auto-scrolling slideshow */}
+          <div className="mb-8">
+            <MobileServiceCarousel
+              onSelectCategory={(categoryName: string) => {
+                const selectedCat = categoriesWithServices.find((c) =>
+                  c.name.toLowerCase().includes(categoryName.toLowerCase())
+                )
+                if (selectedCat) {
+                  setSelectedCategory(selectedCat)
+                  const firstService = services.find((s) => s.category_id === selectedCat.id)
+                  if (firstService) {
+                    setSelectedService(firstService)
+                    setQuantity(firstService.min_quantity || 1000)
                   }
-                }}
-              >
-                <SelectTrigger className="w-full h-12 rounded-xl border-slate-200">
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent
-                  className="w-[var(--radix-select-trigger-width)] max-h-[160px] overflow-y-auto"
-                  side="bottom"
-                  align="start"
-                  position="popper"
-                  sideOffset={4}
-                >
-                  {categoriesWithServices.map((category) => {
-                    const iconUrl = getIconUrl(category.name)
-                    return (
-                      <SelectItem key={category.id} value={category.id} className="truncate text-ellipsis">
-                        <div className="flex items-center gap-2">
-                          {iconUrl && (
-                            <img
-                              src={iconUrl}
-                              alt={category.name}
-                              className="h-5 w-5 rounded object-contain flex-shrink-0"
-                              onError={(e) => {
-                                e.currentTarget.style.display = "none"
-                              }}
-                            />
-                          )}
-                          <span>{category.name}</span>
-                        </div>
-                      </SelectItem>
-                    )
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
+                }
+              }}
+            />
+          </div>
 
-            {selectedCategory && filteredServices.length === 0 && (
-              <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                <Info className="w-4 h-4 text-amber-600" />
-                <p className="text-sm text-amber-800 font-medium">
-                  No services available in this category. Please select another category.
+          {/* Hero Balance Card */}
+          <div className="p-4 @container">
+            <div className="flex flex-col items-stretch justify-start rounded-2xl shadow-lg bg-gradient-to-br from-blue-600 to-blue-800 p-5 text-white">
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex flex-col">
+                  <p className="text-white/80 text-sm font-medium leading-normal flex items-center gap-1">
+                    Total Balance
+                    <Info className="w-3.5 h-3.5" />
+                  </p>
+                  <p className="text-white text-3xl font-bold leading-tight tracking-tight mt-1">
+                    ${userBalance.toFixed(2)}
+                  </p>
+                </div>
+                <div className="bg-white/20 px-3 py-1.5 rounded-full backdrop-blur-sm">
+                  <p className="text-xs font-bold text-white flex items-center gap-1">
+                    <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                    {totalOrders * 10} Pts
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 mt-2">
+                <Link href="/dashboard/deposit" className="flex-1">
+                  <button className="w-full flex cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-xl h-12 bg-white text-blue-600 text-sm font-bold leading-normal hover:bg-blue-50 transition-colors">
+                    <PlusCircle className="w-5 h-5" />
+                    <span>Add Funds</span>
+                  </button>
+                </Link>
+                <Link href="/dashboard/orders">
+                  <button className="flex size-12 cursor-pointer items-center justify-center rounded-xl bg-white/20 text-white border border-white/30 backdrop-blur-sm hover:bg-white/30 transition-colors">
+                    <Wallet className="w-5 h-5" />
+                  </button>
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Stats Grid */}
+          <div className="flex flex-wrap gap-3 px-4 py-2">
+            <div className="flex min-w-[150px] flex-1 flex-col gap-1 rounded-xl p-4 bg-white border border-slate-200 shadow-sm">
+              <div className="flex items-center gap-2 text-slate-500">
+                <ShoppingCart className="w-4 h-4" />
+                <p className="text-xs font-medium uppercase tracking-wider">Active Orders</p>
+              </div>
+              <div className="flex items-end justify-between mt-1">
+                <p className="text-slate-900 text-2xl font-bold leading-none">{totalOrders}</p>
+                <p className="text-emerald-600 text-sm font-bold flex items-center bg-emerald-50 px-1.5 py-0.5 rounded">
+                  <TrendingUp className="w-3 h-3 mr-0.5" />+{Math.floor(totalOrders / 10)}
                 </p>
               </div>
-            )}
+            </div>
+            <div className="flex min-w-[150px] flex-1 flex-col gap-1 rounded-xl p-4 bg-white border border-slate-200 shadow-sm">
+              <div className="flex items-center gap-2 text-slate-500">
+                <CreditCard className="w-4 h-4" />
+                <p className="text-xs font-medium uppercase tracking-wider">Lifetime Spent</p>
+              </div>
+              <div className="flex items-end justify-between mt-1">
+                <p className="text-slate-900 text-2xl font-bold leading-none">${totalSpent.toFixed(2)}</p>
+                <p className="text-emerald-600 text-sm font-bold flex items-center bg-emerald-50 px-1.5 py-0.5 rounded">
+                  12%
+                </p>
+              </div>
+            </div>
+          </div>
 
-            {filteredServices.length > 0 && (
-              <>
-                <div className="flex flex-col gap-2">
-                  <div className="flex justify-between items-center">
-                    <p className="text-slate-900 text-sm font-semibold">Select Service</p>
-                    <span className="text-xs text-blue-600 font-medium flex items-center gap-1 bg-blue-50 px-2 py-0.5 rounded-full">
-                      <CheckCircle2 className="w-3 h-3" /> High Quality
-                    </span>
-                  </div>
-                  <Select
-                    value={selectedService?.id || ""}
-                    onValueChange={(value) => {
-                      const service = filteredServices.find((s) => s.id === value)
-                      if (service) {
-                        setSelectedService(service)
-                        setQuantity(service.min_quantity || 1000)
+          {/* Section Header */}
+          <div className="flex items-center justify-between px-4 pb-3 pt-6">
+            <h2 className="text-slate-900 text-lg font-bold leading-tight tracking-tight">Quick Order</h2>
+            <Link href="/dashboard/orders">
+              <span className="text-blue-600 text-xs font-bold flex items-center gap-1 cursor-pointer hover:text-blue-700 transition-colors">
+                View Orders
+                <ChevronRight className="w-3.5 h-3.5" />
+              </span>
+            </Link>
+          </div>
+
+          <div className="pb-4">
+            {/* Quick Order Module */}
+            <form
+              onSubmit={handleSubmit}
+              className="p-5 bg-white rounded-xl border border-slate-200 shadow-sm space-y-4 overflow-hidden"
+            >
+              <div className="flex flex-col gap-2">
+                <p className="text-slate-900 text-sm font-semibold">Select Category</p>
+                <Select
+                  value={selectedCategory?.id || ""}
+                  onValueChange={(value) => {
+                    const category = categoriesWithServices.find((c) => c.id === value)
+                    if (category) {
+                      setSelectedCategory(category)
+                      const firstService = services.find((s) => s.category_id === category.id)
+                      if (firstService) {
+                        setSelectedService(firstService)
+                        setQuantity(firstService.min_quantity || 1000)
+                      } else {
+                        setSelectedService(null)
                       }
-                    }}
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-full h-12 rounded-xl border-slate-200">
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                  <SelectContent
+                    className="w-[var(--radix-select-trigger-width)] max-h-[160px] overflow-y-auto"
+                    side="bottom"
+                    align="start"
+                    position="popper"
+                    sideOffset={4}
                   >
-                    <SelectTrigger className="w-full h-12 rounded-xl border-slate-200">
-                      <SelectValue placeholder="Select a service" />
-                    </SelectTrigger>
-                    <SelectContent
-                      className="w-[var(--radix-select-trigger-width)] max-h-[160px] overflow-y-auto"
-                      side="bottom"
-                      align="start"
-                      position="popper"
-                      sideOffset={4}
+                    {categoriesWithServices.map((category) => {
+                      const iconUrl = getIconUrl(category.name)
+                      return (
+                        <SelectItem key={category.id} value={category.id} className="truncate text-ellipsis">
+                          <div className="flex items-center gap-2">
+                            {iconUrl && (
+                              <img
+                                src={iconUrl || "/placeholder.svg"}
+                                alt={category.name}
+                                className="h-5 w-5 rounded object-contain flex-shrink-0"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = "none"
+                                }}
+                              />
+                            )}
+                            <span>{category.name}</span>
+                          </div>
+                        </SelectItem>
+                      )
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {selectedCategory && filteredServices.length === 0 && (
+                <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                  <Info className="w-4 h-4 text-amber-600" />
+                  <p className="text-sm text-amber-800 font-medium">
+                    No services available in this category. Please select another category.
+                  </p>
+                </div>
+              )}
+
+              {filteredServices.length > 0 && (
+                <>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex justify-between items-center">
+                      <p className="text-slate-900 text-sm font-semibold">Select Service</p>
+                      <span className="text-xs text-blue-600 font-medium flex items-center gap-1 bg-blue-50 px-2 py-0.5 rounded-full">
+                        <CheckCircle2 className="w-3 h-3" /> High Quality
+                      </span>
+                    </div>
+                    <Select
+                      value={selectedService?.id || ""}
+                      onValueChange={(value) => {
+                        const service = filteredServices.find((s) => s.id === value)
+                        if (service) {
+                          setSelectedService(service)
+                          setQuantity(service.min_quantity || 1000)
+                        }
+                      }}
                     >
-                      {filteredServices.map((service) => {
-                        const iconUrl = getIconUrl(service.name)
-                        return (
-                          <SelectItem key={service.id} value={service.id} className="truncate text-ellipsis">
-                            <div className="flex items-center gap-2">
-                              {iconUrl && (
-                                <img
-                                  src={iconUrl}
-                                  alt={service.name}
-                                  className="h-5 w-5 rounded object-contain flex-shrink-0"
-                                  onError={(e) => {
-                                    e.currentTarget.style.display = "none"
-                                  }}
-                                />
-                              )}
-                              <span>{service.name} - ${Number(service.price || service.base_price || 0).toFixed(2)}/1k</span>
-                            </div>
-                          </SelectItem>
-                        )
-                      })}
-                    </SelectContent>
-                  </Select>
-                  {selectedService && (
-                    <div className="text-xs text-slate-500 bg-slate-50 p-2.5 rounded-lg">
-                      <div className="flex justify-between">
-                        <span>Min: {selectedService.min_quantity}</span>
-                        <span>Max: {selectedService.max_quantity?.toLocaleString()}</span>
-                        <span className="font-bold text-blue-600">
-                          ${Number(selectedService.price || selectedService.base_price || 0).toFixed(4)}/1k
+                      <SelectTrigger className="w-full h-12 rounded-xl border-slate-200">
+                        <SelectValue placeholder="Select a service" />
+                      </SelectTrigger>
+                      <SelectContent
+                        className="w-[var(--radix-select-trigger-width)] max-h-[160px] overflow-y-auto"
+                        side="bottom"
+                        align="start"
+                        position="popper"
+                        sideOffset={4}
+                      >
+                        {filteredServices.map((service) => {
+                          const iconUrl = getIconUrl(service.name)
+                          return (
+                            <SelectItem key={service.id} value={service.id} className="truncate text-ellipsis">
+                              <div className="flex items-center gap-2">
+                                {iconUrl && (
+                                  <img
+                                    src={iconUrl || "/placeholder.svg"}
+                                    alt={service.name}
+                                    className="h-5 w-5 rounded object-contain flex-shrink-0"
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = "none"
+                                    }}
+                                  />
+                                )}
+                                <span>{service.name} - ${Number(service.price || service.base_price || 0).toFixed(2)}/1k</span>
+                              </div>
+                            </SelectItem>
+                          )
+                        })}
+                      </SelectContent>
+                    </Select>
+                    {selectedService && (
+                      <div className="text-xs text-slate-500 bg-slate-50 p-2.5 rounded-lg">
+                        <div className="flex justify-between">
+                          <span>Min: {selectedService.min_quantity}</span>
+                          <span>Max: {selectedService.max_quantity?.toLocaleString()}</span>
+                          <span className="font-bold text-blue-600">
+                            ${Number(selectedService.price || selectedService.base_price || 0).toFixed(4)}/1k
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-100">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <Package className="w-5 h-5 text-blue-600" />
+                        <p className="text-slate-900 text-sm font-bold">Bulk Buy</p>
+                        <span className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+                          Save 16%
                         </span>
+                      </div>
+                      <p className="text-[10px] text-slate-500 font-medium">Min. 10,000 units · Better pricing</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleBulkToggle}
+                      className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
+                        isBulkBuy ? "bg-blue-600" : "bg-slate-300"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform ${
+                          isBulkBuy ? "translate-x-6" : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {isBulkBuy && savings > 0 && (
+                    <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                      <Sparkles className="w-4 h-4 text-emerald-600" />
+                      <div className="flex-1">
+                        <p className="text-xs font-bold text-emerald-700">You're saving ${savings.toFixed(2)}!</p>
+                        <p className="text-[10px] text-slate-500 font-medium">Bulk pricing: 2.5x vs Regular: 3x</p>
                       </div>
                     </div>
                   )}
-                </div>
 
-                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-100">
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-slate-900 text-sm font-semibold">Target URL / Username *</label>
+                    <input
+                      type="text"
+                      placeholder="https://instagram.com/username or post URL"
+                      required
+                      value={link}
+                      onChange={(e) => setLink(e.target.value)}
+                      disabled={loading}
+                      className="form-input flex w-full rounded-xl text-slate-900 border border-slate-200 h-12 px-4 text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+                    />
+                    <p className="text-[10px] text-slate-500 font-medium">Enter the profile or post URL you want to boost</p>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <div className="flex justify-between items-center">
+                      <p className="text-slate-900 text-sm font-semibold">Quantity</p>
+                      <p className="text-xs text-slate-500">
+                        {selectedService?.min_quantity} - {selectedService?.max_quantity?.toLocaleString()}
+                      </p>
+                    </div>
+
+                    {/* Quantity Input */}
+                    <input
+                      type="number"
+                      value={quantity}
+                      onChange={(e) => handleQuantityChange(Number.parseInt(e.target.value) || 0)}
+                      className="form-input flex w-full rounded-xl text-slate-900 border border-slate-200 h-12 px-4 text-sm font-bold text-center focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+                      min={selectedService?.min_quantity || 100}
+                      max={selectedService?.max_quantity || 1000000}
+                    />
+
+                    {/* Quantity Buttons Below */}
                     <div className="flex items-center gap-2">
-                      <Package className="w-5 h-5 text-blue-600" />
-                      <p className="text-slate-900 text-sm font-bold">Bulk Buy</p>
-                      <span className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
-                        Save 16%
+                      <button
+                        type="button"
+                        onClick={() => handleQuantityChange(quantity - 1000)}
+                        disabled={quantity <= (selectedService?.min_quantity || 100)}
+                        className="flex-1 flex items-center justify-center gap-1 h-10 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Minus className="w-4 h-4" />
+                        <span>1000</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleQuantityChange(quantity - 100)}
+                        disabled={quantity <= (selectedService?.min_quantity || 100)}
+                        className="flex-1 flex items-center justify-center gap-1 h-10 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Minus className="w-4 h-4" />
+                        <span>100</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleQuantityChange(quantity + 100)}
+                        disabled={quantity >= (selectedService?.max_quantity || 1000000)}
+                        className="flex-1 flex items-center justify-center gap-1 h-10 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>100</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleQuantityChange(quantity + 1000)}
+                        disabled={quantity >= (selectedService?.max_quantity || 1000000)}
+                        className="flex-1 flex items-center justify-center gap-1 h-10 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>1000</span>
+                      </button>
+                    </div>
+
+                    {/* Bulk Buy Info */}
+                    {isBulkBuy && (
+                      <p className="text-xs text-blue-600 font-medium text-center">
+                        Bulk pricing applied · Minimum 10,000 units
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="w-5 h-5 text-blue-600" />
+                      <span className="text-slate-900 text-sm font-semibold">Total Charge</span>
+                    </div>
+                    <span className="text-xl font-bold text-blue-600">${totalPrice.toFixed(2)}</span>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading || !selectedService || !link.trim()}
+                    className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl h-14 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-base font-bold leading-normal transition-all hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/25"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingCart className="w-5 h-5" />
+                        Place Order
+                      </>
+                    )}
+                  </button>
+                </>
+              )}
+            </form>
+          </div>
+
+          {/* Order History Section */}
+          {recentOrders && recentOrders.length > 0 && (
+            <div className="pb-4">
+              <h3 className="text-slate-900 text-base font-bold px-4 pt-4 pb-2">Recent Orders</h3>
+              <div className="space-y-2 px-4">
+                {recentOrders.map((order) => (
+                  <div
+                    key={order.id}
+                    className="p-3 bg-white border border-slate-200 rounded-lg flex items-center justify-between hover:bg-slate-50 transition-colors"
+                  >
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-slate-900">{order.services?.name}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {order.quantity?.toLocaleString()} units • Order #{order.id?.slice(0, 8)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-slate-900">${(order.price || 0).toFixed(2)}</p>
+                      <span
+                        className={`text-xs font-semibold rounded-full px-2 py-0.5 inline-block mt-1 ${
+                          order.status === "completed"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : order.status === "processing"
+                              ? "bg-blue-100 text-blue-700"
+                              : "bg-amber-100 text-amber-700"
+                        }`}
+                      >
+                        {order.status?.charAt(0).toUpperCase() + order.status?.slice(1)}
                       </span>
                     </div>
-                    <p className="text-[10px] text-slate-500 font-medium">Min. 10,000 units · Better pricing</p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleBulkToggle}
-                    className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
-                      isBulkBuy ? "bg-blue-600" : "bg-slate-300"
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform ${
-                        isBulkBuy ? "translate-x-6" : "translate-x-1"
-                      }`}
-                    />
-                  </button>
-                </div>
-
-                {isBulkBuy && savings > 0 && (
-                  <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
-                    <Sparkles className="w-4 h-4 text-emerald-600" />
-                    <div className="flex-1">
-                      <p className="text-xs font-bold text-emerald-700">You're saving ${savings.toFixed(2)}!</p>
-                      <p className="text-[10px] text-slate-500 font-medium">Bulk pricing: 2.5x vs Regular: 3x</p>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-slate-900 text-sm font-semibold">Target URL / Username *</label>
-                  <input
-                    type="text"
-                    placeholder="https://instagram.com/username or post URL"
-                    required
-                    value={link}
-                    onChange={(e) => setLink(e.target.value)}
-                    disabled={loading}
-                    className="form-input flex w-full rounded-xl text-slate-900 border border-slate-200 h-12 px-4 text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
-                  />
-                  <p className="text-[10px] text-slate-500 font-medium">Enter the profile or post URL you want to boost</p>
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <div className="flex justify-between items-center">
-                    <p className="text-slate-900 text-sm font-semibold">Quantity</p>
-                    <p className="text-xs text-slate-500">
-                      {selectedService?.min_quantity} - {selectedService?.max_quantity?.toLocaleString()}
-                    </p>
-                  </div>
-
-                  {/* Quantity Input */}
-                  <input
-                    type="number"
-                    value={quantity}
-                    onChange={(e) => handleQuantityChange(Number.parseInt(e.target.value) || 0)}
-                    className="form-input flex w-full rounded-xl text-slate-900 border border-slate-200 h-12 px-4 text-sm font-bold text-center focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
-                    min={selectedService?.min_quantity || 100}
-                    max={selectedService?.max_quantity || 1000000}
-                  />
-
-                  {/* Quantity Buttons Below */}
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleQuantityChange(quantity - 1000)}
-                      disabled={quantity <= (selectedService?.min_quantity || 100)}
-                      className="flex-1 flex items-center justify-center gap-1 h-10 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Minus className="w-4 h-4" />
-                      <span>1000</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleQuantityChange(quantity - 100)}
-                      disabled={quantity <= (selectedService?.min_quantity || 100)}
-                      className="flex-1 flex items-center justify-center gap-1 h-10 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Minus className="w-4 h-4" />
-                      <span>100</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleQuantityChange(quantity + 100)}
-                      disabled={quantity >= (selectedService?.max_quantity || 1000000)}
-                      className="flex-1 flex items-center justify-center gap-1 h-10 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>100</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleQuantityChange(quantity + 1000)}
-                      disabled={quantity >= (selectedService?.max_quantity || 1000000)}
-                      className="flex-1 flex items-center justify-center gap-1 h-10 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>1000</span>
-                    </button>
-                  </div>
-
-                  {/* Bulk Buy Info */}
-                  {isBulkBuy && (
-                    <p className="text-xs text-blue-600 font-medium text-center">
-                      Bulk pricing applied · Minimum 10,000 units
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
-                  <div className="flex items-center gap-2">
-                    <CreditCard className="w-5 h-5 text-blue-600" />
-                    <span className="text-slate-900 text-sm font-semibold">Total Charge</span>
-                  </div>
-                  <span className="text-xl font-bold text-blue-600">${totalPrice.toFixed(2)}</span>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading || !selectedService || !link.trim()}
-                  className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl h-14 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-base font-bold leading-normal transition-all hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/25"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <ShoppingCart className="w-5 h-5" />
-                      Place Order
-                    </>
-                  )}
-                </button>
-              </>
-            )}
-          </form>
-        </div>
-
-        {/* Order History Section */}
-        {recentOrders && recentOrders.length > 0 && (
-          <div className="pb-4">
-            <h3 className="text-slate-900 text-base font-bold px-4 pt-4 pb-2">Recent Orders</h3>
-            <div className="space-y-2 px-4">
-              {recentOrders.map((order) => (
-                <div
-                  key={order.id}
-                  className="p-3 bg-white border border-slate-200 rounded-lg flex items-center justify-between hover:bg-slate-50 transition-colors"
-                >
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-slate-900">{order.services?.name}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      {order.quantity?.toLocaleString()} units • Order #{order.id?.slice(0, 8)}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-bold text-slate-900">${(order.price || 0).toFixed(2)}</p>
-                    <span
-                      className={`text-xs font-semibold rounded-full px-2 py-0.5 inline-block mt-1 ${
-                        order.status === "completed"
-                          ? "bg-emerald-100 text-emerald-700"
-                          : order.status === "processing"
-                            ? "bg-blue-100 text-blue-700"
-                            : "bg-amber-100 text-amber-700"
-                      }`}
-                    >
-                      {order.status?.charAt(0).toUpperCase() + order.status?.slice(1)}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
-      </main>
+          )}
+        </main>
 
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-4 py-2 flex justify-around items-center">
-        <Link href="/dashboard" className="flex flex-col items-center gap-1 py-2 flex-1 cursor-pointer">
-          <Home className="w-5 h-5 text-blue-600" />
-          <p className="text-xs font-semibold text-blue-600">Dashboard</p>
-        </Link>
-        <Link href="/dashboard/orders" className="flex flex-col items-center gap-1 py-2 flex-1 cursor-pointer">
-          <ListOrdered className="w-5 h-5 text-slate-600" />
-          <p className="text-xs font-semibold text-slate-600">Orders</p>
-        </Link>
-        <Link href="/dashboard/profile" className="flex flex-col items-center gap-1 py-2 flex-1 cursor-pointer">
-          <UserCircle className="w-5 h-5 text-slate-600" />
-          <p className="text-xs font-semibold text-slate-600">Profile</p>
-        </Link>
+        {/* Bottom Navigation */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-4 py-2 flex justify-around items-center z-20">
+          <Link href="/dashboard" className="flex flex-col items-center gap-1 py-2 flex-1 cursor-pointer">
+            <Home className="w-5 h-5 text-blue-600" />
+            <p className="text-xs font-semibold text-blue-600">Dashboard</p>
+          </Link>
+          <Link href="/dashboard/orders" className="flex flex-col items-center gap-1 py-2 flex-1 cursor-pointer">
+            <ListOrdered className="w-5 h-5 text-slate-600" />
+            <p className="text-xs font-semibold text-slate-600">Orders</p>
+          </Link>
+          <Link href="/dashboard/profile" className="flex flex-col items-center gap-1 py-2 flex-1 cursor-pointer">
+            <UserCircle className="w-5 h-5 text-slate-600" />
+            <p className="text-xs font-semibold text-slate-600">Profile</p>
+          </Link>
+        </div>
       </div>
     </div>
   )

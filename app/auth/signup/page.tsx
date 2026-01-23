@@ -1,17 +1,21 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { CardContent } from "@/components/ui/card"
+import { CardDescription } from "@/components/ui/card"
+import { CardTitle } from "@/components/ui/card"
+import { CardHeader } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import type React from "react"
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Loader2 } from "lucide-react"
+import { ArrowLeft, Loader2, Check } from "lucide-react"
 import { signupUser } from "@/app/actions/auth"
+import Image from "next/image"
 
 export default function SignupPage() {
   const [email, setEmail] = useState("")
@@ -20,32 +24,37 @@ export default function SignupPage() {
   const [fullName, setFullName] = useState("")
   const [referralCode, setReferralCode] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const router = useRouter()
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError(null)
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match")
-      setIsLoading(false)
-      return
-    }
-
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters")
-      setIsLoading(false)
-      return
-    }
-
+  const validateForm = () => {
     if (!fullName.trim()) {
       setError("Full name is required")
-      setIsLoading(false)
-      return
+      return false
     }
+    if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      setError("Please enter a valid email")
+      return false
+    }
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters")
+      return false
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match")
+      return false
+    }
+    return true
+  }
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!validateForm()) return
+
+    setIsLoading(true)
+    setError(null)
 
     try {
       const result = await signupUser({
@@ -65,14 +74,14 @@ export default function SignupPage() {
         password,
       })
 
-      if (loginError) {
-        throw loginError
-      }
+      if (loginError) throw loginError
 
-      router.push("/dashboard")
+      setSuccess(true)
+      setTimeout(() => {
+        router.push("/dashboard")
+      }, 2000)
     } catch (error: unknown) {
       let errorMessage = "An error occurred during signup"
-
       if (error instanceof Error) {
         if (error.message.includes("already registered") || error.message.includes("already exists")) {
           errorMessage = "This email is already registered. Please login instead."
@@ -80,7 +89,6 @@ export default function SignupPage() {
           errorMessage = error.message
         }
       }
-
       setError(errorMessage)
       setIsLoading(false)
     }
@@ -108,7 +116,7 @@ export default function SignupPage() {
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 overflow-hidden bg-transparent">
       {/* Animated blob background */}
-      <div className="fixed inset-0 -z-10 overflow-hidden">
+      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
         <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-500/20 rounded-full mix-blend-multiply filter blur-3xl opacity-60 animate-blob"></div>
         <div className="absolute top-1/3 -right-4 w-72 h-72 bg-blue-500/20 rounded-full mix-blend-multiply filter blur-3xl opacity-60 animate-blob animation-delay-2000"></div>
         <div className="absolute -bottom-8 left-1/3 w-72 h-72 bg-pink-500/20 rounded-full mix-blend-multiply filter blur-3xl opacity-60 animate-blob animation-delay-4000"></div>
@@ -121,16 +129,13 @@ export default function SignupPage() {
             Back to home
           </Link>
         </div>
-        <Card className="bg-white/90 backdrop-blur border-slate-200/50 shadow-2xl hover:shadow-3xl transition-all duration-300">
+        <Card className="bg-white/80 backdrop-blur border-slate-200/50 shadow-2xl hover:shadow-3xl transition-all duration-300">
           <CardHeader className="space-y-4 pb-6">
             <div className="flex justify-center">
-              <Image
-                src="/logo.png"
+              <img
+                src="/nextwave-logo.png"
                 alt="NextWave SMM"
-                width={600}
-                height={150}
                 className="w-40 sm:w-44 h-auto"
-                priority
               />
             </div>
             <div className="space-y-2 text-center">

@@ -3,6 +3,216 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Font Configuration */
+@theme {
+  --font-poppins: var(--font-poppins, system-ui);
+}
+
+/* Floating Animations */
+@keyframes float-bubble {
+  0% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(40px, -60px) scale(1.05); }
+  66% { transform: translate(-30px, 30px) scale(0.95); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+@keyframes drift-sphere {
+  0% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(5deg); }
+  100% { transform: translateY(0) rotate(0deg); }
+}
+
+@keyframes parallax-slow {
+  0% { transform: translateY(0) translateX(0); }
+  100% { transform: translateY(-30px) translateX(15px); }
+}
+
+.bg-immersive-motion {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  background: radial-gradient(circle at 50% 50%, #f0f7ff 0%, #ffffff 100%);
+  overflow: hidden;
+}
+
+.dark .bg-immersive-motion {
+  background: radial-gradient(circle at 50% 50%, #0a0e1a 0%, #050811 100%);
+}
+
+.blue-bubble {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.3;
+  animation: float-bubble 25s infinite ease-in-out;
+  background: radial-gradient(circle, #0055FF 0%, transparent 70%);
+}
+
+.glass-sphere {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.2), 0 10px 30px rgba(0, 85, 255, 0.1);
+  animation: drift-sphere 15s infinite ease-in-out;
+}
+
+.floating-icon {
+  position: absolute;
+  z-index: 1;
+  opacity: 0.25;
+  filter: drop-shadow(0 0 10px rgba(0, 85, 255, 0.3));
+  animation: parallax-slow 12s infinite alternate ease-in-out;
+  color: #0055FF;
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .floating-icon {
+    display: block;
+  }
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .glass-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.service-card:hover {
+  transform: translateY(-8px);
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 30px 60px -15px rgba(0, 85, 255, 0.15);
+}
+
+.dark .service-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(0, 85, 255, 0.3);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #0055FF, #6699FF);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.shadow-premium {
+  box-shadow: 0 15px 50px -10px rgba(0, 85, 255, 0.2);
+}
+
+.quick-order-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(0, 85, 255, 0.15);
+}
+
+.dark .quick-order-panel {
+  background: rgba(10, 14, 26, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Blob Animation */
+@keyframes blob {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(20px, -50px) scale(1.1);
+  }
+  50% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  75% {
+    transform: translate(50px, 50px) scale(1.05);
+  }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+/* Smooth background animations */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes float-animation {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(-20px) translateX(10px);
+    opacity: 0.8;
+  }
+}
+
+@keyframes blur-animation {
+  0%, 100% {
+    filter: blur(40px);
+    transform: scale(1);
+  }
+  50% {
+    filter: blur(60px);
+    transform: scale(1.1);
+  }
+}
+
+.dashboard-animated-bg {
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.08),
+    rgba(139, 92, 246, 0.08),
+    rgba(59, 130, 246, 0.08)
+  );
+  background-size: 200% 200%;
+  animation: gradient-shift 15s ease infinite;
+  position: relative;
+}
+
+.dashboard-blur-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(40px);
+  animation: blur-animation 8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);

@@ -22,10 +22,15 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // Public routes that don't need authentication
   if (
     request.nextUrl.pathname.startsWith("/auth") ||
     request.nextUrl.pathname === "/" ||
-    request.nextUrl.pathname.startsWith("/api/admin")
+    request.nextUrl.pathname.startsWith("/api/v1") ||
+    request.nextUrl.pathname.startsWith("/api/admin") ||
+    request.nextUrl.pathname.startsWith("/privacy") ||
+    request.nextUrl.pathname.startsWith("/terms") ||
+    request.nextUrl.pathname.startsWith("/refund")
   ) {
     return NextResponse.next()
   }
@@ -67,6 +72,10 @@ export async function updateSession(request: NextRequest) {
 
     return supabaseResponse
   } catch (error) {
+    // Handle abort errors gracefully - don't log them as they're expected
+    if (error instanceof Error && error.name === "AbortError") {
+      return NextResponse.next()
+    }
     console.error("[v0] Middleware error:", error)
     return NextResponse.next()
   }
