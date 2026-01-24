@@ -9,6 +9,14 @@ import { ArrowLeft, Loader2 } from "lucide-react"
 import { signupUser, verifyRecaptcha } from "@/app/actions/auth"
 import Script from "next/script"
 
+// Declare global to avoid TypeScript errors
+declare global {
+  interface Window {
+    handleRecaptchaChange: (token: string) => void
+    grecaptcha?: any
+  }
+}
+
 function SignupContent() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -23,13 +31,17 @@ function SignupContent() {
   const router = useRouter()
 
   useEffect(() => {
-    // Setup reCAPTCHA callback
-    window.handleRecaptchaChange = (token: string) => {
+    // Setup reCAPTCHA callback - make it globally accessible
+    const handleRecaptchaChange = (token: string) => {
+      console.log("[v0] reCAPTCHA token received:", token ? "Valid" : "Invalid")
       setCaptchaToken(token)
       if (error === "Please complete the reCAPTCHA verification") {
         setError(null)
       }
     }
+    
+    // Assign to window so reCAPTCHA can call it
+    window.handleRecaptchaChange = handleRecaptchaChange
   }, [error])
 
   const validateForm = () => {
@@ -58,7 +70,12 @@ function SignupContent() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!validateForm()) return
+    console.log("[v0] Signup form submitted - Captcha token:", captchaToken ? "Present" : "Missing")
+    
+    if (!validateForm()) {
+      console.log("[v0] Form validation failed")
+      return
+    }
 
     setIsLoading(true)
     setError(null)
@@ -66,12 +83,16 @@ function SignupContent() {
     try {
       // Verify reCAPTCHA token
       if (captchaToken) {
+        console.log("[v0] Verifying reCAPTCHA token...")
         const recaptchaResult = await verifyRecaptcha(captchaToken)
+        console.log("[v0] reCAPTCHA verification result:", recaptchaResult)
+        
         if (!recaptchaResult.success) {
           throw new Error("reCAPTCHA verification failed. Please try again.")
         }
       }
 
+      console.log("[v0] Creating user account...")
       const result = await signupUser({
         email,
         password,
@@ -83,6 +104,7 @@ function SignupContent() {
         throw new Error(result.error || "Signup failed")
       }
 
+      console.log("[v0] User account created, attempting auto-login...")
       const supabase = createClient()
       const { error: loginError } = await supabase.auth.signInWithPassword({
         email,
@@ -98,6 +120,7 @@ function SignupContent() {
     } catch (error: unknown) {
       let errorMessage = "An error occurred during signup"
       if (error instanceof Error) {
+        console.error("[v0] Signup error:", error.message)
         if (error.message.includes("already registered") || error.message.includes("already exists")) {
           errorMessage = "This email is already registered. Please login instead."
         } else {
@@ -115,18 +138,21 @@ function SignupContent() {
     const supabase = createClient()
 
     try {
+      const callbackUrl = `${window.location.origin}/auth/callback`
+      console.log("[v0] Starting Google sign-up with callback URL:", callbackUrl)
+      
       // Supabase will use the callback URL configured in Supabase Dashboard
       // NOT the redirectTo parameter - redirectTo is only for custom redirects
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: callbackUrl,
         },
       })
       if (error) throw error
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : "Google sign-up failed"
-      console.error("[v0] Google sign-up error:", errorMsg)
+      console.error("[v0] Google sign-up error:", errorMsg, err)
       setError(errorMsg)
       setIsGoogleLoading(false)
     }
@@ -164,10 +190,23 @@ function SignupContent() {
     <div className="relative flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 overflow-hidden bg-transparent">
       <Script
         src="https://www.google.com/recaptcha/api.js"
+        strategy="afterInteractive"
         async
         defer
         onLoad={() => {
-          console.log("[v0] reCAPTCHA script loaded")
+          console.log("[v0] reCAPTCHA API script loaded successfully")
+          // Force reCAPTCHA to render after script loads
+          if (window.grecaptcha && window.grecaptcha.render) {
+            setTimeout(() => {
+              window.grecaptcha.render("recaptcha-container", {
+                sitekey: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
+                callback: "handleRecaptchaChange",
+              })
+            }, 100)
+          }
+        }}
+        onError={() => {
+          console.error("[v0] Failed to load reCAPTCHA script")
         }}
       />
 
@@ -284,8 +323,9 @@ function SignupContent() {
 
             <div className="flex justify-center py-4">
               <div
-                className="g_recaptcha"
-                data-sitekey="6Lea01QsAAAAAG7Wv83BSoSV7NWF14KLe6poX4As"
+                id="recaptcha-container"
+                className="g_recaptcha flex justify-center"
+                data-sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
                 data-callback="handleRecaptchaChange"
               />
             </div>

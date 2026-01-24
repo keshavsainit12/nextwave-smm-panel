@@ -48,15 +48,15 @@
 1. Application type: "Web application" select karo
 2. **Name:** `NextWave NextJS App`
 3. "Authorized JavaScript origins" section mein click "Add URI":
-   ```
+   \`\`\`
    http://localhost:3000
    https://nextwavesmm.com
-   ```
+   \`\`\`
 4. "Authorized redirect URIs" section mein click "Add URI":
-   ```
+   \`\`\`
    http://localhost:3000/auth/callback
    https://nextwavesmm.com/auth/callback
-   ```
+   \`\`\`
 5. "CREATE" button click karo
 
 ---
@@ -67,10 +67,10 @@ Ek popup aayega jisme:
 - **Client Secret** dikhega (copy karo)
 
 **Example format:**
-```
+\`\`\`
 Client ID: 123456789-abc123def456.apps.googleusercontent.com
 Client Secret: GOCSPX-xyz123abc456
-```
+\`\`\`
 
 ---
 

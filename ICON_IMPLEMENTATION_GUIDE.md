@@ -54,17 +54,17 @@ Complete animated GIF icon system integrated into the SMM panel for services and
 ## Database Schema
 
 ### Services Table
-```sql
+\`\`\`sql
 ALTER TABLE services ADD COLUMN IF NOT EXISTS icon TEXT;
 -- Stores URL to animated GIF icon
 -- Example: https://blob.vercel-storage.com/service-instagram-abc123.gif
-```
+\`\`\`
 
 ### Service Categories Table
-```sql
+\`\`\`sql
 -- Already has icon column
 -- Used for category tab icons
-```
+\`\`\`
 
 ---
 
@@ -142,7 +142,7 @@ Features:
 ## Technical Details
 
 ### Icon Display Logic
-```tsx
+\`\`\`tsx
 {service.icon && (
   <img
     src={service.icon}
@@ -153,7 +153,7 @@ Features:
     }}
   />
 )}
-```
+\`\`\`
 
 ### Error Handling
 - If icon URL is invalid or fails to load, the `onError` handler hides the image
@@ -172,7 +172,7 @@ Features:
 ## Examples
 
 ### Facebook Service Icon
-```
+\`\`\`
 Name: Facebook Followers (High Quality)
 Category: Facebook
 Icon URL: https://blob.vercel-storage.com/facebook-icon-gif-abc123.gif
@@ -181,17 +181,17 @@ Displayed In:
 - Quick order form category/service dropdowns
 - Recent orders card
 - Order history table
-```
+\`\`\`
 
 ### Instagram Category Icon
-```
+\`\`\`
 Name: Instagram
 Icon URL: https://blob.vercel-storage.com/instagram-category-icon-abc123.gif
 Displayed In:
 - Service catalog category tabs
 - Quick order form category dropdown
 - Desktop/mobile dashboards
-```
+\`\`\`
 
 ---
 

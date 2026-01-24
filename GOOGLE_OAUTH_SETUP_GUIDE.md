@@ -73,16 +73,16 @@ Fill these fields:
 4. Enter Name: `NextWave SMM Web`
 
 **Add Authorized JavaScript origins:**
-```
+\`\`\`
 http://localhost:3000
 https://nextwavesmm.com
-```
+\`\`\`
 
 **Add Authorized redirect URIs:**
-```
+\`\`\`
 http://localhost:3000/auth/callback
 https://nextwavesmm.com/auth/callback
-```
+\`\`\`
 
 5. Click **"CREATE"**
 6. Copy these values:

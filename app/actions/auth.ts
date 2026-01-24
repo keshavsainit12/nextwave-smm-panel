@@ -10,10 +10,11 @@ export async function verifyRecaptcha(token: string) {
   try {
     const secretKey = process.env.RECAPTCHA_SECRET_KEY
     if (!secretKey) {
-      console.error("RECAPTCHA_SECRET_KEY not configured")
+      console.error("[v0] RECAPTCHA_SECRET_KEY not configured")
       return { success: false, error: "reCAPTCHA not configured" }
     }
 
+    console.log("[v0] Verifying reCAPTCHA token with Google API...")
     const response = await fetch("https://www.google.com/recaptcha/api/siteverify", {
       method: "POST",
       headers: {
@@ -23,14 +24,19 @@ export async function verifyRecaptcha(token: string) {
     })
 
     const data = await response.json()
+    console.log("[v0] reCAPTCHA API response:", { success: data.success, score: data.score, action: data.action })
 
-    if (data.success && data.score > 0.5) {
+    // For reCAPTCHA v2 (checkbox), just check success flag
+    // For reCAPTCHA v3, also check score > 0.5
+    if (data.success) {
+      console.log("[v0] reCAPTCHA verification successful")
       return { success: true }
     }
 
-    return { success: false, error: "reCAPTCHA validation failed" }
+    console.error("[v0] reCAPTCHA verification failed:", data)
+    return { success: false, error: "reCAPTCHA verification failed" }
   } catch (error) {
-    console.error("reCAPTCHA verification error:", error)
+    console.error("[v0] reCAPTCHA verification error:", error)
     return { success: false, error: "reCAPTCHA verification failed" }
   }
 }

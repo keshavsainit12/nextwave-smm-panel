@@ -38,7 +38,7 @@
 
 ## User Journey
 
-```
+\`\`\`
 USER DASHBOARD
     ↓
 Dashboard → API Access
@@ -54,14 +54,14 @@ Make API calls with Authorization header
 Get all services with custom pricing
     ↓
 Place orders, check balance, track status
-```
+\`\`\`
 
 ---
 
 ## API Integration Example
 
 ### Python
-```python
+\`\`\`python
 import requests
 
 API_KEY = "nw_your_key_here"
@@ -88,10 +88,10 @@ order = requests.post(f"{BASE_URL}/order", headers=headers, json={
 }).json()
 
 print(f"Order ID: {order['order_id']}")
-```
+\`\`\`
 
 ### JavaScript/Node.js
-```javascript
+\`\`\`javascript
 const API_KEY = "nw_your_key_here";
 const BASE_URL = "https://nextwavesmm.com/api/v1";
 
@@ -115,10 +115,10 @@ fetch(`${BASE_URL}/order`, {
     quantity: 1000
   })
 }).then(r => r.json()).then(console.log);
-```
+\`\`\`
 
 ### cURL
-```bash
+\`\`\`bash
 # Get services
 curl -X GET "https://nextwavesmm.com/api/v1/services" \
   -H "Authorization: Bearer YOUR_API_KEY"
@@ -132,7 +132,7 @@ curl -X POST "https://nextwavesmm.com/api/v1/order" \
     "link": "https://instagram.com/username",
     "quantity": 1000
   }'
-```
+\`\`\`
 
 ---
 
@@ -190,13 +190,13 @@ curl -X POST "https://nextwavesmm.com/api/v1/order" \
 4. **Automatic Calculation:** All API responses use user's multiplier
 
 ### Example
-```
+\`\`\`
 Provider charges: $1.00 per 1000 followers
 Admin sets your multiplier: 3.0x
 Your API price: $3.00 per 1000 followers
 Your customer buys 1000: You charge $3.00
 Profit: $2.00 per order
-```
+\`\`\`
 
 ---
 

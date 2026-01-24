@@ -5,10 +5,10 @@
 Add these environment variables to your Vercel project:
 
 ### reCAPTCHA Keys
-```
+\`\`\`
 RECAPTCHA_SECRET_KEY=6Lea01QsAAAAAFmpctyqalpZY9iGhywZrEMKAD3F
 NEXT_PUBLIC_RECAPTCHA_SITE_KEY=6Lea01QsAAAAAG7Wv83BSoSV7NWF14KLe6poX4As
-```
+\`\`\`
 
 ### How to Add in Vercel:
 1. Go to your Vercel Project Settings

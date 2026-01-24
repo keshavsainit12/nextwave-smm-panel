@@ -10,7 +10,7 @@
 ## 1. API PROVIDER SYNC AUTOMATION FLOW
 
 ### When you ADD a new API Provider:
-```
+\`\`\`
 Admin clicks "Sync Services" → 
 Backend fetches provider details → 
 Calls SMM API with provider credentials → 
@@ -18,7 +18,7 @@ Receives full service list from API →
 AUTOMATICALLY creates categories → 
 AUTOMATICALLY calculates prices → 
 UPSERTS all services into database
-```
+\`\`\`
 
 ### What happens automatically (Lines 39-157 in `/app/api/admin/sync-services/route.ts`):
 
@@ -36,14 +36,14 @@ UPSERTS all services into database
    - Assigns unique IDs for linking
 
 3. **Service Data Processing** (Lines 101-142)
-   ```
+   \`\`\`
    For each service from API:
    - Category assignment (automatic detection from name)
    - Price calculation: provider_price × multiplier (default 3.0x)
    - Min/Max quantity from API
    - Service features (refill, cancel, dripfeed) detection
    - Status: automatically set to active
-   ```
+   \`\`\`
 
 4. **Smart UPSERT** (Line 134-142)
    - Uses unique constraint: `external_service_id + provider_id`
@@ -68,18 +68,18 @@ UPSERTS all services into database
 ### Icon Update CASCADE System:
 
 **When you update ONE category icon:**
-```
+\`\`\`
 Admin updates category icon → 
 Backend finds category by name → 
 Updates category icon (1 query) → 
 Updates ALL services under that category (cascade) → 
 Updates any duplicate category names (safety) → 
 Invalidates cache tags for real-time update
-```
+\`\`\`
 
 ### Complete Flow (Lines 1-56 in `/app/api/icons/update-category/route.ts`):
 
-```typescript
+\`\`\`typescript
 // Step 1: Find category by name
 SELECT id FROM service_categories WHERE name = categoryName
 
@@ -96,7 +96,7 @@ UPDATE service_categories SET icon = iconUrl WHERE name = categoryName
 revalidateTag('services')
 revalidateTag('categories')
 revalidateTag('icons')
-```
+\`\`\`
 
 **Automation Features:**
 - ✅ Single icon change → auto-applies to entire category
@@ -112,9 +112,9 @@ revalidateTag('icons')
 ### When you DELETE an API Provider:
 
 **Database Schema (Line 76 in `001_create_tables.sql`):**
-```sql
+\`\`\`sql
 provider_id UUID REFERENCES api_providers(id) ON DELETE SET NULL
-```
+\`\`\`
 
 **What happens:**
 - ✅ Provider gets deleted
@@ -164,7 +164,7 @@ provider_id UUID REFERENCES api_providers(id) ON DELETE SET NULL
 ## 6. EXAMPLE SCENARIOS
 
 ### Scenario 1: Adding New API Provider
-```
+\`\`\`
 1. Admin adds: "NewProvider API" with URL & key
 2. Admin clicks "Sync Services"
 3. Backend fetches 500 services from NewProvider
@@ -173,26 +173,26 @@ provider_id UUID REFERENCES api_providers(id) ON DELETE SET NULL
 6. Auto-calculates prices: Provider $5 → Sell $15 (5 × 3.0)
 7. All 500 services now available to users
 ✅ DONE - No manual work needed
-```
+\`\`\`
 
 ### Scenario 2: Updating Instagram Category Icon
-```
+\`\`\`
 1. Admin uploads Instagram.png in Icon Manager
 2. Backend updates service_categories table (Instagram icon)
 3. Backend auto-updates ALL services with category_id=instagram_id
 4. Invalidates cache tags
 5. UI refreshes → All Instagram services show new icon
 ✅ DONE - All services updated automatically
-```
+\`\`\`
 
 ### Scenario 3: New Service Feature (Example: "Refill" available)
-```
+\`\`\`
 1. API provider updates their service data
 2. Next sync detects: refill = true for service X
 3. Auto-updates service record with has_refill = true
 4. Service now shows refill option in UI
 ✅ DONE - Feature automatically enabled
-```
+\`\`\`
 
 ---
 

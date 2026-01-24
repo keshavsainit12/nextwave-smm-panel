@@ -1,62 +1,41 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
+import { createClient } from "@/lib/supabase/server"
+import { redirect } from "next/navigation"
+import UserSettingsForm from "@/components/dashboard/user-settings-form"
 
-export default function SettingsPage() {
+export const metadata = {
+  title: "Settings | NextWave SMM",
+  description: "Manage your account settings and preferences",
+}
+
+export default async function SettingsPage() {
+  const supabase = await createClient()
+
+  // Get current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect("/auth/login")
+  }
+
+  // Get user profile data
+  const { data: userData } = await supabase.from("users").select("*").eq("id", user.id).single()
+
+  if (!userData) {
+    redirect("/auth/login")
+  }
+
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground mt-2">Manage your account preferences</p>
-      </div>
-
-      {/* Settings Cards */}
-      <div className="space-y-6">
-        {/* Notifications */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Notifications</CardTitle>
-            <CardDescription>Control how you receive notifications</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Checkbox id="order-notif" defaultChecked />
-              <label htmlFor="order-notif" className="text-sm font-medium cursor-pointer">
-                Order Notifications
-              </label>
-            </div>
-            <div className="flex items-center gap-3">
-              <Checkbox id="email-updates" defaultChecked />
-              <label htmlFor="email-updates" className="text-sm font-medium cursor-pointer">
-                Email Updates
-              </label>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Security */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Security</CardTitle>
-            <CardDescription>Manage your account security</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Checkbox id="two-factor" />
-              <label htmlFor="two-factor" className="text-sm font-medium cursor-pointer">
-                Two-Factor Authentication
-              </label>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Save Button */}
-        <div className="flex gap-3">
-          <Button className="bg-blue-600 hover:bg-blue-700">Save Settings</Button>
-          <Button variant="outline">Cancel</Button>
-        </div>
-      </div>
+    <div className="p-4 sm:p-6">
+      <UserSettingsForm
+        userData={{
+          email: user.email || "",
+          full_name: userData.full_name || "",
+          language: userData.language || "English",
+          two_factor_enabled: userData.two_factor_enabled || false,
+        }}
+      />
     </div>
   )
 }

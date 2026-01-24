@@ -72,6 +72,8 @@ export function UserList({ users }: { users: any[] }) {
           <TableHead>Tier</TableHead>
           <TableHead>Balance</TableHead>
           <TableHead>Total Orders</TableHead>
+          <TableHead>Language</TableHead>
+          <TableHead>2FA</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>Joined</TableHead>
           <TableHead className="text-right">Actions</TableHead>
@@ -91,6 +93,14 @@ export function UserList({ users }: { users: any[] }) {
             </TableCell>
             <TableCell className="font-mono">${user.balance?.toFixed(2) || "0.00"}</TableCell>
             <TableCell>{user.total_orders || 0}</TableCell>
+            <TableCell>
+              <Badge variant="outline">{user.language || "English"}</Badge>
+            </TableCell>
+            <TableCell>
+              <Badge variant={user.two_factor_enabled ? "default" : "secondary"}>
+                {user.two_factor_enabled ? "Enabled" : "Disabled"}
+              </Badge>
+            </TableCell>
             <TableCell>
               <Badge variant={user.status === "active" ? "default" : "destructive"}>{user.status || "active"}</Badge>
             </TableCell>

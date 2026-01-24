@@ -15,18 +15,18 @@ Your SMM panel provides a complete REST API for programmatic access to all servi
 
 ### 2. Using Your API Key
 Include your API key in request headers:
-```
+\`\`\`
 Authorization: Bearer YOUR_API_KEY_HERE
-```
+\`\`\`
 
 ---
 
 ## API Endpoints
 
 ### Base URL
-```
+\`\`\`
 https://nextwavesmm.com/api/v1
-```
+\`\`\`
 
 ---
 
@@ -39,12 +39,12 @@ https://nextwavesmm.com/api/v1
 **Description:** Get all active services with their details
 
 **Headers:**
-```
+\`\`\`
 Authorization: Bearer YOUR_API_KEY
-```
+\`\`\`
 
 **Response:**
-```json
+\`\`\`json
 {
   "status": "success",
   "services": [
@@ -62,7 +62,7 @@ Authorization: Bearer YOUR_API_KEY
   ],
   "categories": ["Instagram", "TikTok", "YouTube"]
 }
-```
+\`\`\`
 
 ---
 
@@ -75,17 +75,17 @@ Authorization: Bearer YOUR_API_KEY
 **Description:** Check your current account balance
 
 **Headers:**
-```
+\`\`\`
 Authorization: Bearer YOUR_API_KEY
-```
+\`\`\`
 
 **Response:**
-```json
+\`\`\`json
 {
   "status": "success",
   "balance": 150.50
 }
-```
+\`\`\`
 
 ---
 
@@ -98,37 +98,37 @@ Authorization: Bearer YOUR_API_KEY
 **Description:** Place a new service order
 
 **Headers:**
-```
+\`\`\`
 Authorization: Bearer YOUR_API_KEY
 Content-Type: application/json
-```
+\`\`\`
 
 **Request Body:**
-```json
+\`\`\`json
 {
   "service_id": "service-uuid",
   "link": "https://instagram.com/username",
   "quantity": 1000
 }
-```
+\`\`\`
 
 **Response:**
-```json
+\`\`\`json
 {
   "status": "success",
   "order_id": "order-uuid",
   "charge": 2.99,
   "order_status": "pending"
 }
-```
+\`\`\`
 
 **Error Responses:**
-```json
+\`\`\`json
 {
   "status": "error",
   "message": "Insufficient balance"
 }
-```
+\`\`\`
 
 ---
 
@@ -141,15 +141,15 @@ Content-Type: application/json
 **Description:** Check the status of an order
 
 **Headers:**
-```
+\`\`\`
 Authorization: Bearer YOUR_API_KEY
-```
+\`\`\`
 
 **Query Parameters:**
 - `order_id` (required): The order ID to check
 
 **Response:**
-```json
+\`\`\`json
 {
   "status": "success",
   "order_id": "order-uuid",
@@ -159,7 +159,7 @@ Authorization: Bearer YOUR_API_KEY
   "remains": 1000,
   "link": "https://instagram.com/username"
 }
-```
+\`\`\`
 
 ---
 
@@ -181,35 +181,35 @@ Authorization: Bearer YOUR_API_KEY
 ## Error Handling
 
 ### Authentication Errors (401)
-```json
+\`\`\`json
 {
   "status": "error",
   "message": "Missing API key"
 }
-```
+\`\`\`
 
 ### Validation Errors (400)
-```json
+\`\`\`json
 {
   "status": "error",
   "message": "Missing required fields"
 }
-```
+\`\`\`
 
 ### Server Errors (500)
-```json
+\`\`\`json
 {
   "status": "error",
   "message": "Internal server error"
 }
-```
+\`\`\`
 
 ---
 
 ## Code Examples
 
 ### Python
-```python
+\`\`\`python
 import requests
 
 BASE_URL = "https://nextwavesmm.com/api/v1"
@@ -238,10 +238,10 @@ order_data = {
 response = requests.post(f"{BASE_URL}/order", json=order_data, headers=headers)
 order = response.json()
 print(f"Order ID: {order['order_id']}")
-```
+\`\`\`
 
 ### JavaScript/Node.js
-```javascript
+\`\`\`javascript
 const API_KEY = "your_api_key_here";
 const BASE_URL = "https://nextwavesmm.com/api/v1";
 
@@ -280,10 +280,10 @@ async function placeOrder(serviceId, link, quantity) {
 getServices().then(console.log);
 getBalance().then(console.log);
 placeOrder("service-uuid", "https://instagram.com/username", 1000).then(console.log);
-```
+\`\`\`
 
 ### cURL
-```bash
+\`\`\`bash
 # Get services
 curl -X GET "https://nextwavesmm.com/api/v1/services" \
   -H "Authorization: Bearer your_api_key_here"
@@ -305,7 +305,7 @@ curl -X POST "https://nextwavesmm.com/api/v1/order" \
 # Check order status
 curl -X GET "https://nextwavesmm.com/api/v1/order?order_id=order-uuid" \
   -H "Authorization: Bearer your_api_key_here"
-```
+\`\`\`
 
 ---
 

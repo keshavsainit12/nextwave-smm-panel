@@ -82,16 +82,16 @@
 ## 📝 Files Created/Modified
 
 ### New Files
-```
+\`\`\`
 /app/actions/icons.ts                              - Icon update actions
 /components/admin/icon-upload-dialog.tsx           - Upload component
 /app/admin-panel-2024/manage-icons/page.tsx       - Icon management page
 /ICON_IMPLEMENTATION_GUIDE.md                      - Detailed documentation
 /ICON_SETUP_SUMMARY.md                             - This file
-```
+\`\`\`
 
 ### Modified Files
-```
+\`\`\`
 /components/dashboard/service-card.tsx             - Added icon display
 /components/dashboard/service-catalog.tsx          - Added category icons
 /components/dashboard/desktop-dashboard.tsx        - Added icon indicators
@@ -102,14 +102,14 @@
 /components/admin/order-list.tsx                   - Added service icons
 /components/admin/service-list.tsx                 - Added service icons
 /scripts/add-icons-to-services.sql                 - Migration (already run)
-```
+\`\`\`
 
 ---
 
 ## 🎨 Icon Display Examples
 
 ### Service Card
-```
+\`\`\`
 ┌─────────────────────────┐
 │ 🎯 Instagram Followers  │  ← Icon + name
 │ Facebook Category       │
@@ -118,29 +118,29 @@
 │    Min: 100  Max: 100k  │
 │  [Order Now Button]     │
 └─────────────────────────┘
-```
+\`\`\`
 
 ### Category Tabs
-```
+\`\`\`
 All Services | 🎯 Facebook | 📷 Instagram | 👥 TikTok | 💬 Twitter
-```
+\`\`\`
 
 ### Service Dropdown
-```
+\`\`\`
 Select Service ▼
 🎯 Instagram Followers - $0.50/1k
 🎯 Instagram Likes - $0.30/1k
 🎯 Instagram Comments - $1.00/1k
-```
+\`\`\`
 
 ### Order History
-```
+\`\`\`
 ┌──────────────────────────────────────────┐
 │ 🎯 Instagram Followers  | $50 | Completed
 │ 📷 TikTok Views        | $25 | Processing
 │ 👥 Twitter Followers   | $30 | Pending
 └──────────────────────────────────────────┘
-```
+\`\`\`
 
 ---
 
@@ -173,17 +173,17 @@ Select Service ▼
 ## 🔧 Technical Implementation
 
 ### Icon Field
-```sql
+\`\`\`sql
 -- Services table
 ALTER TABLE services ADD COLUMN IF NOT EXISTS icon TEXT;
 -- Stores URL: https://blob.vercel-storage.com/service-icon.gif
 
 -- Service Categories table
 -- Already has icon field
-```
+\`\`\`
 
 ### React Component Pattern
-```tsx
+\`\`\`tsx
 {service.icon && (
   <img
     src={service.icon}
@@ -192,17 +192,17 @@ ALTER TABLE services ADD COLUMN IF NOT EXISTS icon TEXT;
     onError={(e) => e.currentTarget.style.display = "none"}
   />
 )}
-```
+\`\`\`
 
 ### Server Action Example
-```tsx
+\`\`\`tsx
 export async function updateServiceIcon(serviceId: string, iconUrl: string) {
   // Validate URL
   // Update database
   // Revalidate pages
   // Return success
 }
-```
+\`\`\`
 
 ---
 
