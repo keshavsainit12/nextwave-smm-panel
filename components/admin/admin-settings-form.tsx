@@ -1,35 +1,37 @@
 "use client"
 
-import React from "react"
-
-import { useState } from "react"
+import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Checkbox } from "@/components/ui/checkbox"
 import { AlertTriangle, CheckCircle, Loader2 } from "lucide-react"
-import { changeAdminPassword } from "@/app/actions/admin-settings"
+import { changeAdminPassword, changeAdminUsername, enableAdmin2FA, disableAdmin2FA } from "@/app/actions/admin-settings"
 import { toast } from "sonner"
 
-interface AdminSettingsPageProps {
+interface AdminSettingsFormProps {
   userId: string
   userEmail: string
 }
 
-export default function AdminSettingsPage({ userId, userEmail }: AdminSettingsPageProps) {
+export default function AdminSettingsForm({ userId, userEmail }: AdminSettingsFormProps) {
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [currentUsername, setCurrentUsername] = useState("admin202502")
   const [newUsername, setNewUsername] = useState("")
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false)
   const [loadingPassword, setLoadingPassword] = useState(false)
   const [loadingUsername, setLoadingUsername] = useState(false)
+  const [loading2FA, setLoading2FA] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [usernameError, setUsernameError] = useState<string | null>(null)
+  const [error2FA, setError2FA] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [usernameSuccess, setUsernameSuccess] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [success2FA, setSuccess2FA] = useState(false)
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -84,29 +86,53 @@ export default function AdminSettingsPage({ userId, userEmail }: AdminSettingsPa
         throw new Error("New username must be different from current username")
       }
 
-      const response = await fetch("/api/admin/change-username", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ newUsername }),
+      const result = await changeAdminUsername({
+        userId,
+        newUsername,
       })
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to change username")
+      if (result.success) {
+        toast.success("Username changed successfully")
+        setCurrentUsername(newUsername)
+        setNewUsername("")
+        setUsernameSuccess(true)
+        setTimeout(() => setUsernameSuccess(false), 5000)
+      } else {
+        throw new Error(result.error || "Failed to change username")
       }
-
-      toast.success("Username changed successfully")
-      setCurrentUsername(newUsername)
-      setNewUsername("")
-      setUsernameSuccess(true)
-      setTimeout(() => setUsernameSuccess(false), 5000)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "An error occurred"
       setUsernameError(errorMessage)
       toast.error(errorMessage)
     } finally {
       setLoadingUsername(false)
+    }
+  }
+
+  const handleToggle2FA = async () => {
+    setError2FA(null)
+    setSuccess2FA(false)
+    setLoading2FA(true)
+
+    try {
+      const result = twoFactorEnabled
+        ? await disableAdmin2FA(userId)
+        : await enableAdmin2FA(userId)
+
+      if (result.success) {
+        setTwoFactorEnabled(!twoFactorEnabled)
+        toast.success(result.message || "Two-factor authentication updated successfully")
+        setSuccess2FA(true)
+        setTimeout(() => setSuccess2FA(false), 5000)
+      } else {
+        throw new Error(result.error || "Failed to update 2FA settings")
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "An error occurred"
+      setError2FA(errorMessage)
+      toast.error(errorMessage)
+    } finally {
+      setLoading2FA(false)
     }
   }
 
@@ -342,6 +368,82 @@ export default function AdminSettingsPage({ userId, userEmail }: AdminSettingsPa
               </Button>
             </div>
           </form>
+        </CardContent>
+      </Card>
+
+      {/* Two-Factor Authentication */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Two-Factor Authentication</CardTitle>
+          <CardDescription>Add an extra layer of security to your admin account</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            {/* Success Alert */}
+            {success2FA && (
+              <Alert className="border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/20">
+                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <AlertTitle className="text-green-900 dark:text-green-100">Success</AlertTitle>
+                <AlertDescription className="text-green-800 dark:text-green-200">
+                  Two-factor authentication settings have been updated successfully.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Error Alert */}
+            {error2FA && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error2FA}</AlertDescription>
+              </Alert>
+            )}
+
+            {/* 2FA Toggle */}
+            <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border">
+              <Checkbox
+                id="two-factor"
+                checked={twoFactorEnabled}
+                onCheckedChange={() => handleToggle2FA()}
+                disabled={loading2FA}
+              />
+              <div className="flex-1">
+                <label htmlFor="two-factor" className="text-sm font-medium cursor-pointer">
+                  Enable Two-Factor Authentication
+                </label>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  When enabled, you'll need to enter a verification code sent to your email when logging into the admin panel. This provides enhanced security for your account.
+                </p>
+              </div>
+            </div>
+
+            {twoFactorEnabled && (
+              <Alert className="border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/20">
+                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <AlertTitle className="text-green-900 dark:text-green-100">Enabled</AlertTitle>
+                <AlertDescription className="text-green-800 dark:text-green-200">
+                  Two-factor authentication is now active. You will receive a verification code via email during login.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {!twoFactorEnabled && (
+              <Alert className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/20">
+                <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <AlertTitle className="text-amber-900 dark:text-amber-100">Disabled</AlertTitle>
+                <AlertDescription className="text-amber-800 dark:text-amber-200">
+                  Two-factor authentication is not active. We recommend enabling it for better security.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {loading2FA && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Updating settings...
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>

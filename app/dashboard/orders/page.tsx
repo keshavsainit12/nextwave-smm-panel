@@ -1,8 +1,13 @@
 import { createClient } from "@/lib/supabase/server"
 import { MobileOrdersHistory } from "@/components/dashboard/mobile-orders-history"
 import { redirect } from "next/navigation"
+import { Suspense } from "react"
 
-export default async function OrdersPage() {
+interface OrdersPageProps {
+  searchParams: { page?: string }
+}
+
+async function OrdersContent({ page = 1 }: { page: number }) {
   const supabase = await createClient()
   const {
     data: { user },
@@ -12,11 +17,26 @@ export default async function OrdersPage() {
     redirect("/auth/login")
   }
 
-  const { data: orders } = await supabase
+  const pageSize = 20
+  const offset = (page - 1) * pageSize
+
+  // Fetch paginated orders
+  const { data: orders, error: ordersError } = await supabase
     .from("orders")
     .select("*, services(id, name, icon, platform, has_refill, category_id, service_categories(id, name, icon))")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
+    .range(offset, offset + pageSize - 1)
+
+  // Get total count for pagination
+  const { count: totalOrders } = await supabase
+    .from("orders")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+
+  if (ordersError) {
+    console.error("[v0] Orders fetch error:", ordersError)
+  }
 
   // Transform orders to use category icon if service icon is missing
   const transformedOrders = orders?.map((order: any) => ({
@@ -26,6 +46,8 @@ export default async function OrdersPage() {
       icon: order.services?.icon || order.services?.service_categories?.icon,
     },
   })) || []
+
+  const totalPages = Math.ceil((totalOrders || 0) / pageSize)
 
   return (
     <>
@@ -118,7 +140,85 @@ export default async function OrdersPage() {
             <p className="text-gray-600 dark:text-gray-400">No orders yet</p>
           </div>
         )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Showing {offset + 1} to {Math.min(offset + pageSize, totalOrders || 0)} of {totalOrders} orders
+            </p>
+            <div className="flex gap-2">
+              <a
+                href={`/dashboard/orders${page > 1 ? `?page=${page - 1}` : ""}`}
+                className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                  page === 1
+                    ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                    : "border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-900/30"
+                }`}
+                aria-disabled={page === 1}
+              >
+                Previous
+              </a>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                  .map((p, idx, arr) => (
+                    <div key={p}>
+                      {idx > 0 && arr[idx - 1] !== p - 1 && <span className="text-gray-400">...</span>}
+                      <a
+                        href={`/dashboard/orders?page=${p}`}
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          p === page
+                            ? "bg-blue-600 text-white"
+                            : "border border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-900/30"
+                        }`}
+                      >
+                        {p}
+                      </a>
+                    </div>
+                  ))}
+              </div>
+              <a
+                href={`/dashboard/orders?page=${page + 1}`}
+                className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                  page === totalPages
+                    ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                    : "border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-900/30"
+                }`}
+                aria-disabled={page === totalPages}
+              >
+                Next
+              </a>
+            </div>
+          </div>
+        )}
       </div>
     </>
   )
 }
+
+export default async function OrdersPage({ searchParams }: OrdersPageProps) {
+  const page = parseInt(searchParams?.page || "1", 10)
+
+  return (
+    <Suspense fallback={<OrdersPageSkeleton />}>
+      <OrdersContent page={page} />
+    </Suspense>
+  )
+}
+
+function OrdersPageSkeleton() {
+  return (
+    <div className="hidden lg:block space-y-6 p-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">My Orders</h1>
+        <p className="text-muted-foreground">View and manage your order history</p>
+      </div>
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="animate-pulse space-y-2">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-12 bg-gray-100 dark:bg-gray-700"></div>
+          ))}
+        </div>
+      </div>
+    </div>

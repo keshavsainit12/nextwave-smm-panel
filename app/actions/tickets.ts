@@ -21,12 +21,13 @@ export async function createTicket(formData: FormData) {
         subject: formData.get("subject") as string,
         priority: formData.get("priority") as string,
         status: "open",
-        order_id: formData.get("order_id") as string | null,
+        created_at: new Date().toISOString(),
       })
       .select()
       .single()
 
     if (ticketError) {
+      console.error("[v0] Ticket creation error:", ticketError)
       return { success: false, error: ticketError.message }
     }
 
@@ -35,9 +36,11 @@ export async function createTicket(formData: FormData) {
       user_id: user.id,
       message: formData.get("message") as string,
       is_admin: false,
+      created_at: new Date().toISOString(),
     })
 
     if (messageError) {
+      console.error("[v0] Message creation error:", messageError)
       return { success: false, error: messageError.message }
     }
 
@@ -45,6 +48,7 @@ export async function createTicket(formData: FormData) {
 
     return { success: true, ticketId: ticket.id }
   } catch (error) {
+    console.error("[v0] Unexpected error in createTicket:", error)
     return { success: false, error: "An unexpected error occurred" }
   }
 }

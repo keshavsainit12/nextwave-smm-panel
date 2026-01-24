@@ -12,21 +12,27 @@ import { updateUserProfile, updateUserPassword, enableTwoFactorAuth, disableTwoF
 import { createClient } from '@/lib/supabase/client'
 
 interface UserData {
+  id: string
   email: string
   full_name: string
+  username?: string
   language?: string
+  currency?: string
   two_factor_enabled?: boolean
 }
 
 export default function UserSettingsForm({ userData }: { userData: UserData }) {
   const [formData, setFormData] = useState({
     full_name: userData.full_name || '',
+    username: userData.username || '',
     language: userData.language || 'English',
+    currency: userData.currency || 'USD',
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   })
 
+  const [changedFields, setChangedFields] = useState<Set<string>>(new Set())
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(userData.two_factor_enabled || false)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
@@ -45,31 +51,55 @@ export default function UserSettingsForm({ userData }: { userData: UserData }) {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
+    setChangedFields(prev => new Set(prev).add(name))
   }
 
   const handleLanguageChange = (value: string) => {
     setFormData(prev => ({ ...prev, language: value }))
+    setChangedFields(prev => new Set(prev).add('language'))
+  }
+
+  const handleCurrencyChange = (value: string) => {
+    setFormData(prev => ({ ...prev, currency: value }))
+    setChangedFields(prev => new Set(prev).add('currency'))
   }
 
   const handleSaveProfile = async () => {
     if (!userId) return
+    if (changedFields.size === 0) {
+      setMessage({ type: 'error', text: 'No changes to save' })
+      return
+    }
+
+    // Confirm currency changes
+    if (changedFields.has('currency') && formData.currency !== userData.currency) {
+      if (!confirm(`Changing currency from ${userData.currency} to ${formData.currency} will affect all future pricing. Continue?`)) {
+        return
+      }
+    }
 
     setLoading(true)
     setMessage(null)
 
     try {
-      const result = await updateUserProfile(userId, {
-        full_name: formData.full_name,
-        language: formData.language,
+      const updates: any = {}
+      changedFields.forEach(field => {
+        updates[field] = formData[field as keyof typeof formData]
       })
+
+      console.log("[v0] Saving profile changes:", updates)
+
+      const result = await updateUserProfile(userId, updates)
 
       if (result.success) {
         setMessage({ type: 'success', text: 'Profile updated successfully!' })
+        setChangedFields(new Set())
       } else {
         setMessage({ type: 'error', text: result.error || 'Failed to update profile' })
       }
     } catch (error) {
       setMessage({ type: 'error', text: error instanceof Error ? error.message : 'An error occurred' })
+      console.error("[v0] Profile save error:", error)
     } finally {
       setLoading(false)
     }
@@ -190,15 +220,16 @@ export default function UserSettingsForm({ userData }: { userData: UserData }) {
 
             {/* Username */}
             <div className="space-y-2">
-              <Label htmlFor="full_name" className="text-sm font-medium">Username</Label>
+              <Label htmlFor="username" className="text-sm font-medium">Username</Label>
               <Input
-                id="full_name"
-                name="full_name"
+                id="username"
+                name="username"
                 type="text"
-                value={formData.full_name}
+                value={formData.username}
                 onChange={handleInputChange}
-                placeholder="Enter your full name"
+                placeholder="Enter your username"
               />
+              <p className="text-xs text-gray-500">Your unique username for the platform</p>
             </div>
 
             {/* Language */}
@@ -216,6 +247,27 @@ export default function UserSettingsForm({ userData }: { userData: UserData }) {
                   <SelectItem value="French">French</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Currency */}
+            <div className="space-y-2">
+              <Label htmlFor="currency" className="text-sm font-medium">Currency</Label>
+              <Select value={formData.currency} onValueChange={handleCurrencyChange}>
+                <SelectTrigger id="currency">
+                  <SelectValue placeholder="Select currency" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="USD">US Dollar (USD)</SelectItem>
+                  <SelectItem value="EUR">Euro (EUR)</SelectItem>
+                  <SelectItem value="GBP">British Pound (GBP)</SelectItem>
+                  <SelectItem value="INR">Indian Rupee (INR)</SelectItem>
+                  <SelectItem value="PKR">Pakistani Rupee (PKR)</SelectItem>
+                  <SelectItem value="AED">UAE Dirham (AED)</SelectItem>
+                </SelectContent>
+              </Select>
+              {changedFields.has('currency') && formData.currency !== userData.currency && (
+                <p className="text-xs text-orange-600">Currency change will affect all future pricing</p>
+              )}
             </div>
 
             <Button

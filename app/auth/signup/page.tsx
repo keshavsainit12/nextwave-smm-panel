@@ -138,11 +138,9 @@ function SignupContent() {
     const supabase = createClient()
 
     try {
-      const callbackUrl = `${window.location.origin}/auth/callback`
+      const callbackUrl = `${window.location.origin}/auth/callback?source=signup`
       console.log("[v0] Starting Google sign-up with callback URL:", callbackUrl)
       
-      // Supabase will use the callback URL configured in Supabase Dashboard
-      // NOT the redirectTo parameter - redirectTo is only for custom redirects
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {

@@ -33,17 +33,17 @@ Admin panel now displays:
 
 ### 4. Real-time Revalidation
 When user updates settings, these paths are revalidated:
-```
+\`\`\`
 - /dashboard/settings (user sees changes immediately)
 - /dashboard/profile (if applicable)
 - /admin-panel-2024/users (admin sees changes immediately)
 - /admin-panel-2024 (dashboard updates)
-```
+\`\`\`
 
 ## Database Schema
 
 ### Users Table Columns (Updated)
-```sql
+\`\`\`sql
 - id (UUID, PK)
 - email (text)
 - full_name (text)           -- Username
@@ -53,31 +53,31 @@ When user updates settings, these paths are revalidated:
 - tier (integer)
 - status (text)              -- 'active', 'banned', etc.
 - created_at (timestamp)
-```
+\`\`\`
 
 ## Action Functions in `/app/actions/users.ts`
 
 ### updateUserProfile()
-```typescript
+\`\`\`typescript
 // Updates username and language
 await updateUserProfile(userId, {
   full_name: "New Name",
   language: "Urdu"
 })
-```
+\`\`\`
 
 ### updateUserPassword()
-```typescript
+\`\`\`typescript
 // Updates password in Supabase Auth
 await updateUserPassword(userId, currentPassword, newPassword)
-```
+\`\`\`
 
 ### enableTwoFactorAuth() / disableTwoFactorAuth()
-```typescript
+\`\`\`typescript
 // Enables or disables 2FA for user
 await enableTwoFactorAuth(userId)
 await disableTwoFactorAuth(userId)
-```
+\`\`\`
 
 ## Admin Panel Features
 

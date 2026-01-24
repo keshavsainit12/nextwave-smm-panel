@@ -1,19 +1,54 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { processPendingInstantPayments } from '@/app/actions/process-pending-payments'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { processPendingInstantPayments, processUserPayment } from '@/app/actions/process-pending-payments'
 import { toast } from 'sonner'
-import { AlertCircle, CheckCircle2, Loader2, RefreshCw } from 'lucide-react'
+import { AlertCircle, CheckCircle2, Loader2, RefreshCw, Search } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { fetchPendingUsers } from '@/app/actions/instant-payments'
+
+interface PendingUser {
+  userId: string
+  userEmail: string
+  userName: string
+  pendingAmount: number
+  pendingCount: number
+}
 
 export default function ProcessPendingPaymentsPage() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
+  const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([])
+  const [loadingUsers, setLoadingUsers] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedUser, setSelectedUser] = useState<PendingUser | null>(null)
+  const [processingUser, setProcessingUser] = useState(false)
 
-  const handleProcess = async () => {
+  // Fetch pending users on component mount
+  useEffect(() => {
+    fetchPendingUsersData()
+  }, [])
+
+  const fetchPendingUsersData = async () => {
+    setLoadingUsers(true)
+    try {
+      const users = await fetchPendingUsers()
+      setPendingUsers(users || [])
+      console.log('[v0] Pending users fetched:', users)
+    } catch (error) {
+      console.error('[v0] Error fetching users:', error)
+      toast.error('Failed to load pending users')
+    } finally {
+      setLoadingUsers(false)
+    }
+  }
+
+  const handleProcessAll = async () => {
     setLoading(true)
     try {
       const response = await processPendingInstantPayments()
@@ -22,6 +57,7 @@ export default function ProcessPendingPaymentsPage() {
       if (response.success) {
         if (response.processed > 0) {
           toast.success(`Processed ${response.processed} pending payments!`)
+          fetchPendingUsersData() // Refresh the list
         } else {
           toast.info('No pending payments to process')
         }
@@ -36,42 +72,200 @@ export default function ProcessPendingPaymentsPage() {
     }
   }
 
+  const handleProcessUserPayment = async (user: PendingUser) => {
+    setProcessingUser(true)
+    try {
+      const response = await processUserPayment(user.userId, user.pendingAmount)
+
+      if (response.success) {
+        toast.success(`Processed payment for ${user.userEmail}`)
+        setSelectedUser(null)
+        fetchPendingUsersData() // Refresh the list
+      } else {
+        toast.error(response.error || 'Failed to process payment')
+      }
+    } catch (error) {
+      console.error('[v0] Error:', error)
+      toast.error('Failed to process user payment')
+    } finally {
+      setProcessingUser(false)
+    }
+  }
+
+  const filteredUsers = pendingUsers.filter(user =>
+    user.userEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.userName.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Process Pending Payments</h1>
-        <p className="text-muted-foreground">Manually process pending instant gateway payments and credit user wallets</p>
+        <p className="text-muted-foreground">Process instant gateway payments for individual users or all at once</p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Pending Instant Payments Processor</CardTitle>
-          <CardDescription>Click the button below to find and process all pending instant gateway payments</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              This will find all pending instant payments and credit the user wallets. Each transaction will be marked as completed.
-            </AlertDescription>
-          </Alert>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Pending Users List */}
+        <div className="lg:col-span-2 space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Pending Payments List</CardTitle>
+              <CardDescription>Users with pending instant payments</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Search Box */}
+              <div className="space-y-2">
+                <Label htmlFor="search" className="text-sm font-medium">Search Users</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="search"
+                    placeholder="Search by email or username..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
 
-          <Button onClick={handleProcess} disabled={loading} size="lg" className="w-full gap-2">
-            {loading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="h-4 w-4" />
-                Process Pending Payments
-              </>
-            )}
-          </Button>
-        </CardContent>
-      </Card>
+              {/* Loading State */}
+              {loadingUsers && (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+                  <span className="ml-2 text-sm text-muted-foreground">Loading pending users...</span>
+                </div>
+              )}
 
+              {/* Users List */}
+              {!loadingUsers && filteredUsers.length > 0 && (
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {filteredUsers.map((user) => (
+                    <div
+                      key={user.userId}
+                      onClick={() => setSelectedUser(user)}
+                      className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                        selectedUser?.userId === user.userId
+                          ? 'border-blue-600 bg-blue-50 dark:bg-blue-950/30'
+                          : 'border-gray-200 dark:border-gray-800 hover:border-blue-400'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{user.userEmail}</p>
+                          <p className="text-xs text-muted-foreground">{user.userName}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {user.pendingCount} pending transaction(s)
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <Badge className="bg-orange-600">${user.pendingAmount.toFixed(2)}</Badge>
+                          <p className="text-xs text-muted-foreground mt-1">Pending</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {!loadingUsers && filteredUsers.length === 0 && (
+                <div className="text-center py-8">
+                  <AlertCircle className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">
+                    {pendingUsers.length === 0 ? 'No pending payments' : 'No users match your search'}
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Process Payment Panel */}
+        <div>
+          <Card className="sticky top-4">
+            <CardHeader>
+              <CardTitle>Process Payment</CardTitle>
+              <CardDescription>Single or bulk processing</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Selected User Info */}
+              {selectedUser && (
+                <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-900">
+                  <p className="text-xs text-muted-foreground mb-1">Selected User</p>
+                  <p className="text-sm font-medium">{selectedUser.userEmail}</p>
+                  <p className="text-sm font-bold text-blue-600 mt-2">${selectedUser.pendingAmount.toFixed(2)}</p>
+                </div>
+              )}
+
+              {/* Individual User Payment Button */}
+              <Button
+                onClick={() => selectedUser && handleProcessUserPayment(selectedUser)}
+                disabled={!selectedUser || processingUser}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {processingUser ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    {selectedUser ? 'Process Selected User' : 'Select a User First'}
+                  </>
+                )}
+              </Button>
+
+              <div className="relative py-3">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300 dark:border-gray-700"></div>
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white dark:bg-slate-950 px-2 text-gray-500">OR</span>
+                </div>
+              </div>
+
+              {/* Bulk Processing Alert */}
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-xs">
+                  Process all pending payments at once. Each transaction will be marked as completed and wallet updated.
+                </AlertDescription>
+              </Alert>
+
+              {/* Process All Button */}
+              <Button
+                onClick={handleProcessAll}
+                disabled={loading || pendingUsers.length === 0}
+                className="w-full gap-2 bg-green-600 hover:bg-green-700 text-white"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4" />
+                    Process All ({pendingUsers.length})
+                  </>
+                )}
+              </Button>
+
+              {/* Stats */}
+              <div className="p-3 bg-slate-50 dark:bg-slate-900/30 rounded-lg border border-slate-200 dark:border-slate-800 space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">Summary</p>
+                <div className="space-y-1 text-xs">
+                  <p>Total Users: <span className="font-semibold">{pendingUsers.length}</span></p>
+                  <p>Total Amount: <span className="font-semibold text-orange-600">
+                    ${pendingUsers.reduce((acc, u) => acc + u.pendingAmount, 0).toFixed(2)}
+                  </span></p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Results Display */}
       {result && (
         <Card>
           <CardHeader>

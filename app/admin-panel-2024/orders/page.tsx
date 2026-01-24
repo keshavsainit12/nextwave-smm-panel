@@ -41,79 +41,83 @@ export default async function AdminOrdersPage() {
   }))
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Orders Management</h1>
-          <p className="text-muted-foreground">Monitor and manage all user orders</p>
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header - Mobile responsive */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight">Orders</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">Monitor and manage all user orders</p>
         </div>
-        <ExportCsvButton data={exportData || []} filename="orders" />
+        <div className="flex-shrink-0 w-full sm:w-auto">
+          <ExportCsvButton data={exportData || []} filename="orders" />
+        </div>
       </div>
 
-      <Tabs defaultValue="all">
-        <TabsList>
-          <TabsTrigger value="all">All Orders ({transformedOrders?.length || 0})</TabsTrigger>
-          <TabsTrigger value="pending">Pending ({statusCounts.pending})</TabsTrigger>
-          <TabsTrigger value="processing">Processing ({statusCounts.processing})</TabsTrigger>
-          <TabsTrigger value="completed">Completed ({statusCounts.completed})</TabsTrigger>
-          <TabsTrigger value="partial">Partial ({statusCounts.partial})</TabsTrigger>
+      {/* Tabs - Mobile scrollable */}
+      <Tabs defaultValue="all" className="w-full">
+        <TabsList className="grid grid-cols-2 sm:grid-cols-5 gap-1 sm:gap-0 w-full h-auto">
+          <TabsTrigger value="all" className="text-xs sm:text-sm py-2">All ({transformedOrders?.length || 0})</TabsTrigger>
+          <TabsTrigger value="pending" className="text-xs sm:text-sm py-2">Pending ({statusCounts.pending})</TabsTrigger>
+          <TabsTrigger value="processing" className="text-xs sm:text-sm py-2 hidden sm:inline-flex">Processing ({statusCounts.processing})</TabsTrigger>
+          <TabsTrigger value="completed" className="text-xs sm:text-sm py-2 hidden sm:inline-flex">Completed ({statusCounts.completed})</TabsTrigger>
+          <TabsTrigger value="partial" className="text-xs sm:text-sm py-2">Partial ({statusCounts.partial})</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="all" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>All Orders</CardTitle>
-              <CardDescription>Complete order history</CardDescription>
+        <TabsContent value="all" className="mt-3 sm:mt-4 md:mt-6">
+          <Card className="bg-white dark:bg-slate-900 border-gray-200 dark:border-gray-800">
+            <CardHeader className="p-3 sm:p-4 md:p-6">
+              <CardTitle className="text-lg sm:text-xl">All Orders</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Complete order history</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3 sm:p-4 md:p-6 overflow-x-auto">
               <OrderList orders={transformedOrders || []} />
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="pending" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Pending Orders</CardTitle>
-              <CardDescription>Orders awaiting processing</CardDescription>
+        <TabsContent value="pending" className="mt-3 sm:mt-4 md:mt-6">
+          <Card className="bg-white dark:bg-slate-900 border-gray-200 dark:border-gray-800">
+            <CardHeader className="p-3 sm:p-4 md:p-6">
+              <CardTitle className="text-lg sm:text-xl">Pending Orders</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Orders awaiting processing</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3 sm:p-4 md:p-6 overflow-x-auto">
               <OrderList orders={transformedOrders?.filter((o) => o.status === "pending") || []} />
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="processing" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Processing Orders</CardTitle>
-              <CardDescription>Orders currently being fulfilled</CardDescription>
+        <TabsContent value="processing" className="mt-3 sm:mt-4 md:mt-6">
+          <Card className="bg-white dark:bg-slate-900 border-gray-200 dark:border-gray-800">
+            <CardHeader className="p-3 sm:p-4 md:p-6">
+              <CardTitle className="text-lg sm:text-xl">Processing Orders</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Orders being fulfilled</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3 sm:p-4 md:p-6 overflow-x-auto">
               <OrderList orders={transformedOrders?.filter((o) => o.status === "processing") || []} />
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="completed" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Completed Orders</CardTitle>
-              <CardDescription>Successfully fulfilled orders</CardDescription>
+        <TabsContent value="completed" className="mt-3 sm:mt-4 md:mt-6">
+          <Card className="bg-white dark:bg-slate-900 border-gray-200 dark:border-gray-800">
+            <CardHeader className="p-3 sm:p-4 md:p-6">
+              <CardTitle className="text-lg sm:text-xl">Completed Orders</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Successfully fulfilled</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3 sm:p-4 md:p-6 overflow-x-auto">
               <OrderList orders={transformedOrders?.filter((o) => o.status === "completed") || []} />
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="partial" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Partial Orders</CardTitle>
-              <CardDescription>Orders partially completed</CardDescription>
+        <TabsContent value="partial" className="mt-3 sm:mt-4 md:mt-6">
+          <Card className="bg-white dark:bg-slate-900 border-gray-200 dark:border-gray-800">
+            <CardHeader className="p-3 sm:p-4 md:p-6">
+              <CardTitle className="text-lg sm:text-xl">Partial Orders</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Partially completed</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3 sm:p-4 md:p-6 overflow-x-auto">
               <OrderList orders={transformedOrders?.filter((o) => o.status === "partial") || []} />
             </CardContent>
           </Card>

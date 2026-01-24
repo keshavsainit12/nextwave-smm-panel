@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Info, Zap, CheckCircle, XCircle, Clock, CreditCard } from "lucide-react"
+import { Info, Zap, CheckCircle, XCircle, Clock } from "lucide-react"
 import { MobileAddFunds } from "@/components/dashboard/mobile-add-funds"
 import { InstantPaymentForm } from "@/components/dashboard/instant-payment-form"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -17,7 +17,23 @@ export default async function DepositPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  const { data: userData } = await supabase.from("users").select("balance, full_name").eq("id", user?.id).single()
+
+  if (!user) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Add Balance</h1>
+          <p className="text-muted-foreground">Please log in to make a deposit</p>
+        </div>
+      </div>
+    )
+  }
+
+  const { data: userData } = await supabase
+    .from("users")
+    .select("balance, full_name")
+    .eq("id", user.id)
+    .single()
 
   const { data: cryptoCurrencies } = await supabase
     .from("crypto_currencies")
@@ -25,31 +41,33 @@ export default async function DepositPage() {
     .eq("is_active", true)
     .order("display_order", { ascending: true })
 
-  // Fetch BOTH crypto deposits AND instant payment transactions
+  // Fetch crypto deposits
   const { data: cryptoDeposits } = await supabase
     .from("crypto_deposits")
     .select("*, crypto_currency_id(symbol, name)")
-    .eq("user_id", user?.id)
+    .eq("user_id", user.id)
     .order("created_at", { ascending: false })
 
+  // Fetch instant payment transactions
   const { data: instantPayments } = await supabase
     .from("transactions")
     .select("*")
-    .eq("user_id", user?.id)
+    .eq("user_id", user.id)
     .eq("type", "deposit")
     .eq("payment_method", "instant_xaf")
     .order("created_at", { ascending: false })
 
   // Combine and sort all deposits
   const allDeposits = [
-    ...(cryptoDeposits || []).map((d) => ({
+    ...(cryptoDeposits || []).map((d: any) => ({
       ...d,
       deposit_type: "crypto",
       id: d.id,
       created_at: d.created_at,
       status: d.status,
+      amount: d.amount,
     })),
-    ...(instantPayments || []).map((t) => ({
+    ...(instantPayments || []).map((t: any) => ({
       ...t,
       deposit_type: "instant",
       id: t.id,
@@ -57,7 +75,7 @@ export default async function DepositPage() {
       status: t.status,
       amount: t.amount,
     })),
-  ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  ].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
   return (
     <div className="space-y-6">
@@ -100,7 +118,7 @@ export default async function DepositPage() {
                   currentBalance={userData.balance || 0}
                 />
               ) : (
-                <p className="text-muted-foreground">Please log in to make a deposit</p>
+                <p className="text-muted-foreground">Loading form...</p>
               )}
             </CardContent>
           </Card>
@@ -137,7 +155,9 @@ export default async function DepositPage() {
                 <CardDescription>Track all your deposit transactions and their status</CardDescription>
               </div>
               <Link href="/dashboard/transaction-history">
-                <Button variant="outline" size="sm">View Full History</Button>
+                <Button variant="outline" size="sm">
+                  View Full History
+                </Button>
               </Link>
             </CardHeader>
             <CardContent>
@@ -149,28 +169,30 @@ export default async function DepositPage() {
                         <TableHead>Transaction ID</TableHead>
                         <TableHead>Payment Method</TableHead>
                         <TableHead>Amount</TableHead>
-                        <TableHead>Crypto Amount</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead>Details</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {allDeposits.map((deposit) => (
+                      {allDeposits.map((deposit: any) => (
                         <TableRow key={`${deposit.deposit_type}-${deposit.id}`}>
-                          <TableCell className="font-mono text-xs">
-                            {deposit.id.substring(0, 8)}...
-                          </TableCell>
+                          <TableCell className="font-mono text-xs">{deposit.id.substring(0, 8)}...</TableCell>
                           <TableCell>
-                            <div className="font-medium">{deposit.deposit_type === "instant" ? "XAF" : deposit.crypto_currency_id?.symbol}</div>
+                            <div className="font-medium">
+                              {deposit.deposit_type === "instant"
+                                ? "XAF"
+                                : deposit.crypto_currency_id?.symbol}
+                            </div>
                             <div className="text-xs text-muted-foreground">
-                              {deposit.deposit_type === "instant" ? "Instant Payment" : deposit.crypto_currency_id?.name}
+                              {deposit.deposit_type === "instant"
+                                ? "Instant Payment"
+                                : deposit.crypto_currency_id?.name}
                             </div>
                           </TableCell>
                           <TableCell className="font-mono font-semibold text-green-600">
-                            ${deposit.amount}
+                            ${deposit.amount || 0}
                           </TableCell>
-                          <TableCell className="font-mono text-sm">{deposit.crypto_amount}</TableCell>
                           <TableCell>
                             <Badge
                               variant={
@@ -188,9 +210,7 @@ export default async function DepositPage() {
                               {(deposit.status === "rejected" || deposit.status === "failed") && (
                                 <XCircle className="h-3 w-3" />
                               )}
-                              {deposit.status === "pending" && (
-                                <Clock className="h-3 w-3" />
-                              )}
+                              {deposit.status === "pending" && <Clock className="h-3 w-3" />}
                               <span className="capitalize">{deposit.status}</span>
                             </Badge>
                           </TableCell>
@@ -198,20 +218,20 @@ export default async function DepositPage() {
                             {formatDistance(new Date(deposit.created_at), new Date(), { addSuffix: true })}
                           </TableCell>
                           <TableCell className="text-xs">
-                            {(deposit.status === "rejected" || deposit.status === "failed") && deposit.admin_notes && (
-                              <div className="text-red-600 dark:text-red-400">
-                                Reason: {deposit.admin_notes}
-                              </div>
-                            )}
-                            {(deposit.status === "completed" || deposit.status === "approved") && deposit.reviewed_at && (
-                              <div className="text-green-600 dark:text-green-400">
-                                {deposit.deposit_type === "instant" ? "Instant Credit" : `Approved ${formatDistance(
-                                  new Date(deposit.reviewed_at),
-                                  new Date(),
-                                  { addSuffix: true }
-                                )}`}
-                              </div>
-                            )}
+                            {(deposit.status === "rejected" || deposit.status === "failed") &&
+                              deposit.admin_notes && (
+                                <div className="text-red-600 dark:text-red-400">Reason: {deposit.admin_notes}</div>
+                              )}
+                            {(deposit.status === "completed" || deposit.status === "approved") &&
+                              deposit.reviewed_at && (
+                                <div className="text-green-600 dark:text-green-400">
+                                  {deposit.deposit_type === "instant"
+                                    ? "Instant Credit"
+                                    : `Approved ${formatDistance(new Date(deposit.reviewed_at), new Date(), {
+                                        addSuffix: true,
+                                      })}`}
+                                </div>
+                              )}
                             {deposit.status === "pending" && (
                               <div className="text-yellow-600 dark:text-yellow-400">
                                 {deposit.deposit_type === "instant" ? "Processing..." : "Awaiting approval"}

@@ -16,6 +16,10 @@ import { useToast } from "@/hooks/use-toast"
 export function OrderDialog({ service, open, onClose }: { service: any; open: boolean; onClose: () => void }) {
   const [link, setLink] = useState("")
   const [quantity, setQuantity] = useState(service.min_quantity || 100)
+  const [couponCode, setCouponCode] = useState("")
+  const [couponDiscount, setCouponDiscount] = useState(0)
+  const [couponError, setCouponError] = useState<string | null>(null)
+  const [validateCouponLoading, setValidateCouponLoading] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
@@ -23,14 +27,86 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
 
   const servicePrice = Number(service.price || service.base_price || 0)
   const totalPrice = ((quantity / 1000) * servicePrice).toFixed(2)
+  const discountedTotal = (Number(totalPrice) * (1 - couponDiscount / 100)).toFixed(2)
 
   useEffect(() => {
     if (open) {
       setLink("")
       setQuantity(service.min_quantity || 100)
+      setCouponCode("")
+      setCouponDiscount(0)
+      setCouponError(null)
       setError(null)
     }
   }, [open, service.min_quantity])
+
+  const handleValidateCoupon = async () => {
+    if (!couponCode.trim()) {
+      setCouponError("Please enter a coupon code")
+      return
+    }
+
+    setValidateCouponLoading(true)
+    setCouponError(null)
+
+    try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 8000) // 8s timeout
+
+      const response = await fetch("/api/v1/validate-coupon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ couponCode: couponCode.toUpperCase() }),
+        signal: controller.signal,
+      })
+
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Coupon code not found")
+        } else if (response.status === 410) {
+          throw new Error("This coupon has expired")
+        } else if (response.status === 429) {
+          throw new Error("Too many validation attempts. Please try again in a moment")
+        } else if (response.status >= 500) {
+          throw new Error("Server error. Please try again shortly")
+        } else {
+          throw new Error("Failed to validate coupon")
+        }
+      }
+
+      const data = await response.json()
+
+      if (data.valid) {
+        setCouponDiscount(data.discount || 0)
+        toast({
+          title: "Coupon Applied",
+          description: `${data.discount}% discount applied to your order`,
+          duration: 3000,
+        })
+      } else {
+        setCouponError(data.error || "Invalid coupon code")
+        setCouponDiscount(0)
+      }
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        setCouponError("Validation timed out. Please try again")
+      } else {
+        setCouponError(err instanceof Error ? err.message : "Failed to validate coupon")
+      }
+      setCouponDiscount(0)
+      console.error("[v0] Coupon validation error:", err)
+    } finally {
+      setValidateCouponLoading(false)
+    }
+  }
+
+  const handleRemoveCoupon = () => {
+    setCouponCode("")
+    setCouponDiscount(0)
+    setCouponError(null)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -38,7 +114,16 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
     setError(null)
 
     try {
-      const result = await placeOrder(service.id, link, quantity)
+      if (!link.trim()) {
+        throw new Error("Please enter a valid link")
+      }
+
+      if (quantity < (service.min_quantity || 100)) {
+        throw new Error(`Minimum quantity is ${service.min_quantity || 100}`)
+      }
+
+      console.log("[v0] Placing order with coupon:", couponCode || "none")
+      const result = await placeOrder(service.id, link, quantity, couponCode || undefined)
 
       if (result.error) {
         throw new Error(result.error)
@@ -54,10 +139,12 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
       router.push("/dashboard/orders")
       router.refresh()
     } catch (err: any) {
-      setError(err.message)
+      const errorMessage = err instanceof Error ? err.message : "An error occurred while placing your order"
+      setError(errorMessage)
+      console.error("[v0] Order placement error:", err)
       toast({
         title: "Order Failed",
-        description: err.message,
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
@@ -126,6 +213,67 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
             </p>
           </div>
 
+          {/* Coupon Code Input */}
+          <div className="space-y-2 p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+            <Label htmlFor="coupon" className="text-sm font-bold text-slate-900 dark:text-white">Apply Coupon Code (Optional)</Label>
+            
+            {couponDiscount > 0 ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
+                  <div>
+                    <p className="text-xs text-green-600 dark:text-green-400 font-medium">Coupon Applied</p>
+                    <p className="text-lg font-bold text-green-700 dark:text-green-300">{couponCode}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-green-600 dark:text-green-400">Discount</p>
+                    <p className="text-2xl font-bold text-green-700 dark:text-green-300">{couponDiscount}%</p>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  onClick={handleRemoveCoupon}
+                  variant="outline"
+                  className="w-full text-red-600 border-red-200 hover:bg-red-50 dark:hover:bg-red-950/30"
+                >
+                  Remove Coupon
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Input
+                  id="coupon"
+                  placeholder="SAVE10, WELCOME, etc..."
+                  value={couponCode}
+                  onChange={(e) => {
+                    setCouponCode(e.target.value.toUpperCase())
+                    if (couponDiscount > 0) setCouponDiscount(0)
+                  }}
+                  disabled={loading || validateCouponLoading}
+                  className="h-11 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500/20 uppercase font-semibold"
+                />
+                <Button
+                  type="button"
+                  onClick={handleValidateCoupon}
+                  disabled={!couponCode.trim() || validateCouponLoading || loading}
+                  className="px-6 h-11 bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+                >
+                  {validateCouponLoading ? "Checking..." : "Apply"}
+                </Button>
+              </div>
+            )}
+
+            {couponError && (
+              <Alert variant="destructive" className="border-red-300 bg-red-50 dark:bg-red-950/30">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-red-700 dark:text-red-300">{couponError}</AlertDescription>
+              </Alert>
+            )}
+
+            <p className="text-xs text-slate-600 dark:text-slate-400 italic">
+              💡 Have a coupon code? Enter it above to get instant discount on this order!
+            </p>
+          </div>
+
           {/* Price Breakdown Card */}
           <div className="rounded-xl border border-blue-200/50 bg-gradient-to-br from-blue-50 to-blue-50/50 p-4 space-y-3">
             <div className="flex items-center justify-between text-sm">
@@ -136,12 +284,24 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
               <span className="text-slate-600">Quantity:</span>
               <span className="font-semibold text-slate-900">{quantity.toLocaleString()}</span>
             </div>
-            <div className="border-t border-blue-200 pt-3 flex items-center justify-between">
-              <span className="font-semibold text-slate-700 flex items-center gap-2">
-                <Wallet className="h-4 w-4 text-blue-600" />
-                Total:
-              </span>
-              <span className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">${totalPrice}</span>
+            <div className="border-t border-blue-200 pt-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-slate-700">Subtotal:</span>
+                <span className="text-slate-900">${totalPrice}</span>
+              </div>
+              {couponDiscount > 0 && (
+                <div className="flex items-center justify-between text-green-700">
+                  <span className="text-sm">Discount ({couponDiscount}%):</span>
+                  <span className="font-semibold">-${(Number(totalPrice) * couponDiscount / 100).toFixed(2)}</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between pt-2 border-t border-blue-200">
+                <span className="font-semibold text-slate-700 flex items-center gap-2">
+                  <Wallet className="h-4 w-4 text-blue-600" />
+                  Total:
+                </span>
+                <span className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">${discountedTotal}</span>
+              </div>
             </div>
           </div>
 

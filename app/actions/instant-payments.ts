@@ -91,8 +91,77 @@ async function getAccountPeJWT(): Promise<string | null> {
   }
 }
 
-export async function createInstantPayment(params: CreateInstantPaymentParams): Promise<PaymentResponse> {
+export async function fetchPendingUsers(): Promise<PendingUser[]> {
   try {
+    const supabase = createAdminClient()
+
+    // Get all pending transactions grouped by user
+    const { data: transactions, error } = await supabase
+      .from("transactions")
+      .select("user_id, amount, id")
+      .eq("status", "pending")
+      .eq("type", "deposit")
+      .eq("payment_method", "instant_xaf")
+
+    if (error) {
+      console.error("[v0] Error fetching pending transactions:", error)
+      return []
+    }
+
+    // Group by user and aggregate
+    const userMap = new Map<string, any>()
+
+    for (const tx of transactions || []) {
+      if (!userMap.has(tx.user_id)) {
+        userMap.set(tx.user_id, {
+          userId: tx.user_id,
+          pendingAmount: 0,
+          pendingCount: 0,
+        })
+      }
+      const user = userMap.get(tx.user_id)
+      user.pendingAmount += tx.amount || 0
+      user.pendingCount += 1
+    }
+
+    // Now fetch user details for each pending user
+    const pendingUsers: PendingUser[] = []
+
+    for (const [userId, data] of userMap) {
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("email, username, full_name")
+        .eq("id", userId)
+        .single()
+
+      if (!userError && userData) {
+        pendingUsers.push({
+          userId,
+          userEmail: userData.email || "",
+          userName: userData.username || userData.full_name || userId,
+          pendingAmount: data.pendingAmount,
+          pendingCount: data.pendingCount,
+        })
+      }
+    }
+
+    console.log("[v0] Fetched pending users:", pendingUsers.length)
+    return pendingUsers.sort((a, b) => b.pendingAmount - a.pendingAmount)
+  } catch (error) {
+    console.error("[v0] Error fetching pending users:", error)
+    return []
+  }
+}
+
+interface PendingUser {
+  userId: string
+  userEmail: string
+  userName: string
+  pendingAmount: number
+  pendingCount: number
+}
+
+export async function createInstantPayment(params: CreateInstantPaymentParams): Promise<PaymentResponse> {
     console.log("[v0] Creating instant payment with params:", {
       userId: params.userId,
       amount: params.amount,

@@ -22,30 +22,32 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: {
   console.log("[v0] Users Page - Fetched users count:", users?.length || 0)
 
   return (
-    <div className="space-y-6 pt-16 lg:pt-0">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white/70 backdrop-blur-sm rounded-lg p-6 shadow-md">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Users Management
+    <div className="space-y-3 sm:space-y-4 md:space-y-6">
+      {/* Header Card - Mobile responsive */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 bg-white dark:bg-slate-900 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 shadow-sm border border-gray-200 dark:border-gray-800">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Users
           </h1>
-          <p className="text-muted-foreground mt-1">Manage user accounts, balances, and permissions</p>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">Manage user accounts and permissions</p>
         </div>
       </div>
 
-      <Card className="bg-white/70 backdrop-blur-sm">
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <CardTitle>All Users ({users?.length || 0})</CardTitle>
-              <CardDescription>View and manage all registered user accounts</CardDescription>
+      {/* Users List Card */}
+      <Card className="bg-white dark:bg-slate-900 border-gray-200 dark:border-gray-800">
+        <CardHeader className="p-3 sm:p-4 md:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <div className="min-w-0">
+              <CardTitle className="text-lg sm:text-xl">All Users ({users?.length || 0})</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">View and manage all registered users</CardDescription>
             </div>
-            <div className="relative w-full sm:w-64">
+            <div className="relative w-full sm:w-64 flex-shrink-0">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search users..." className="pl-8" />
+              <Input placeholder="Search..." className="pl-8 h-9 text-sm" />
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-4 md:p-6 overflow-x-auto">
           <UserList users={users || []} />
         </CardContent>
       </Card>

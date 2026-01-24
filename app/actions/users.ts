@@ -118,7 +118,9 @@ export async function updateUserProfile(
   userId: string,
   data: {
     full_name?: string
+    username?: string
     language?: string
+    currency?: string
   },
 ) {
   try {
@@ -126,7 +128,19 @@ export async function updateUserProfile(
 
     console.log("[v0] Updating user profile:", userId, data)
 
-    const { error } = await supabase.from("users").update(data).eq("id", userId)
+    // Validate currency if provided
+    const validCurrencies = ['USD', 'EUR', 'GBP', 'INR', 'PKR', 'AED']
+    if (data.currency && !validCurrencies.includes(data.currency)) {
+      return { success: false, error: `Invalid currency. Supported: ${validCurrencies.join(', ')}` }
+    }
+
+    // Prepare update data with timestamp for currency changes
+    const updateData = { ...data }
+    if (data.currency) {
+      updateData['currency_updated_at'] = new Date().toISOString()
+    }
+
+    const { error } = await supabase.from("users").update(updateData).eq("id", userId)
 
     if (error) {
       console.error("[v0] Update profile error:", error.message)
@@ -138,7 +152,7 @@ export async function updateUserProfile(
     revalidatePath("/admin-panel-2024/users")
     revalidatePath("/admin-panel-2024")
 
-    console.log("[v0] Profile updated successfully")
+    console.log("[v0] Profile updated successfully with currency:", data.currency)
     return { success: true }
   } catch (error: any) {
     console.error("[v0] Update profile error:", error?.message)

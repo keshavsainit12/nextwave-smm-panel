@@ -10,20 +10,23 @@ export async function GET(request: NextRequest) {
     const code = requestUrl.searchParams.get("code")
     const error = requestUrl.searchParams.get("error")
     const errorDescription = requestUrl.searchParams.get("error_description")
+    const source = requestUrl.searchParams.get("source") // Track if from signup
 
-    console.log("[v0] OAuth callback received:", { code: !!code, error, errorDescription })
+    console.log("[v0] OAuth callback received:", { code: !!code, error, errorDescription, source })
 
     // Handle OAuth errors
     if (error) {
       console.error("[v0] OAuth error:", { error, errorDescription })
+      const redirectUrl = source === "signup" ? "/auth/signup" : "/auth/login"
       return NextResponse.redirect(
-        new URL(`/auth/login?error=${encodeURIComponent(errorDescription || error)}`, request.url)
+        new URL(`${redirectUrl}?error=${encodeURIComponent(errorDescription || error)}`, request.url)
       )
     }
 
     if (!code) {
       console.error("[v0] No code provided in OAuth callback")
-      return NextResponse.redirect(new URL("/auth/login?error=No authorization code", request.url))
+      const redirectUrl = source === "signup" ? "/auth/signup" : "/auth/login"
+      return NextResponse.redirect(new URL(`${redirectUrl}?error=No authorization code`, request.url))
     }
 
     const cookieStore = await cookies()
@@ -47,8 +50,9 @@ export async function GET(request: NextRequest) {
 
     if (exchangeError) {
       console.error("[v0] Exchange error:", exchangeError)
+      const redirectUrl = source === "signup" ? "/auth/signup" : "/auth/login"
       return NextResponse.redirect(
-        new URL(`/auth/login?error=${encodeURIComponent(exchangeError.message)}`, request.url)
+        new URL(`${redirectUrl}?error=${encodeURIComponent(exchangeError.message)}`, request.url)
       )
     }
 
@@ -89,7 +93,8 @@ export async function GET(request: NextRequest) {
 
     if (userCheckError && userCheckError.code !== "PGRST116") {
       console.error("[v0] User check error:", userCheckError)
-      return NextResponse.redirect(new URL("/auth/login?error=Database error", request.url))
+      const redirectUrl = source === "signup" ? "/auth/signup" : "/auth/login"
+      return NextResponse.redirect(new URL(`${redirectUrl}?error=Database error`, request.url))
     }
 
     if (!existingUser) {
