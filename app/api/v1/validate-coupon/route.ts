@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       .from('coupons')
       .select('*')
       .ilike('code', couponCode.trim())
-      .single()
+      .maybeSingle()
 
     console.log("[v0] Coupon found:", coupon)
 
