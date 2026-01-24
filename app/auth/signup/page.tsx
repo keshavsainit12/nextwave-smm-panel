@@ -6,7 +6,8 @@ import { createClient } from "@/lib/supabase/client"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, Loader2 } from "lucide-react"
-import { signupUser } from "@/app/actions/auth"
+import { signupUser, verifyRecaptcha } from "@/app/actions/auth"
+import Script from "next/script"
 
 function SignupContent() {
   const [email, setEmail] = useState("")
@@ -18,6 +19,7 @@ function SignupContent() {
   const [success, setSuccess] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   const router = useRouter()
 
   const validateForm = () => {
@@ -37,7 +39,18 @@ function SignupContent() {
       setError("Passwords do not match")
       return false
     }
+    if (!captchaToken) {
+      setError("Please complete the reCAPTCHA verification")
+      return false
+    }
     return true
+  }
+
+  const handleRecaptchaChange = (token: string | null) => {
+    setCaptchaToken(token)
+    if (token && error === "Please complete the reCAPTCHA verification") {
+      setError(null)
+    }
   }
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -48,6 +61,14 @@ function SignupContent() {
     setError(null)
 
     try {
+      // Verify reCAPTCHA token
+      if (captchaToken) {
+        const recaptchaResult = await verifyRecaptcha(captchaToken)
+        if (!recaptchaResult.success) {
+          throw new Error("reCAPTCHA verification failed. Please try again.")
+        }
+      }
+
       const result = await signupUser({
         email,
         password,
@@ -138,6 +159,12 @@ function SignupContent() {
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 overflow-hidden bg-transparent">
+      <Script
+        src="https://www.google.com/recaptcha/api.js"
+        async
+        defer
+      />
+
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
         <div className="absolute w-96 h-96 rounded-full blur-3xl opacity-40 bg-blue-500 -top-32 -left-32"></div>
         <div className="absolute w-96 h-96 rounded-full blur-3xl opacity-40 bg-cyan-500 top-1/3 -right-20"></div>
@@ -249,6 +276,14 @@ function SignupContent() {
               />
             </div>
 
+            <div className="flex justify-center py-4">
+              <div
+                className="g_recaptcha"
+                data-sitekey="6Lea01QsAAAAAG7Wv83BSoSV7NWF14KLe6poX4As"
+                data-callback="window.handleRecaptchaChange"
+              />
+            </div>
+
             {error && (
               <div className="text-sm text-red-600 bg-red-50/80 backdrop-blur border border-red-200/50 p-3 sm:p-4 rounded-2xl">
                 {error}
@@ -257,7 +292,7 @@ function SignupContent() {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !captchaToken}
               className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-3 sm:py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isLoading ? (
@@ -326,6 +361,17 @@ function SignupContent() {
           </Link>
         </div>
       </div>
+
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `
+            window.handleRecaptchaChange = function(token) {
+              const event = new CustomEvent('captchaChange', { detail: { token } });
+              window.dispatchEvent(event);
+            };
+          `,
+        }}
+      />
     </div>
   )
 }
