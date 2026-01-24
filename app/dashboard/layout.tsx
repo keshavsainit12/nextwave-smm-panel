@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
+import { MobileBottomNav } from "@/components/dashboard/mobile-bottom-nav"
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -33,13 +34,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <DashboardHeader user={userProfile} />
         </div>
 
-        {/* Main content - Scrollable only on mobile, full height with scroll on desktop */}
+        {/* Main content - Scrollable, with padding for mobile bottom nav */}
         <main className="flex-1 overflow-y-auto overflow-x-hidden pb-20 md:pb-0">
           <div className="h-full w-full">
             <div className="w-full max-w-7xl mx-auto px-2 py-4 sm:px-4 md:px-6 lg:px-8">{children}</div>
           </div>
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav />
     </div>
   )
 }
