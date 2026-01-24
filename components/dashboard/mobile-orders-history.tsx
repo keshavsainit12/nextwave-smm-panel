@@ -1,8 +1,25 @@
 "use client"
 
+import React from "react"
+
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Download, Search, Info } from "lucide-react"
+import { Download, Search, Info, MessageCircle, RefreshCw } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { createTicket } from "@/app/actions/tickets"
+import { toast } from "sonner"
 
 interface Order {
   id: string
@@ -90,6 +107,9 @@ const getIconUrl = (serviceName: string): string | undefined => {
 export function MobileOrdersHistory({ orders }: { orders: Order[] }) {
   const [searchQuery, setSearchQuery] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
+  const [ticketDialogOpen, setTicketDialogOpen] = useState(false)
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
+  const [ticketLoading, setTicketLoading] = useState(false)
   const router = useRouter()
 
   const filteredOrders = orders.filter((order) => {
@@ -99,6 +119,35 @@ export function MobileOrdersHistory({ orders }: { orders: Order[] }) {
     const matchesFilter = filterStatus === "all" || order.status?.toLowerCase() === filterStatus
     return matchesSearch && matchesFilter
   })
+
+  const handleCreateTicket = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setTicketLoading(true)
+
+    try {
+      const formData = new FormData(e.currentTarget)
+      formData.append("order_id", selectedOrderId || "")
+      
+      const result = await createTicket(formData)
+
+      if (result && result.success) {
+        toast.success("Support ticket created! We'll help you shortly.")
+        setTicketDialogOpen(false)
+        setSelectedOrderId(null)
+        if (e.currentTarget) {
+          e.currentTarget.reset()
+        }
+        router.refresh()
+      } else {
+        toast.error("Failed to create ticket. Please try again.")
+      }
+    } catch (error) {
+      console.error("[v0] Ticket creation error:", error)
+      toast.error(error instanceof Error ? error.message : "Failed to create ticket. Please try again.")
+    } finally {
+      setTicketLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen pb-24 bg-gradient-to-b from-slate-50 to-white">
@@ -234,12 +283,106 @@ export function MobileOrdersHistory({ orders }: { orders: Order[] }) {
                       minute: '2-digit'
                     })}
                   </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-2 pt-3 border-t border-slate-100">
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setSelectedOrderId(order.order_id)
+                        setTicketDialogOpen(true)
+                      }}
+                      className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold h-9 flex items-center justify-center gap-2"
+                    >
+                      <MessageCircle size={16} />
+                      Get Support
+                    </Button>
+                    {status === "completed" && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="flex-1 border-slate-200 text-slate-700 hover:bg-slate-50 font-semibold h-9 flex items-center justify-center gap-2 bg-transparent"
+                      >
+                        <RefreshCw size={16} />
+                        Refill
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             )
           })
         )}
       </main>
+
+      {/* Support Ticket Dialog */}
+      <Dialog open={ticketDialogOpen} onOpenChange={setTicketDialogOpen}>
+        <DialogContent className="max-h-[90vh] w-full max-w-[95vw] overflow-y-auto sm:max-w-[550px] bg-gradient-to-b from-slate-50 to-white rounded-2xl border border-slate-200/50 shadow-xl">
+          <DialogHeader className="border-b border-slate-200/50 pb-4">
+            <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Create Support Ticket
+            </DialogTitle>
+            <DialogDescription className="text-sm text-slate-600 mt-2">
+              {selectedOrderId && <span>Order ID: <strong>#{selectedOrderId}</strong></span>}
+              <p>Describe your issue and we'll help you resolve it quickly</p>
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCreateTicket} className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="subject" className="text-sm font-semibold text-slate-700">Subject *</Label>
+              <Input 
+                id="subject" 
+                name="subject" 
+                placeholder="Brief description of your issue" 
+                required 
+                className="h-11 bg-white border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="priority" className="text-sm font-semibold text-slate-700">Priority</Label>
+              <Select name="priority" defaultValue="normal">
+                <SelectTrigger className="h-11 bg-white border-slate-200 focus:border-blue-500">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-white border-slate-200">
+                  <SelectItem value="low">Low Priority</SelectItem>
+                  <SelectItem value="normal">Normal Priority</SelectItem>
+                  <SelectItem value="high">High Priority</SelectItem>
+                  <SelectItem value="urgent">Urgent</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="message" className="text-sm font-semibold text-slate-700">Message *</Label>
+              <Textarea 
+                id="message" 
+                name="message" 
+                rows={5} 
+                placeholder="Detailed description of your issue..." 
+                required 
+                className="bg-white border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 resize-none"
+              />
+            </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setTicketDialogOpen(false)}
+                className="border-slate-200 text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={ticketLoading}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold disabled:opacity-50"
+              >
+                {ticketLoading ? "Creating..." : "Create Ticket"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
