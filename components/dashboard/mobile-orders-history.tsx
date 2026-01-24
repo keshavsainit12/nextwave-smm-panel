@@ -323,8 +323,8 @@ export function MobileOrdersHistory({ orders }: { orders: Order[] }) {
               Create Support Ticket
             </DialogTitle>
             <DialogDescription className="text-sm text-slate-600 mt-2">
-              {selectedOrderId && <span>Order ID: <strong>#{selectedOrderId}</strong></span>}
-              <p>Describe your issue and we'll help you resolve it quickly</p>
+              {selectedOrderId && <div className="mb-2">Order ID: <strong>#{selectedOrderId}</strong></div>}
+              <span>Describe your issue and we'll help you resolve it quickly</span>
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreateTicket} className="space-y-4 py-4">
