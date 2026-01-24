@@ -103,27 +103,28 @@ export function MobileServiceCarousel({ onSelectCategory, onSelectService }: Ser
     // Emit both callbacks for carousel selection and direct service ordering
     onSelectCategory(categoryName)
     
-    // Trigger a small delay then scroll to service selection
+    // Trigger scroll to Place Order button (after form renders)
     setTimeout(() => {
-      const serviceSection = document.getElementById("service-selection-section")
-      if (serviceSection) {
-        serviceSection.scrollIntoView({ behavior: "smooth", block: "start" })
+      const placeOrderButton = document.getElementById("place-order-button")
+      if (placeOrderButton) {
+        // Scroll with offset to show the button properly
+        placeOrderButton.scrollIntoView({ behavior: "smooth", block: "center" })
       }
-    }, 300)
+    }, 100)
   }
 
   const currentPlatform = platformConfig[currentIndex]
 
   return (
     <div className="w-full">
-      {/* Header Section */}
-      <div className="mb-8">
-        <div className="flex items-center gap-2">
-          <h2 className="text-2xl font-bold text-slate-900 font-poppins">🔥</h2>
-          <h2 className="text-2xl font-bold text-slate-900 font-poppins">Hot Offers</h2>
-          <h2 className="text-2xl font-bold text-slate-900 font-poppins">This Week</h2>
+      {/* Header Section - Better spacing and typography */}
+      <div className="mb-6 pt-2">
+        <div className="flex items-baseline gap-2">
+          <span className="text-3xl">🔥</span>
+          <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Hot Offers</h2>
+          <p className="text-2xl md:text-3xl font-black text-blue-600 tracking-tight">This Week</p>
         </div>
-        <p className="text-sm text-slate-500 mt-2">Limited time deals • Swipe to explore</p>
+        <p className="text-sm text-slate-500 mt-3 font-medium">Limited time deals • Swipe to explore</p>
       </div>
 
       {/* Carousel Container */}

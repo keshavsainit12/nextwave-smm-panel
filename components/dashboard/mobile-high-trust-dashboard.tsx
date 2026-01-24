@@ -77,15 +77,15 @@ export function MobileHighTrustDashboard({
 
   // Hardcoded icon mapping - Using Blob Storage URLs
   const iconMap: Record<string, string> = {
-    Instagram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-instagram-Y6Ka1ocAALzf5J8Hu64Toiy50JdPFd.gif",
-    TikTok: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-tiktok-EzflMkAJ5ndq4gRIi5nzmBOoM1OvUF.gif",
-    Facebook: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-facebook-circled-EtRgurnTPAHD2yxFZbazoJxbrZYTq9.gif",
-    YouTube: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-youtube-M93kjqYJSjNU8cGtu7AQA1RKroGXxQ.gif",
-    Twitter: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-twitter-logo.gif",
-    Discord: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-discord-mNk8wSFfWYQoBZCDbcO2VNGpaupSgy.gif",
-    Telegram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-telegram-logo-gdYZ4CI62yYQFzmsC9hgp5SCpNecjH.gif",
-    LinkedIn: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-linkedin-j6nqGqyCXXSRbGjpQ6hLsVTKXmXfdX.gif",
-    Spotify: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-spotify-2iAARTR3O1EPL2XispaD2uZe9tLu3S.gif",
+    Instagram: "/images/icons8-instagram.gif",
+    TikTok: "/images/icons8-tiktok.gif",
+    Facebook: "/images/icons8-facebook-circled.gif",
+    YouTube: "/images/icons8-youtube.gif",
+    Twitter: "/images/icons8-twitter-logo.gif",
+    Discord: "/images/icons8-discord.gif",
+    Telegram: "/images/icons8-telegram-logo.gif",
+    LinkedIn: "/images/icons8-linkedin.gif",
+    Spotify: "/images/icons8-spotify.gif",
   }
 
   const getIconUrl = (categoryName: string) => {
@@ -604,6 +604,7 @@ export function MobileHighTrustDashboard({
                   </div>
 
                   <button
+                    id="place-order-button"
                     type="submit"
                     disabled={loading || !selectedService || !link.trim()}
                     className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl h-14 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-base font-bold leading-normal transition-all hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/25"
