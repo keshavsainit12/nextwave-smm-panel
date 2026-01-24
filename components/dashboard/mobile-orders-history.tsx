@@ -216,11 +216,11 @@ export function MobileOrdersHistory({ orders }: { orders: Order[] }) {
                   <div className="grid grid-cols-2 gap-3 py-2">
                     <div className="bg-slate-50 rounded-lg p-3">
                       <p className="text-xs text-slate-600 font-medium mb-1">Quantity</p>
-                      <p className="text-sm font-bold text-slate-900">{order.quantity.toLocaleString()}</p>
+                      <p className="text-sm font-bold text-slate-900">{(order.quantity || 0).toLocaleString()}</p>
                     </div>
                     <div className="bg-slate-50 rounded-lg p-3">
                       <p className="text-xs text-slate-600 font-medium mb-1">Total Price</p>
-                      <p className="text-sm font-bold text-slate-900">${order.total_price.toFixed(2)}</p>
+                      <p className="text-sm font-bold text-slate-900">${(order.total_price || 0).toFixed(2)}</p>
                     </div>
                   </div>
 
