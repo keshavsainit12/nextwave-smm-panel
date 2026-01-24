@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { 
   ACCOUNTPE_API_URL, 
   ACCOUNTPE_MERCHANT_ID, 
@@ -162,6 +163,7 @@ interface PendingUser {
 }
 
 export async function createInstantPayment(params: CreateInstantPaymentParams): Promise<PaymentResponse> {
+  try {
     console.log("[v0] Creating instant payment with params:", {
       userId: params.userId,
       amount: params.amount,
@@ -362,7 +364,10 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
     }
   } catch (error) {
     console.error("[v0] Instant payment error:", error)
-    return { success: false, error: error instanceof Error ? error.message : "Payment processing failed" }
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Payment processing failed"
+    };
   }
 }
 
