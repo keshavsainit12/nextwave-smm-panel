@@ -362,7 +362,10 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
     }
   } catch (error) {
     console.error("[v0] Instant payment error:", error)
-    return { success: false, error: error instanceof Error ? error.message : "Payment processing failed" }
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Payment processing failed"
+    }
   }
 }
 

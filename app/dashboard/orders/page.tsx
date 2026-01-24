@@ -107,3 +107,5 @@ function OrdersPageSkeleton() {
         </div>
       </div>
     </div>
+  )
+}
