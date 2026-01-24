@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast"
 import { placeOrder } from "@/app/actions/orders"
 import Link from "next/link"
 import { MobileServiceCarousel } from "./mobile-service-carousel"
+import { DashboardFooter } from "./dashboard-footer"
 import {
   Wallet,
   ShoppingCart,
@@ -83,15 +84,15 @@ export function MobileHighTrustDashboard({
 
   // Platform icon mapping - Using PNG icons from blob storage
   const iconMap: Record<string, string> = {
-    Instagram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-from-rawpixel-id-3344505-png-xDtnIBO3bc9t82kgmtCyYBnFkegScR.png",
-    TikTok: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-tiktok-EzflMkAJ5ndq4gRIi5nzmBOoM1OvUF.gif",
-    Facebook: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/facebook-RxpdvYtrTg1bsGUndmGLdWChd8onD6.png",
-    YouTube: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/youtube%20%281%29-07vpIxURnynwTMsjlHY7sISv5nHdvU.png",
-    Twitter: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/twitter-yUDtKy3fS31OodMEPl1luj7lSE1XFK.png",
-    Discord: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-discord-mNk8wSFfWYQoBZCDbcO2VNGpaupSgy.gif",
-    Telegram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/telegram-IKRhQNifTjNlijvJShg0wkSFQkxyj9.png",
-    LinkedIn: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-linkedin-j6nqGqyCXXSRbGjpQ6hLsVTKXmXfdX.gif",
-    Spotify: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-spotify-2iAARTR3O1EPL2XispaD2uZe9tLu3S.gif",
+    Instagram: "/images/image-from-rawpixel-id-3344505-png.png",
+    TikTok: "/images/icons8-tiktok.gif",
+    Facebook: "/images/facebook.png",
+    YouTube: "/images/youtube-20-281-29.png",
+    Twitter: "/images/twitter.png",
+    Discord: "/images/icons8-discord.gif",
+    Telegram: "/images/telegram.png",
+    LinkedIn: "/images/icons8-linkedin.gif",
+    Spotify: "/images/icons8-spotify.gif",
   }
 
   const getIconUrl = (nameOrObject: string | any): string | undefined => {
@@ -406,7 +407,7 @@ export function MobileHighTrustDashboard({
                           <div className="flex items-center gap-2">
                             {iconUrl && (
                               <img
-                                src={iconUrl}
+                                src={iconUrl || "/placeholder.svg"}
                                 alt={category.name}
                                 className="h-5 w-5 rounded object-contain"
                                 crossOrigin="anonymous"
@@ -469,7 +470,7 @@ export function MobileHighTrustDashboard({
                               <div className="flex items-center gap-2">
                                 {iconUrl && (
                                   <img
-                                    src={iconUrl}
+                                    src={iconUrl || "/placeholder.svg"}
                                     alt={service.name}
                                     className="h-5 w-5 rounded object-contain"
                                     crossOrigin="anonymous"
@@ -681,6 +682,9 @@ export function MobileHighTrustDashboard({
             </div>
           )}
         </main>
+
+        {/* Dashboard Footer */}
+        <DashboardFooter />
 
         {/* Bottom Navigation */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-4 py-2 flex justify-around items-center z-20">
