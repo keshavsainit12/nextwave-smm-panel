@@ -2,7 +2,7 @@
 
 ## Architecture Overview
 
-```
+\`\`\`
 ┌─────────────────────────────────────────────────────────────────────┐
 │                    E-Commerce Platform                              │
 │                                                                     │
@@ -28,7 +28,7 @@
 │  └─────────────────────────────────────────────────────────────┘   │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
-```
+\`\`\`
 
 ---
 
@@ -36,7 +36,7 @@
 
 ### Load Time Comparison
 
-```
+\`\`\`
 BEFORE                          AFTER
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -51,7 +51,7 @@ Coupon Validation:
 
 Settings Save:
 █████████ 500-1000ms            ██ 200-500ms   ✓ 50% faster
-```
+\`\`\`
 
 ---
 
@@ -71,7 +71,7 @@ Settings Save:
 
 ## Issue Resolution Flowchart
 
-```
+\`\`\`
 START
   │
   ├─→ ORDER PAGE UNRESPONSIVE
@@ -96,13 +96,13 @@ START
       ├─ Add Status Code Handling
       ├─ Ready for Retry/Cache
       └─ Result: 100% reliability ✓
-```
+\`\`\`
 
 ---
 
 ## Implementation Timeline
 
-```
+\`\`\`
 WEEK 1: Critical Fixes
 ┌─────────────────────────────────────────────────┐
 │ Mon-Wed: Order Pagination & Coupon Timeout    │
@@ -132,13 +132,13 @@ WEEK 4: Deployment & Monitoring
 │ Thu-Fri: Monitoring & Validation               │
 │ Status: 🟢 LOW (8% effort)                     │
 └─────────────────────────────────────────────────┘
-```
+\`\`\`
 
 ---
 
 ## Risk Matrix
 
-```
+\`\`\`
 ┌─────────────────────────────────────────────┐
 │ Risk Level  │  Count  │  Mitigation          │
 ├─────────────────────────────────────────────┤
@@ -150,13 +150,13 @@ WEEK 4: Deployment & Monitoring
 
 Risk Mitigation: 100% coverage
 Overall Risk Level: LOW ✓
-```
+\`\`\`
 
 ---
 
 ## Code Changes Summary
 
-```
+\`\`\`
 FILES MODIFIED: 4
 
 1. /app/dashboard/orders/page.tsx
@@ -183,13 +183,13 @@ FILES MODIFIED: 4
    └─ Total: ~40 additions
 
 TOTAL CHANGES: ~315 additions, ~80 removals
-```
+\`\`\`
 
 ---
 
 ## Success Metrics Dashboard
 
-```
+\`\`\`
 METRIC                      BEFORE    AFTER    TARGET   STATUS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Order Load Time (p95)        8-15s     <2s      <2s      ✓ MET
@@ -199,13 +199,13 @@ Error Rate                   2%        <0.1%    <0.1%    ✓ MET
 Success Rate                 85%       >99.5%   >99.5%   ✓ MET
 User Satisfaction            3.2/5     4.5/5    4.5/5    ⏳ PENDING
 NPS Score                    +15       +25      +25      ⏳ PENDING
-```
+\`\`\`
 
 ---
 
 ## Documentation Deliverables
 
-```
+\`\`\`
 📦 COMPLETE PACKAGE (2,200+ lines)
 │
 ├─ 📄 EXECUTIVE_SUMMARY.md (326 lines)
@@ -228,7 +228,7 @@ NPS Score                    +15       +25      +25      ⏳ PENDING
 │
 └─ 📄 This File (Visual Summary)
    └─ Quick reference and overview
-```
+\`\`\`
 
 ---
 
@@ -253,7 +253,7 @@ NPS Score                    +15       +25      +25      ⏳ PENDING
 
 ## Deployment Readiness Checklist
 
-```
+\`\`\`
 PRE-DEPLOYMENT
 ☐ Code review completed
 ☐ Unit tests passing
@@ -280,7 +280,7 @@ POST-DEPLOYMENT
 ☐ User feedback collected
 ☐ Documentation updated
 ☐ Team notified
-```
+\`\`\`
 
 ---
 

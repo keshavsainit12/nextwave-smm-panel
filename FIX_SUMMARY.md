@@ -56,7 +56,7 @@
 ### Key Features Implemented
 
 **Mobile-First Responsive Design:**
-```
+\`\`\`
 Desktop (lg+):        Mobile:
 ┌─────────────┐      ┌──────────────┐
 │  Sidebar    │      │ Mobile Menu  │
@@ -70,7 +70,7 @@ Desktop (lg+):        Mobile:
 └─────────────┘      │ Bottom Nav   │
                      │ (Fixed)      │
                      └──────────────┘
-```
+\`\`\`
 
 **Coupon System Flow:**
 1. Admin creates coupon via dialog

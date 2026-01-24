@@ -33,10 +33,10 @@
 4. `/app/actions/users.ts` - Currency validation
 
 ### Database Changes
-```sql
+\`\`\`sql
 ALTER TABLE users ADD COLUMN currency TEXT DEFAULT 'USD';
 ALTER TABLE users ADD COLUMN currency_updated_at TIMESTAMP DEFAULT NOW();
-```
+\`\`\`
 
 ---
 
@@ -105,12 +105,12 @@ ALTER TABLE users ADD COLUMN currency_updated_at TIMESTAMP DEFAULT NOW();
 ## 🔐 Security & Safety
 
 ### Backup Plan
-```
+\`\`\`
 1. Database backup BEFORE migration
 2. Test rollback in staging
 3. Keep rollback script ready
 4. Monitor after deployment
-```
+\`\`\`
 
 ### Rollback Time
 **< 5 minutes** if issues occur
@@ -219,7 +219,7 @@ ALTER TABLE users ADD COLUMN currency_updated_at TIMESTAMP DEFAULT NOW();
 
 ## 🎖️ Implementation Status
 
-```
+\`\`\`
 Planning:        ████████████████████ ✓ COMPLETE
 Architecture:    ████████████████████ ✓ COMPLETE
 Development:     ████████████████████ ✓ COMPLETE
@@ -227,7 +227,7 @@ Documentation:   ████████████████████ �
 Testing:         ⏳ READY TO START
 Deployment:      ⏳ READY TO SCHEDULE
 Monitoring:      ⏳ READY TO CONFIGURE
-```
+\`\`\`
 
 ---
 

@@ -2,7 +2,7 @@
 
 ## 1. Advanced Error Boundary for Orders
 
-```typescript
+\`\`\`typescript
 // components/dashboard/orders-error-boundary.tsx
 'use client'
 
@@ -48,11 +48,11 @@ export function OrdersErrorBoundary({ error, reset }: ErrorBoundaryProps) {
     </div>
   )
 }
-```
+\`\`\`
 
 ## 2. Coupon Validation with Retry & Caching
 
-```typescript
+\`\`\`typescript
 // lib/coupon-validator.ts
 interface CachedCoupon {
   discount: number
@@ -173,11 +173,11 @@ class CouponValidator {
 }
 
 export const couponValidator = new CouponValidator()
-```
+\`\`\`
 
 ## 3. Settings Form with Proper State Management
 
-```typescript
+\`\`\`typescript
 // components/dashboard/enhanced-settings-form.tsx
 'use client'
 
@@ -352,11 +352,11 @@ export function EnhancedSettingsForm({ userData }: { userData: UserData }) {
     </Card>
   )
 }
-```
+\`\`\`
 
 ## 4. Orders Pagination Component
 
-```typescript
+\`\`\`typescript
 // components/dashboard/orders-pagination.tsx
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
@@ -437,11 +437,11 @@ export function OrdersPagination({
     </div>
   )
 }
-```
+\`\`\`
 
 ## 5. API Response Logging Utility
 
-```typescript
+\`\`\`typescript
 // lib/api-logger.ts
 interface ApiLogEntry {
   timestamp: string
@@ -519,11 +519,11 @@ export class ApiLogger {
     this.logs = []
   }
 }
-```
+\`\`\`
 
 ## 6. Performance Monitoring Hook
 
-```typescript
+\`\`\`typescript
 // hooks/use-performance-monitor.ts
 import { useEffect } from 'react'
 
@@ -556,4 +556,4 @@ export function usePerformanceMonitor(componentName: string) {
     }
   }, [componentName])
 }
-```
+\`\`\`
