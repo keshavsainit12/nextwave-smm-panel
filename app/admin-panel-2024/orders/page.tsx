@@ -41,43 +41,45 @@ export default async function AdminOrdersPage() {
   }))
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header - Mobile responsive */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Orders Management</h1>
-          <p className="text-muted-foreground">Monitor and manage all user orders</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Orders</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">Monitor and manage all user orders</p>
         </div>
         <ExportCsvButton data={exportData || []} filename="orders" />
       </div>
 
-      <Tabs defaultValue="all">
-        <TabsList>
-          <TabsTrigger value="all">All Orders ({transformedOrders?.length || 0})</TabsTrigger>
-          <TabsTrigger value="pending">Pending ({statusCounts.pending})</TabsTrigger>
-          <TabsTrigger value="processing">Processing ({statusCounts.processing})</TabsTrigger>
-          <TabsTrigger value="completed">Completed ({statusCounts.completed})</TabsTrigger>
-          <TabsTrigger value="partial">Partial ({statusCounts.partial})</TabsTrigger>
+      {/* Tabs - Mobile scrollable */}
+      <Tabs defaultValue="all" className="w-full">
+        <TabsList className="grid grid-cols-2 sm:grid-cols-5 gap-1 sm:gap-0 w-full h-auto sm:h-10">
+          <TabsTrigger value="all" className="text-xs sm:text-sm">All ({transformedOrders?.length || 0})</TabsTrigger>
+          <TabsTrigger value="pending" className="text-xs sm:text-sm">Pending ({statusCounts.pending})</TabsTrigger>
+          <TabsTrigger value="processing" className="text-xs sm:text-sm hidden sm:inline-flex">Processing ({statusCounts.processing})</TabsTrigger>
+          <TabsTrigger value="completed" className="text-xs sm:text-sm hidden sm:inline-flex">Completed ({statusCounts.completed})</TabsTrigger>
+          <TabsTrigger value="partial" className="text-xs sm:text-sm">Partial ({statusCounts.partial})</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="all" className="mt-6">
+        <TabsContent value="all" className="mt-4 sm:mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>All Orders</CardTitle>
-              <CardDescription>Complete order history</CardDescription>
+              <CardTitle className="text-lg sm:text-xl">All Orders</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Complete order history</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="overflow-x-auto">
               <OrderList orders={transformedOrders || []} />
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="pending" className="mt-6">
+        <TabsContent value="pending" className="mt-4 sm:mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Pending Orders</CardTitle>
-              <CardDescription>Orders awaiting processing</CardDescription>
+              <CardTitle className="text-lg sm:text-xl">Pending Orders</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Orders awaiting processing</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="overflow-x-auto">
               <OrderList orders={transformedOrders?.filter((o) => o.status === "pending") || []} />
             </CardContent>
           </Card>

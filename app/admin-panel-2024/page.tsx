@@ -54,30 +54,32 @@ export default async function AdminDashboardPage() {
   const activeUsersCount = activeUsersData?.length || 0
 
   return (
-    <div className="space-y-8">
-      <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6 md:space-y-8">
+      {/* Welcome Card - Mobile first responsive */}
+      <div className="bg-white dark:bg-slate-900 rounded-lg sm:rounded-xl p-4 sm:p-6 md:p-8 shadow-sm border border-gray-200 dark:border-gray-700 space-y-4 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             Admin Dashboard
           </h1>
-          <p className="text-gray-600 mt-2 text-lg">Welcome back! Here's what's happening today.</p>
+          <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm sm:text-base">Welcome back! Here's what's happening today.</p>
         </div>
-        <div className="flex gap-2">
-          <Link href="/admin-panel-2024/transaction-history">
-            <Button variant="outline" className="flex items-center gap-2 bg-transparent">
-              View All Transactions
-              <ArrowRight className="h-4 w-4" />
+        <div className="flex gap-2 flex-col sm:flex-row w-full sm:w-auto">
+          <Link href="/admin-panel-2024/transaction-history" className="w-full sm:w-auto">
+            <Button variant="outline" className="flex items-center gap-2 bg-transparent w-full sm:w-auto text-xs sm:text-sm">
+              Transactions
+              <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
           </Link>
-          <Link href="/admin-panel-2024/manage-transactions">
-            <Button className="flex items-center gap-2">
-              Manage Transactions
-              <ArrowRight className="h-4 w-4" />
+          <Link href="/admin-panel-2024/manage-transactions" className="w-full sm:w-auto">
+            <Button className="flex items-center gap-2 w-full sm:w-auto text-xs sm:text-sm">
+              Manage
+              <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
           </Link>
         </div>
       </div>
 
+      {/* Stats Cards */}
       <AdminStatsCards
         totalRevenue={totalRevenue}
         totalProfit={totalProfit}
@@ -88,14 +90,18 @@ export default async function AdminDashboardPage() {
         pendingDeposits={pendingDeposits || 0}
       />
 
-      <div className="grid gap-8 lg:grid-cols-3">
+      {/* Charts - Stack on mobile, side by side on lg */}
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <RevenueChart />
         </div>
-        <RecentOrders />
+        <div className="col-span-1">
+          <RecentOrders />
+        </div>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-2">
+      {/* Recent Transactions */}
+      <div className="grid gap-4 sm:gap-6 grid-cols-1">
         <RecentTransactions />
       </div>
     </div>
