@@ -3,6 +3,100 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 
+export async function processUserPayment(userId: string, amount: number) {
+  try {
+    const supabase = createAdminClient()
+
+    console.log(`[v0] Processing payment for user: ${userId}, amount: ${amount}`)
+
+    // Get user's pending transactions
+    const { data: pendingTransactions, error: fetchError } = await supabase
+      .from('transactions')
+      .select('id, amount, user_id')
+      .eq('user_id', userId)
+      .eq('type', 'deposit')
+      .eq('payment_method', 'instant_xaf')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true })
+
+    if (fetchError) {
+      console.error('[v0] Fetch error:', fetchError.message)
+      return { success: false, error: 'Failed to fetch transactions' }
+    }
+
+    if (!pendingTransactions || pendingTransactions.length === 0) {
+      return { success: false, error: 'No pending transactions for this user' }
+    }
+
+    // Get current user balance
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('balance, email')
+      .eq('id', userId)
+      .single()
+
+    if (userError || !userData) {
+      return { success: false, error: 'User not found' }
+    }
+
+    const balanceBefore = Number(userData.balance) || 0
+    const balanceAfter = balanceBefore + amount
+
+    // Update all pending transactions for this user to completed
+    const { error: txUpdateError } = await supabase
+      .from('transactions')
+      .update({
+        status: 'completed',
+        balance_before: balanceBefore,
+        balance_after: balanceAfter,
+      })
+      .eq('user_id', userId)
+      .eq('status', 'pending')
+      .eq('type', 'deposit')
+      .eq('payment_method', 'instant_xaf')
+
+    if (txUpdateError) {
+      console.error('[v0] Transaction update error:', txUpdateError.message)
+      return { success: false, error: 'Failed to update transactions' }
+    }
+
+    // Update user balance
+    const { error: balanceError } = await supabase
+      .from('users')
+      .update({ balance: balanceAfter })
+      .eq('id', userId)
+
+    if (balanceError) {
+      console.error('[v0] Balance update error:', balanceError.message)
+      return { success: false, error: 'Failed to update balance' }
+    }
+
+    // Revalidate paths
+    revalidatePath('/admin-panel-2024/process-payments')
+    revalidatePath('/admin-panel-2024')
+    revalidatePath('/dashboard')
+
+    console.log(`[v0] ✅ User payment processed successfully:`, {
+      userId,
+      userEmail: userData.email,
+      amount,
+      balanceBefore,
+      balanceAfter,
+    })
+
+    return {
+      success: true,
+      message: `Payment of $${amount.toFixed(2)} processed for ${userData.email}`,
+    }
+  } catch (error) {
+    console.error('[v0] Process user payment error:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to process payment',
+    }
+  }
+}
+
 export async function processPendingInstantPayments() {
   try {
     const supabase = createAdminClient()

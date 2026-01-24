@@ -16,6 +16,10 @@ import { useToast } from "@/hooks/use-toast"
 export function OrderDialog({ service, open, onClose }: { service: any; open: boolean; onClose: () => void }) {
   const [link, setLink] = useState("")
   const [quantity, setQuantity] = useState(service.min_quantity || 100)
+  const [couponCode, setCouponCode] = useState("")
+  const [couponDiscount, setCouponDiscount] = useState(0)
+  const [couponError, setCouponError] = useState<string | null>(null)
+  const [validateCouponLoading, setValidateCouponLoading] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
@@ -23,14 +27,61 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
 
   const servicePrice = Number(service.price || service.base_price || 0)
   const totalPrice = ((quantity / 1000) * servicePrice).toFixed(2)
+  const discountedTotal = (Number(totalPrice) * (1 - couponDiscount / 100)).toFixed(2)
 
   useEffect(() => {
     if (open) {
       setLink("")
       setQuantity(service.min_quantity || 100)
+      setCouponCode("")
+      setCouponDiscount(0)
+      setCouponError(null)
       setError(null)
     }
   }, [open, service.min_quantity])
+
+  const handleValidateCoupon = async () => {
+    if (!couponCode.trim()) {
+      setCouponError("Please enter a coupon code")
+      return
+    }
+
+    setValidateCouponLoading(true)
+    setCouponError(null)
+
+    try {
+      const response = await fetch("/api/v1/validate-coupon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ couponCode: couponCode.toUpperCase() }),
+      })
+
+      const data = await response.json()
+
+      if (data.valid) {
+        setCouponDiscount(data.discount || 0)
+        toast({
+          title: "Coupon Applied",
+          description: `${data.discount}% discount applied to your order`,
+          duration: 3000,
+        })
+      } else {
+        setCouponError(data.error || "Invalid coupon code")
+        setCouponDiscount(0)
+      }
+    } catch (err) {
+      setCouponError("Failed to validate coupon")
+      setCouponDiscount(0)
+    } finally {
+      setValidateCouponLoading(false)
+    }
+  }
+
+  const handleRemoveCoupon = () => {
+    setCouponCode("")
+    setCouponDiscount(0)
+    setCouponError(null)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -38,7 +89,7 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
     setError(null)
 
     try {
-      const result = await placeOrder(service.id, link, quantity)
+      const result = await placeOrder(service.id, link, quantity, couponCode || undefined)
 
       if (result.error) {
         throw new Error(result.error)
@@ -126,6 +177,52 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
             </p>
           </div>
 
+          {/* Coupon Code Input */}
+          <div className="space-y-2">
+            <Label htmlFor="coupon" className="text-sm font-semibold text-slate-700">Coupon Code (Optional)</Label>
+            <div className="flex gap-2">
+              <Input
+                id="coupon"
+                placeholder="Enter coupon code"
+                value={couponCode}
+                onChange={(e) => {
+                  setCouponCode(e.target.value.toUpperCase())
+                  if (couponDiscount > 0) setCouponDiscount(0)
+                }}
+                disabled={loading || validateCouponLoading || couponDiscount > 0}
+                className="h-11 bg-white border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 uppercase"
+              />
+              {couponDiscount > 0 ? (
+                <Button
+                  type="button"
+                  onClick={handleRemoveCoupon}
+                  variant="outline"
+                  className="px-4 h-11 text-red-600 border-red-200 hover:bg-red-50"
+                >
+                  Remove
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={handleValidateCoupon}
+                  disabled={!couponCode.trim() || validateCouponLoading || loading}
+                  className="px-4 h-11 bg-slate-900 hover:bg-slate-800 text-white"
+                >
+                  {validateCouponLoading ? "..." : "Apply"}
+                </Button>
+              )}
+            </div>
+            {couponError && (
+              <p className="text-xs text-red-600">{couponError}</p>
+            )}
+            {couponDiscount > 0 && (
+              <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-lg">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <p className="text-sm text-green-700 font-medium">{couponDiscount}% discount applied!</p>
+              </div>
+            )}
+          </div>
+
           {/* Price Breakdown Card */}
           <div className="rounded-xl border border-blue-200/50 bg-gradient-to-br from-blue-50 to-blue-50/50 p-4 space-y-3">
             <div className="flex items-center justify-between text-sm">
@@ -136,12 +233,24 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
               <span className="text-slate-600">Quantity:</span>
               <span className="font-semibold text-slate-900">{quantity.toLocaleString()}</span>
             </div>
-            <div className="border-t border-blue-200 pt-3 flex items-center justify-between">
-              <span className="font-semibold text-slate-700 flex items-center gap-2">
-                <Wallet className="h-4 w-4 text-blue-600" />
-                Total:
-              </span>
-              <span className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">${totalPrice}</span>
+            <div className="border-t border-blue-200 pt-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-slate-700">Subtotal:</span>
+                <span className="text-slate-900">${totalPrice}</span>
+              </div>
+              {couponDiscount > 0 && (
+                <div className="flex items-center justify-between text-green-700">
+                  <span className="text-sm">Discount ({couponDiscount}%):</span>
+                  <span className="font-semibold">-${(Number(totalPrice) * couponDiscount / 100).toFixed(2)}</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between pt-2 border-t border-blue-200">
+                <span className="font-semibold text-slate-700 flex items-center gap-2">
+                  <Wallet className="h-4 w-4 text-blue-600" />
+                  Total:
+                </span>
+                <span className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">${discountedTotal}</span>
+              </div>
             </div>
           </div>
 

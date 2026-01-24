@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { SMMApiClient } from "@/lib/smm-api-client"
 
-export async function placeOrder(serviceId: string, link: string, quantity: number, isBulkBuy = false) {
+export async function placeOrder(serviceId: string, link: string, quantity: number, couponCode?: string, isBulkBuy = false) {
   try {
     const supabase = await createClient()
     const userResponse = await supabase.auth.getUser()
@@ -14,7 +14,7 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
       return { error: "Unauthorized" }
     }
 
-    console.log("[v0] Placing order for user:", user.id, "service:", serviceId, "bulk:", isBulkBuy)
+    console.log("[v0] Placing order for user:", user.id, "service:", serviceId, "coupon:", couponCode, "bulk:", isBulkBuy)
 
     const serviceResponse = await supabase
       .from("services")
@@ -49,11 +49,58 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
     const baseMultiplier = userData.price_multiplier || 3.0
     const priceMultiplier = isBulkBuy ? 2.5 : baseMultiplier
     const finalServicePrice = servicePrice * priceMultiplier
-    const price = (quantity / 1000) * finalServicePrice
+    let price = (quantity / 1000) * finalServicePrice
 
     console.log(
       `[v0] Order calculation: ${quantity} units × $${servicePrice}/1K × ${priceMultiplier}x (${isBulkBuy ? "BULK" : "REGULAR"}) = $${price.toFixed(4)}`,
     )
+
+    // Apply coupon discount if provided
+    let couponId: string | null = null
+    let discountPercentage = 0
+
+    if (couponCode) {
+      const { data: coupon, error: couponError } = await supabase
+        .from("coupons")
+        .select("id, discount_percentage, active, expires_at, max_uses, used_count, per_user_limit")
+        .ilike("code", couponCode.trim())
+        .single()
+
+      if (couponError || !coupon) {
+        return { error: "Invalid coupon code" }
+      }
+
+      if (!coupon.active) {
+        return { error: "This coupon is not active" }
+      }
+
+      if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
+        return { error: "This coupon has expired" }
+      }
+
+      if (coupon.max_uses && coupon.used_count >= coupon.max_uses) {
+        return { error: "This coupon has reached its usage limit" }
+      }
+
+      // Check per-user limit
+      if (coupon.per_user_limit && coupon.per_user_limit > 0) {
+        const { data: userUsages } = await supabase
+          .from("coupon_usages")
+          .select("id")
+          .eq("coupon_id", coupon.id)
+          .eq("user_id", user.id)
+
+        if (userUsages && userUsages.length >= coupon.per_user_limit) {
+          return { error: `You have already used this coupon ${coupon.per_user_limit} time(s)` }
+        }
+      }
+
+      couponId = coupon.id
+      discountPercentage = coupon.discount_percentage || 0
+      price = price * (1 - discountPercentage / 100)
+
+      console.log(`[v0] Coupon applied: ${discountPercentage}% discount, new price: $${price.toFixed(2)}`)
+    }
 
     if (isBulkBuy && quantity < 10000) {
       return { error: "Bulk orders require a minimum quantity of 10,000" }
@@ -76,6 +123,8 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
         price,
         status: "pending",
         can_refill: service.has_refill || service.refill,
+        coupon_id: couponId,
+        discount_percentage: discountPercentage,
       })
       .select()
       .single()
@@ -96,6 +145,19 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
         total_spent: (userData.total_spent || 0) + price,
       })
       .eq("id", user.id)
+
+    // Record coupon usage if coupon was used
+    if (couponId) {
+      await supabase.from("coupon_usages").insert({
+        coupon_id: couponId,
+        user_id: user.id,
+        order_id: order.id,
+        discount_amount: (quantity / 1000) * finalServicePrice * (discountPercentage / 100),
+      })
+
+      // Increment coupon usage count
+      await supabase.rpc("increment_coupon_usage", { coupon_id: couponId })
+    }
 
     // Create transaction record
     await supabase.from("transactions").insert({
