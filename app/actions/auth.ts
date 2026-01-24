@@ -159,13 +159,12 @@ export async function handleOAuthCallback(userId: string, email: string, fullNam
     })
 
     if (profileError) {
-      console.error("[v0] OAuth profile creation error:", profileError)
+      console.error("OAuth profile creation error:", profileError)
       throw profileError
     }
 
     return { success: true, existing: false }
   } catch (error) {
-    console.error("[v0] OAuth callback error:", error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to create profile",

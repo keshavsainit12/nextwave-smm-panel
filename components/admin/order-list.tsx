@@ -93,7 +93,9 @@ export function OrderList({ orders }: { orders: any[] }) {
         <TableBody>
           {orders.map((order) => (
             <TableRow key={order.id}>
-              <TableCell className="font-mono text-xs">{order.id.slice(0, 8)}...</TableCell>
+              <TableCell className="font-mono text-sm font-bold text-blue-600">
+                <span className="bg-blue-50 dark:bg-blue-900/20 px-3 py-1 rounded">#{order.order_id}</span>
+              </TableCell>
               <TableCell>
                 <div className="text-sm">{order.users?.full_name || order.users?.email}</div>
               </TableCell>
@@ -139,32 +141,40 @@ export function OrderList({ orders }: { orders: any[] }) {
             <DialogTitle>Manage Order {selectedOrder?.id?.slice(0, 8)}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
+            <div className="grid grid-cols-2 gap-4 p-4 bg-gradient-to-r from-blue-50 to-slate-50 dark:from-blue-900/20 dark:to-slate-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
               <div>
-                <div className="text-xs text-muted-foreground">User</div>
+                <div className="text-xs text-muted-foreground font-semibold">Order ID</div>
+                <div className="font-mono font-bold text-lg text-blue-600">{selectedOrder?.order_id}</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground font-semibold">User</div>
                 <div className="font-medium">{selectedOrder?.users?.full_name || selectedOrder?.users?.email}</div>
               </div>
               <div>
-                <div className="text-xs text-muted-foreground">Service</div>
+                <div className="text-xs text-muted-foreground font-semibold">Service</div>
                 <div className="font-medium">{selectedOrder?.services?.name}</div>
               </div>
               <div>
-                <div className="text-xs text-muted-foreground">Link</div>
+                <div className="text-xs text-muted-foreground font-semibold">Link</div>
                 <div className="font-mono text-sm truncate">{selectedOrder?.link}</div>
               </div>
               <div>
-                <div className="text-xs text-muted-foreground">Quantity</div>
+                <div className="text-xs text-muted-foreground font-semibold">Quantity</div>
                 <div className="font-medium">{selectedOrder?.quantity?.toLocaleString()}</div>
               </div>
               <div>
-                <div className="text-xs text-muted-foreground">Total Price</div>
+                <div className="text-xs text-muted-foreground font-semibold">Total Price</div>
                 <div className="font-mono font-semibold text-green-600">
                   ${(selectedOrder?.total_price || 0).toFixed(2)}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-muted-foreground">Current Status</div>
+                <div className="text-xs text-muted-foreground font-semibold">Status</div>
                 <Badge variant={statusColors[selectedOrder?.status] || "default"}>{selectedOrder?.status}</Badge>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground font-semibold">Created</div>
+                <div className="text-sm">{new Date(selectedOrder?.created_at).toLocaleDateString()}</div>
               </div>
             </div>
 

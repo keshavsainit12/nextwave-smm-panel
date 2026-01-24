@@ -142,7 +142,6 @@ export function MobileOrdersHistory({ orders }: { orders: Order[] }) {
         toast.error("Failed to create ticket. Please try again.")
       }
     } catch (error) {
-      console.error("[v0] Ticket creation error:", error)
       toast.error(error instanceof Error ? error.message : "Failed to create ticket. Please try again.")
     } finally {
       setTicketLoading(false)
