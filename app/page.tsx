@@ -361,9 +361,9 @@ export default function LandingPage() {
               <img src="/nextwave-logo.png" alt="NextWave SMM" className="h-12 object-contain" />
               
               <div className="flex flex-col items-center gap-4 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
-                <Link href="/privacy" className="hover:text-blue-400 transition-colors">Privacy Policy</Link>
-                <Link href="/terms" className="hover:text-blue-400 transition-colors">Terms & Conditions</Link>
-                <Link href="/refund" className="hover:text-blue-400 transition-colors">Refund Policy</Link>
+                <Link href="/privacy-policy" className="hover:text-blue-400 transition-colors">Privacy Policy</Link>
+                <Link href="/terms-of-service" className="hover:text-blue-400 transition-colors">Terms & Conditions</Link>
+                <Link href="/refund-policy" className="hover:text-blue-400 transition-colors">Refund Policy</Link>
                 <button onClick={() => setShowContactForm(true)} className="hover:text-blue-400 transition-colors">Contact Us</button>
               </div>
 
@@ -375,9 +375,9 @@ export default function LandingPage() {
               <img src="/nextwave-logo.png" alt="NextWave SMM" className="h-14 object-contain" />
               
               <div className="flex gap-8 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
-                <Link href="/privacy" className="hover:text-blue-400 transition-colors">Privacy Policy</Link>
-                <Link href="/terms" className="hover:text-blue-400 transition-colors">Terms & Conditions</Link>
-                <Link href="/refund" className="hover:text-blue-400 transition-colors">Refund Policy</Link>
+                <Link href="/privacy-policy" className="hover:text-blue-400 transition-colors">Privacy Policy</Link>
+                <Link href="/terms-of-service" className="hover:text-blue-400 transition-colors">Terms & Conditions</Link>
+                <Link href="/refund-policy" className="hover:text-blue-400 transition-colors">Refund Policy</Link>
                 <button onClick={() => setShowContactForm(true)} className="hover:text-blue-400 transition-colors">Contact Us</button>
               </div>
 
