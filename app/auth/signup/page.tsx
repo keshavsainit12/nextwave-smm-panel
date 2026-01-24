@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -21,6 +21,16 @@ function SignupContent() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   const router = useRouter()
+
+  useEffect(() => {
+    // Setup reCAPTCHA callback
+    window.handleRecaptchaChange = (token: string) => {
+      setCaptchaToken(token)
+      if (error === "Please complete the reCAPTCHA verification") {
+        setError(null)
+      }
+    }
+  }, [error])
 
   const validateForm = () => {
     if (!fullName.trim()) {
@@ -44,13 +54,6 @@ function SignupContent() {
       return false
     }
     return true
-  }
-
-  const handleRecaptchaChange = (token: string | null) => {
-    setCaptchaToken(token)
-    if (token && error === "Please complete the reCAPTCHA verification") {
-      setError(null)
-    }
   }
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -163,6 +166,9 @@ function SignupContent() {
         src="https://www.google.com/recaptcha/api.js"
         async
         defer
+        onLoad={() => {
+          console.log("[v0] reCAPTCHA script loaded")
+        }}
       />
 
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
@@ -280,7 +286,7 @@ function SignupContent() {
               <div
                 className="g_recaptcha"
                 data-sitekey="6Lea01QsAAAAAG7Wv83BSoSV7NWF14KLe6poX4As"
-                data-callback="window.handleRecaptchaChange"
+                data-callback="handleRecaptchaChange"
               />
             </div>
 
@@ -361,19 +367,7 @@ function SignupContent() {
           </Link>
         </div>
       </div>
-
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            window.handleRecaptchaChange = function(token) {
-              const event = new CustomEvent('captchaChange', { detail: { token } });
-              window.dispatchEvent(event);
-            };
-          `,
-        }}
-      />
-    </div>
-  )
+    )
 }
 
 export default function SignupPage() {
