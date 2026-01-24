@@ -181,10 +181,10 @@ export function MobileOrdersHistory({ orders }: { orders: Order[] }) {
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-bold text-slate-900 leading-tight truncate">
+                        <h3 className="text-sm font-bold text-slate-900 leading-tight break-words line-clamp-2">
                           {order.services?.name}
                         </h3>
-                        <p className="text-xs text-slate-500 uppercase font-semibold tracking-wider">
+                        <p className="text-xs text-slate-500 uppercase font-semibold tracking-wider truncate">
                           Order #{order.order_id}
                         </p>
                       </div>
