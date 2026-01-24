@@ -135,6 +135,8 @@ export async function updateUserProfile(
 
     revalidatePath("/dashboard/settings")
     revalidatePath("/dashboard/profile")
+    revalidatePath("/admin-panel-2024/users")
+    revalidatePath("/admin-panel-2024")
 
     console.log("[v0] Profile updated successfully")
     return { success: true }
@@ -221,6 +223,8 @@ export async function enableTwoFactorAuth(userId: string) {
     }
 
     revalidatePath("/dashboard/settings")
+    revalidatePath("/admin-panel-2024/users")
+    revalidatePath("/admin-panel-2024")
 
     console.log("[v0] 2FA enabled successfully")
     return { success: true, message: "Two-factor authentication enabled. A verification code will be sent to your email." }
@@ -247,6 +251,8 @@ export async function disableTwoFactorAuth(userId: string) {
     }
 
     revalidatePath("/dashboard/settings")
+    revalidatePath("/admin-panel-2024/users")
+    revalidatePath("/admin-panel-2024")
 
     console.log("[v0] 2FA disabled successfully")
     return { success: true, message: "Two-factor authentication disabled" }
