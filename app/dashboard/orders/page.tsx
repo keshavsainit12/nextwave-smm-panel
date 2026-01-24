@@ -65,14 +65,20 @@ async function OrdersContent({ page = 1 }: { page: number }) {
 
         {/* Desktop order table with all order details */}
         {transformedOrders && transformedOrders.length > 0 ? (
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="animate-pulse space-y-2">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-12 bg-gray-100 dark:bg-gray-700"></div>
-          ))}
-        </div>
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="animate-pulse space-y-2">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-12 bg-gray-100 dark:bg-gray-700"></div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">No orders found</p>
+          </div>
+        )}
       </div>
-    </div>
+    </>
   )
 }
 
