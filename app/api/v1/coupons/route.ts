@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       .from("coupons")
       .select("id")
       .ilike("code", code.trim())
-      .single()
+      .maybeSingle()
 
     if (existingCoupon) {
       return NextResponse.json({ error: "Coupon code already exists" }, { status: 409 })

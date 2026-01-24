@@ -58,22 +58,26 @@ export function AddCouponDialog() {
         }),
       })
 
+      console.log("[v0] API Response status:", response.status)
+      const data = await response.json()
+      console.log("[v0] API Response data:", data)
+
       if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || "Failed to create coupon")
+        throw new Error(data.error || `Failed to create coupon (${response.status})`)
       }
 
-      const data = await response.json()
-      console.log("[v0] Coupon created:", data)
+      console.log("[v0] Coupon created successfully:", data)
 
       toast.success("Coupon created successfully!")
       setFormData({ code: "", discount_percentage: 10, max_uses: "", active: true })
       setOpen(false)
 
       // Refresh page to show new coupon
-      window.location.reload()
+      setTimeout(() => {
+        window.location.reload()
+      }, 500)
     } catch (error: any) {
-      console.error("[v0] Coupon creation error:", error)
+      console.error("[v0] Coupon creation error:", error.message)
       toast.error(error.message || "Failed to create coupon")
     } finally {
       setLoading(false)
