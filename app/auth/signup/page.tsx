@@ -367,7 +367,8 @@ function SignupContent() {
           </Link>
         </div>
       </div>
-    )
+    </div>
+  )
 }
 
 export default function SignupPage() {
