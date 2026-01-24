@@ -21,9 +21,9 @@ Google's OAuth flow works like this:
 - Look for "Authorized redirect URIs" section
 
 ### Step 3: Add ONLY This URL
-```
+\`\`\`
 https://hhtvvlzsjamprvxeayxm.supabase.co/auth/v1/callback
-```
+\`\`\`
 
 **IMPORTANT:** 
 - ✅ Copy-paste exactly as shown (case-sensitive)
@@ -33,11 +33,11 @@ https://hhtvvlzsjamprvxeayxm.supabase.co/auth/v1/callback
 
 ### Step 4: JavaScript Origins (Different Field!)
 In the "Authorized JavaScript Origins" section, add:
-```
+\`\`\`
 https://hhtvvlzsjamprvxeayxm.supabase.co
 http://localhost:3000
 https://nextwavesmm.com
-```
+\`\`\`
 
 ## How the Flow Works
 1. User clicks "Sign in with Google"

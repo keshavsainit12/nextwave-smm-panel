@@ -8,14 +8,14 @@ Basically origin = protocol + domain (without path)
 ## Tere App Ke Liye JavaScript Origins:
 
 ### Development (Local Testing):
-```
+\`\`\`
 http://localhost:3000
-```
+\`\`\`
 
 ### Production (Live Website):
-```
+\`\`\`
 https://nextwavesmm.com
-```
+\`\`\`
 
 ## Google Cloud Console mein Add Kaise Karo:
 
@@ -30,16 +30,16 @@ https://nextwavesmm.com
 4. **"Authorized JavaScript origins" section milega**
 
 5. **Add karo dono origins:**
-   ```
+   \`\`\`
    http://localhost:3000
    https://nextwavesmm.com
-   ```
+   \`\`\`
 
 6. **"Authorized redirect URIs" section mein ye add karo:**
-   ```
+   \`\`\`
    http://localhost:3000/auth/callback
    https://nextwavesmm.com/auth/callback
-   ```
+   \`\`\`
 
 7. **SAVE button click karo** (very important!)
 

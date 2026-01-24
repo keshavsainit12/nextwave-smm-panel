@@ -34,14 +34,14 @@ Each processed transaction shows:
 ## Technical Details
 
 ### Transaction Processing Flow
-```
+\`\`\`
 1. Query all "pending" instant_xaf transactions
 2. For each transaction:
    a. Get user's current balance
    b. Mark transaction as "completed"
    c. Add payment amount to user balance
 3. Revalidate all affected pages/caches
-```
+\`\`\`
 
 ### What Gets Revalidated
 After processing, these pages automatically refresh:
@@ -75,7 +75,7 @@ If you need to manually approve multiple pending payments:
 
 ## Example Result
 
-```
+\`\`\`
 Processed: 5
 Total: 5
 Failed: 0
@@ -91,7 +91,7 @@ Transaction 2:
 - Balance: $50.00 → $75.00 ✅ Completed
 
 (... and so on)
-```
+\`\`\`
 
 ## Troubleshooting
 

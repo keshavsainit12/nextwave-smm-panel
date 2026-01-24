@@ -23,10 +23,10 @@ Your users can now:
 ### Step 2: User Implements Integration
 User can now make API calls with their key:
 
-```bash
+\`\`\`bash
 curl -X GET "https://nextwavesmm.com/api/v1/services" \
   -H "Authorization: Bearer nw_[their_key]"
-```
+\`\`\`
 
 ### Step 3: Services Auto-Apply Pricing
 - User's price multiplier (default 3.0x) automatically applied
@@ -40,38 +40,38 @@ curl -X GET "https://nextwavesmm.com/api/v1/services" \
 ### 1. Get All Services
 **Endpoint:** `GET /api/v1/services`
 **Auth:** Optional (with key for custom pricing)
-```json
+\`\`\`json
 Response: {
   "services": [...],
   "categories": ["Instagram", "TikTok", ...]
 }
-```
+\`\`\`
 
 ### 2. Check Balance
 **Endpoint:** `GET /api/v1/balance`
 **Auth:** Required
-```json
+\`\`\`json
 Response: { "balance": 250.50 }
-```
+\`\`\`
 
 ### 3. Place Order
 **Endpoint:** `POST /api/v1/order`
 **Auth:** Required
-```json
+\`\`\`json
 Body: {
   "service_id": "uuid",
   "link": "https://instagram.com/username",
   "quantity": 1000
 }
 Response: { "order_id": "uuid", "charge": 2.99 }
-```
+\`\`\`
 
 ### 4. Check Order Status
 **Endpoint:** `GET /api/v1/order?order_id=UUID`
 **Auth:** Required
-```json
+\`\`\`json
 Response: { "order_status": "completed" }
-```
+\`\`\`
 
 ---
 
@@ -100,23 +100,23 @@ Response: { "order_status": "completed" }
 ## How Pricing Works
 
 ### User Creates API Key
-```
+\`\`\`
 Price Multiplier = 3.0x (default, customizable by admin)
-```
+\`\`\`
 
 ### User Makes API Call
-```
+\`\`\`
 Provider Price: $1.00
 User Multiplier: 3.0x
 API Response Price: $3.00 ✓
-```
+\`\`\`
 
 ### User Places Order
-```
+\`\`\`
 Service: Instagram Followers
 API Price: $3.00
 Deducted from balance: $3.00 ✓
-```
+\`\`\`
 
 ---
 
@@ -129,19 +129,19 @@ Deducted from balance: $3.00 ✓
 4. Copy the key
 
 ### Test 2: Get Services
-```bash
+\`\`\`bash
 curl -X GET "https://yourdomain.com/api/v1/services" \
   -H "Authorization: Bearer YOUR_KEY"
-```
+\`\`\`
 
 ### Test 3: Check Balance
-```bash
+\`\`\`bash
 curl -X GET "https://yourdomain.com/api/v1/balance" \
   -H "Authorization: Bearer YOUR_KEY"
-```
+\`\`\`
 
 ### Test 4: Place Order
-```bash
+\`\`\`bash
 curl -X POST "https://yourdomain.com/api/v1/order" \
   -H "Authorization: Bearer YOUR_KEY" \
   -H "Content-Type: application/json" \
@@ -150,7 +150,7 @@ curl -X POST "https://yourdomain.com/api/v1/order" \
     "link": "https://instagram.com/testuser",
     "quantity": 100
   }'
-```
+\`\`\`
 
 ---
 
@@ -218,9 +218,9 @@ As admin, you can:
 ## Your Domain
 
 Users will use their API with:
-```
+\`\`\`
 https://yourdomain.com/api/v1
-```
+\`\`\`
 
 Update `NEXT_PUBLIC_APP_URL` in your environment to change the domain shown in the dashboard.
 

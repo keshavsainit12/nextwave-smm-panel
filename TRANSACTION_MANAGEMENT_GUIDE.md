@@ -66,7 +66,7 @@
 
 ## 📋 WEBHOOK FLOW (NOW SAFE)
 
-```
+\`\`\`
 Payment Received from AccountPe
        ↓
 Webhook Hits: /api/webhooks/instant-payment
@@ -82,7 +82,7 @@ Atomic Update: Try to mark transaction as "completed"
 Credit User Wallet (only if transaction update succeeded)
        ↓
 Log Activity & Revalidate Pages
-```
+\`\`\`
 
 ---
 
@@ -96,13 +96,13 @@ Log Activity & Revalidate Pages
 5. See confirmation dialog with refund amount
 
 ### User oke@gmail.com Example:
-```
+\`\`\`
 Email: oke@gmail.com
 Balance: $222 (now correct)
 Recent Transactions:
 - $221 Deposit (Instant Payment) - Completed ✅
 - $1 Order - Completed ✅
-```
+\`\`\`
 
 ---
 
@@ -181,9 +181,9 @@ Recent Transactions:
 ## 📞 WEBHOOK CALLBACK URL
 
 Your webhook endpoint:
-```
+\`\`\`
 https://[your-app-url]/api/webhooks/instant-payment
-```
+\`\`\`
 
 Configured in:
 - AccountPe Merchant Settings → Callback URL

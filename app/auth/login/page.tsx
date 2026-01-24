@@ -56,18 +56,21 @@ function LoginContent() {
     const supabase = createClient()
 
     try {
+      const callbackUrl = `${window.location.origin}/auth/callback`
+      console.log("[v0] Starting Google sign-in with callback URL:", callbackUrl)
+      
       // Supabase will use the callback URL configured in Supabase Dashboard
       // NOT the redirectTo parameter - redirectTo is only for custom redirects
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: callbackUrl,
         },
       })
       if (error) throw error
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : "Google sign-in failed"
-      console.error("[v0] Google sign-in error:", errorMsg)
+      console.error("[v0] Google sign-in error:", errorMsg, err)
       setError(errorMsg)
       setIsGoogleLoading(false)
     }

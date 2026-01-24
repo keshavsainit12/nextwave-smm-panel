@@ -43,19 +43,19 @@
 
 ## 🎯 USER: oke@gmail.com Status
 
-```
+\`\`\`
 ✅ Balance: $222 (Correct - includes pending payment)
 ✅ Recent Transaction: $221 Instant Payment (Showing correctly)
 ✅ Status: Will show "Completed" after webhook received
 ✅ Webhook timing: Usually 1-5 seconds max 30 seconds
-```
+\`\`\`
 
 ---
 
 ## 🚀 NEW FEATURES BY ROLE
 
 ### **Admin Features:**
-```
+\`\`\`
 Admin Dashboard
 ├── "Manage Transactions" Button (NEW)
 │   ├── Search users by email
@@ -68,17 +68,17 @@ Admin Dashboard
     ├── Live feed of all transactions
     ├── Shows 10 most recent
     └── Updates in real-time
-```
+\`\`\`
 
 ### **User Features:**
-```
+\`\`\`
 Dashboard
 └── Transaction History
     ├── View all transactions (deposits/orders/refunds)
     ├── See status (Completed/Pending/Failed)
     ├── Delete pending transactions
     └── Cannot delete completed (need support)
-```
+\`\`\`
 
 ---
 
@@ -162,7 +162,7 @@ Dashboard
 
 ## 📊 WEBHOOK PROCESSING DIAGRAM
 
-```
+\`\`\`
 AccountPe Payment Completed
          ↓
     Webhook POST
@@ -187,7 +187,7 @@ Status=1 (Success)          Status=-1 (Failed)           Other Status
    ├─ Log activity
    │
    └─ Revalidate pages (dashboard, history, admin)
-```
+\`\`\`
 
 ---
 
@@ -229,9 +229,9 @@ Status=1 (Success)          Status=-1 (Failed)           Other Status
 ## 📞 WEBHOOK CALLBACK CONFIGURED
 
 Your webhook URL:
-```
+\`\`\`
 https://[your-domain]/api/webhooks/instant-payment
-```
+\`\`\`
 
 All instant payments will automatically:
 1. ✅ Create transaction (pending)

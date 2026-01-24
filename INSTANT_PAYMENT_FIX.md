@@ -26,7 +26,7 @@
 
 ## How Instant Payment Flow Works Now:
 
-```
+\`\`\`
 1. User enters amount and submits form
    ↓
 2. Transaction created in DB with payment_id field initialized
@@ -51,7 +51,7 @@
     ↓
 12. Pages revalidate to show new balance
 
-```
+\`\`\`
 
 ## What's Stored Where:
 
@@ -65,11 +65,11 @@
 
 ## Environment Variables Required:
 
-```
+\`\`\`
 ACCOUNTPE_API_KEY=email@example.com:password123
 ACCOUNTPE_MERCHANT_ID=your_merchant_id
 ACCOUNTPE_API_URL=https://accountpe-api-url
-```
+\`\`\`
 
 ## Testing Steps:
 

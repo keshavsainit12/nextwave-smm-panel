@@ -33,7 +33,7 @@
 
 ## Icon Upload Process
 
-```
+\`\`\`
 Admin Panel → Manage Icons
        ↓
 Click "Upload Icon" button
@@ -47,7 +47,7 @@ See preview
 Click "Update Icon"
        ↓
 ✅ Done! Page refreshes automatically
-```
+\`\`\`
 
 ---
 
@@ -88,9 +88,9 @@ Click "Update Icon"
 7. Copy the CDN URL
 
 **URL will look like:**
-```
+\`\`\`
 https://blob.vercel-storage.com/icon-abc123.gif
-```
+\`\`\`
 
 ---
 

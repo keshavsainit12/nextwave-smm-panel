@@ -1,12 +1,12 @@
 ## AccountPe Setup Instructions for NextWave SMM Panel
 
 ### Your Configuration Details:
-```
+\`\`\`
 Vercel URL: https://nextwavesmm.vercel.app
 Merchant ID: nextwavedigitalsolutions1
 Email: nextwavedigitalsolutions1@gmail.com
 Password: FMdbnds53@@
-```
+\`\`\`
 
 ### Setup Steps:
 
@@ -19,19 +19,19 @@ Password: FMdbnds53@@
 Navigate to **Settings → Webhooks & Redirects** and add:
 
 **Success Redirect URL:**
-```
+\`\`\`
 https://nextwavesmm.vercel.app/dashboard/deposit?status=success
-```
+\`\`\`
 
 **Failure Redirect URL:**
-```
+\`\`\`
 https://nextwavesmm.vercel.app/dashboard/deposit?status=failed
-```
+\`\`\`
 
 **Webhook URL:**
-```
+\`\`\`
 https://nextwavesmm.vercel.app/api/webhooks/instant-payment
-```
+\`\`\`
 
 #### 3. Get API Credentials
 In **Settings → API Keys** section, copy:
@@ -41,9 +41,9 @@ In **Settings → API Keys** section, copy:
 
 #### 4. Whitelist Domain
 In **Settings → Security/Whitelist**, add:
-```
+\`\`\`
 nextwavesmm.vercel.app
-```
+\`\`\`
 
 #### 5. Test Payment Flow
 1. Go to dashboard/deposit
@@ -53,10 +53,10 @@ nextwavesmm.vercel.app
 5. Webhook should fire and balance should update
 
 ### Environment Variables Set:
-```
+\`\`\`
 NEXT_PUBLIC_APP_URL=https://nextwavesmm.vercel.app
 ACCOUNTPE_API_KEY=FMdbnds53@@
-```
+\`\`\`
 
 ### Payment Flow:
 1. User clicks "Pay" button

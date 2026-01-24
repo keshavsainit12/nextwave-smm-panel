@@ -49,9 +49,9 @@ Once set, category icons appear in:
 ## GIF URL Format
 
 Your URL should look like:
-```
+\`\`\`
 /images/icons8-instagram.gif
-```
+\`\`\`
 
 ## Troubleshooting
 
