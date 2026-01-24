@@ -24,7 +24,7 @@ Your users can now:
 User can now make API calls with their key:
 
 ```bash
-curl -X GET "https://yourdomain.com/api/v1/services" \
+curl -X GET "https://nextwavesmm.com/api/v1/services" \
   -H "Authorization: Bearer nw_[their_key]"
 ```
 

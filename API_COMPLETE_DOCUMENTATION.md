@@ -25,7 +25,7 @@ Authorization: Bearer YOUR_API_KEY_HERE
 
 ### Base URL
 ```
-https://yourdomain.com/api/v1
+https://nextwavesmm.com/api/v1
 ```
 
 ---
@@ -212,7 +212,7 @@ Authorization: Bearer YOUR_API_KEY
 ```python
 import requests
 
-BASE_URL = "https://yourdomain.com/api/v1"
+BASE_URL = "https://nextwavesmm.com/api/v1"
 API_KEY = "your_api_key_here"
 
 headers = {
@@ -243,7 +243,7 @@ print(f"Order ID: {order['order_id']}")
 ### JavaScript/Node.js
 ```javascript
 const API_KEY = "your_api_key_here";
-const BASE_URL = "https://yourdomain.com/api/v1";
+const BASE_URL = "https://nextwavesmm.com/api/v1";
 
 const headers = {
   "Authorization": `Bearer ${API_KEY}`,
@@ -285,15 +285,15 @@ placeOrder("service-uuid", "https://instagram.com/username", 1000).then(console.
 ### cURL
 ```bash
 # Get services
-curl -X GET "https://yourdomain.com/api/v1/services" \
+curl -X GET "https://nextwavesmm.com/api/v1/services" \
   -H "Authorization: Bearer your_api_key_here"
 
 # Check balance
-curl -X GET "https://yourdomain.com/api/v1/balance" \
+curl -X GET "https://nextwavesmm.com/api/v1/balance" \
   -H "Authorization: Bearer your_api_key_here"
 
 # Place order
-curl -X POST "https://yourdomain.com/api/v1/order" \
+curl -X POST "https://nextwavesmm.com/api/v1/order" \
   -H "Authorization: Bearer your_api_key_here" \
   -H "Content-Type: application/json" \
   -d '{
@@ -303,7 +303,7 @@ curl -X POST "https://yourdomain.com/api/v1/order" \
   }'
 
 # Check order status
-curl -X GET "https://yourdomain.com/api/v1/order?order_id=order-uuid" \
+curl -X GET "https://nextwavesmm.com/api/v1/order?order_id=order-uuid" \
   -H "Authorization: Bearer your_api_key_here"
 ```
 
@@ -341,7 +341,7 @@ Coming soon: Real-time order status webhooks
 ## Support
 
 For API support:
-- Email: support@yourdomain.com
+- Email: support@nextwavesmm.com
 - Dashboard: Create a support ticket
 - Documentation: Visit your API dashboard for live examples
 
