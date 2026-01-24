@@ -54,12 +54,19 @@ function LoginContent() {
     setIsGoogleLoading(true)
     setError(null)
     const supabase = createClient()
-    
+
     try {
+      // Get the correct redirect URL based on environment
+      const redirectUrl = process.env.NEXT_PUBLIC_APP_URL 
+        ? `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`
+        : `${window.location.origin}/auth/callback`
+      
+      console.log("[v0] Google OAuth redirect URL:", redirectUrl)
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: redirectUrl,
         },
       })
       if (error) throw error

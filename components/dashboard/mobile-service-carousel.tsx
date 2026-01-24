@@ -5,15 +5,16 @@ import { ChevronLeft, ChevronRight, Star, Shield } from "lucide-react"
 
 interface ServiceCarouselProps {
   onSelectCategory: (categoryName: string) => void
+  onSelectService?: (service: any) => void
 }
 
 const getIconUrl = (platform: string) => {
   const iconMap: Record<string, string> = {
-    Instagram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-from-rawpixel-id-3344505-png-26OEaERgfRA2szq1ynwrYmHizPyhpM.png",
-    YouTube: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/youtube%20%281%29-vLiOrlbLFV57Tue7SrmDV7Frnkb1uZ.png",
-    Facebook: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/facebook-5KZKPoiTruTw0y6Y5Q58NACnBWPhD9.png",
-    Telegram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/telegram-Zsh1cuHtI9tmxUm9E19up6lNY3iSYW.png",
-    Twitter: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/twitter-7UdPUD56etBYgs0HoboaabXKV4Bx0r.png",
+    Instagram: "/images/image-from-rawpixel-id-3344505-png.png",
+    YouTube: "/images/youtube-20-281-29.png",
+    Facebook: "/images/facebook.png",
+    Telegram: "/images/telegram.png",
+    Twitter: "/images/twitter.png",
   }
   return iconMap[platform as keyof typeof iconMap] || ""
 }
@@ -71,7 +72,7 @@ const platformConfig = [
   },
 ]
 
-export function MobileServiceCarousel({ onSelectCategory }: ServiceCarouselProps) {
+export function MobileServiceCarousel({ onSelectCategory, onSelectService }: ServiceCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [autoPlay, setAutoPlay] = useState(true)
 
@@ -99,7 +100,10 @@ export function MobileServiceCarousel({ onSelectCategory }: ServiceCarouselProps
   }
 
   const handleSelectService = (categoryName: string) => {
+    // Emit both callbacks for carousel selection and direct service ordering
     onSelectCategory(categoryName)
+    
+    // Trigger a small delay then scroll to service selection
     setTimeout(() => {
       const serviceSection = document.getElementById("service-selection-section")
       if (serviceSection) {

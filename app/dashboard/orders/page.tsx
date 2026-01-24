@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { MobileOrdersHistory } from "@/components/dashboard/mobile-orders-history"
+import { redirect } from "next/navigation"
 
 export default async function OrdersPage() {
   const supabase = await createClient()
@@ -7,10 +8,14 @@ export default async function OrdersPage() {
     data: { user },
   } = await supabase.auth.getUser()
 
+  if (!user) {
+    redirect("/auth/login")
+  }
+
   const { data: orders } = await supabase
     .from("orders")
-    .select("*, services(id, name, icon, platform, has_refill, category_id, service_categories!inner(id, name, icon))")
-    .eq("user_id", user!.id)
+    .select("*, services(id, name, icon, platform, has_refill, category_id, service_categories(id, name, icon))")
+    .eq("user_id", user.id)
     .order("created_at", { ascending: false })
 
   // Transform orders to use category icon if service icon is missing

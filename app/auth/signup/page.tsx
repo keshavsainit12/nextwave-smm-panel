@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation"
 import { ArrowLeft, Loader2, Check } from "lucide-react"
 import { signupUser } from "@/app/actions/auth"
 import Image from "next/image"
+import Script from "next/script"
 
 export default function SignupPage() {
   const [email, setEmail] = useState("")
@@ -27,6 +28,7 @@ export default function SignupPage() {
   const [success, setSuccess] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   const router = useRouter()
 
   const validateForm = () => {
@@ -46,7 +48,18 @@ export default function SignupPage() {
       setError("Passwords do not match")
       return false
     }
+    if (!captchaToken) {
+      setError("Please complete the reCAPTCHA verification")
+      return false
+    }
     return true
+  }
+
+  const handleCaptchaChange = (token: string | null) => {
+    setCaptchaToken(token)
+    if (token && error === "Please complete the reCAPTCHA verification") {
+      setError(null)
+    }
   }
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -100,10 +113,17 @@ export default function SignupPage() {
     const supabase = createClient()
     
     try {
+      // Get the correct redirect URL based on environment
+      const redirectUrl = process.env.NEXT_PUBLIC_APP_URL 
+        ? `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`
+        : `${window.location.origin}/auth/callback`
+      
+      console.log("[v0] Google OAuth redirect URL:", redirectUrl)
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: redirectUrl,
         },
       })
       if (error) throw error
@@ -115,6 +135,17 @@ export default function SignupPage() {
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 overflow-hidden bg-transparent">
+      {/* reCAPTCHA Script */}
+      <Script
+        src="https://www.google.com/recaptcha/api.js"
+        async
+        defer
+        onLoad={() => {
+          // Make the callback globally accessible
+          (window as any).handleCaptchaChange = handleCaptchaChange
+        }}
+      />
+      
       {/* Animated blob background */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
         <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-500/20 rounded-full mix-blend-multiply filter blur-3xl opacity-60 animate-blob"></div>
@@ -210,7 +241,13 @@ export default function SignupPage() {
                 />
               </div>
               {error && <p className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">{error}</p>}
-              <Button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium shadow-lg hover:shadow-xl transition-all mt-2" disabled={isLoading}>
+              
+              {/* reCAPTCHA */}
+              <div className="flex justify-center my-4">
+                <div className="g_recaptcha" data-sitekey="6LfR2PsqAAAAAP7tqN_3xK_7jM_vNgQhL6-5NjKT" data-callback="handleCaptchaChange"></div>
+              </div>
+              
+              <Button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium shadow-lg hover:shadow-xl transition-all mt-2" disabled={isLoading || !captchaToken}>
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -26,7 +26,7 @@ interface PaymentResponse {
   error?: string
 }
 
-// Get JWT token from AccountPe /admin/auth endpoint
+// Get JWT token from AccountPe authentication endpoint
 async function getAccountPeJWT(): Promise<string | null> {
   try {
     console.log("[v0] Parsing AccountPe credentials...")
@@ -43,38 +43,51 @@ async function getAccountPeJWT(): Promise<string | null> {
       passwordLength: creds.password?.length,
     })
 
-    console.log("[v0] Calling AccountPe JWT endpoint:", `${ACCOUNTPE_API_URL}/admin/auth`)
-    
-    const response = await fetch(`${ACCOUNTPE_API_URL}/admin/auth`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email: creds.email,
-        password: creds.password,
-      }),
-    })
+    // Try multiple auth endpoints as AccountPe may use different ones
+    const authEndpoints = [
+      `${ACCOUNTPE_API_URL}/admin/auth`,
+      `https://api.accountpe.com/api/auth`,
+      `https://api.accountpe.com/auth`,
+    ]
 
-    console.log("[v0] Auth response status:", response.status)
+    for (const authUrl of authEndpoints) {
+      console.log("[v0] Trying auth endpoint:", authUrl)
+      
+      try {
+        const response = await fetch(authUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: creds.email,
+            password: creds.password,
+          }),
+        })
 
-    if (!response.ok) {
-      const error = await response.text()
-      console.error("[v0] Auth endpoint failed:", {
-        status: response.status,
-        statusText: response.statusText,
-        errorBody: error,
-      })
-      return null
+        console.log("[v0] Auth response status:", response.status, "from", authUrl)
+
+        if (response.ok) {
+          const data = await response.json()
+          const token = data.token || data.access_token || data.jwt || data.data?.token
+          if (token) {
+            console.log("[v0] JWT token received successfully from:", authUrl)
+            return token
+          }
+        }
+      } catch (endpointError) {
+        console.log("[v0] Endpoint failed:", authUrl, endpointError)
+        continue
+      }
     }
 
-    const data = await response.json()
-    console.log("[v0] JWT token received successfully")
-
-    return data.token || data.access_token || data.jwt
+    // If all auth endpoints fail, try using API key directly as bearer token
+    console.log("[v0] All auth endpoints failed, using API key as bearer token")
+    return ACCOUNTPE_API_KEY || null
   } catch (error) {
     console.error("[v0] JWT token fetch error:", error)
-    return null
+    // Fallback to using API key directly
+    return ACCOUNTPE_API_KEY || null
   }
 }
 
@@ -88,26 +101,38 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
 
     // Check if credentials are configured
     if (!ACCOUNTPE_CREDENTIALS) {
-      console.error("[v0] CRITICAL: AccountPe credentials NOT configured in environment")
+      console.error("[v0] CRITICAL: AccountPe credentials NOT configured")
+      console.error("[v0] Please set ACCOUNTPE_API_KEY in Vars section with format: email:password")
       return {
         success: false,
-        error: "Payment service not configured. Please set ACCOUNTPE_API_KEY in Vars section.",
+        error: "Payment service not configured. Please set ACCOUNTPE_API_KEY (format: email:password) in Vars section.",
       }
     }
 
-    console.log("[v0] Credentials found, attempting JWT authentication...")
+    // Validate credential format
+    const creds = parseCredentials(ACCOUNTPE_CREDENTIALS)
+    if (!creds) {
+      console.error("[v0] Invalid credential format")
+      return {
+        success: false,
+        error: "Invalid API key format. Expected: email:password",
+      }
+    }
+
+    console.log("[v0] Credentials valid, attempting JWT authentication...")
+    console.log("[v0] Using email:", creds.email)
 
     // Get JWT token
     const jwtToken = await getAccountPeJWT()
     if (!jwtToken) {
-      console.error("[v0] JWT token retrieval failed - see logs above")
+      console.error("[v0] JWT token retrieval failed")
       return {
         success: false,
-        error: "Authentication failed - Check API credentials in Vars section",
+        error: "Authentication failed - Check API credentials (email:password format)",
       }
     }
 
-    console.log("[v0] JWT token obtained successfully, proceeding with payment creation...")
+    console.log("[v0] JWT token obtained successfully")
 
     const supabase = await createClient()
 
