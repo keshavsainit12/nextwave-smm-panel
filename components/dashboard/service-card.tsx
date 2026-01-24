@@ -24,6 +24,7 @@ export function ServiceCard({ service }: { service: any }) {
                     src={service.icon || "/placeholder.svg"}
                     alt={service.name}
                     className="h-10 w-10 rounded-lg object-contain bg-muted p-1"
+                    crossOrigin="anonymous"
                     onError={(e) => {
                       e.currentTarget.style.display = "none"
                     }}

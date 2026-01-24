@@ -8,7 +8,14 @@ interface ServiceCarouselProps {
   onSelectService?: (service: any) => void
 }
 
-const getIconUrl = (platform: string) => {
+const getIconUrl = (platformOrName: string | any) => {
+  // If it's an object with an icon property, use it first
+  if (typeof platformOrName === 'object' && platformOrName?.icon) {
+    return platformOrName.icon
+  }
+  
+  const platform = typeof platformOrName === 'string' ? platformOrName : platformOrName?.name || ''
+  
   const iconMap: Record<string, string> = {
     Instagram: "/images/image-from-rawpixel-id-3344505-png.png",
     YouTube: "/images/youtube-20-281-29.png",

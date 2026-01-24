@@ -75,6 +75,7 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
                 src={service.icon || "/placeholder.svg"}
                 alt={service.name}
                 className="h-8 w-8 rounded object-contain"
+                crossOrigin="anonymous"
                 onError={(e) => {
                   e.currentTarget.style.display = "none"
                 }}

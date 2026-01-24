@@ -88,15 +88,36 @@ export function MobileHighTrustDashboard({
     Spotify: "/images/icons8-spotify.gif",
   }
 
-  const getIconUrl = (categoryName: string) => {
-    // Try exact match first
-    if (iconMap[categoryName]) return iconMap[categoryName]
-    // Try matching the start of the category name
+  const getIconUrl = (nameOrObject: string | any) => {
+    // If it's an object with an icon property, check if it's a valid URL
+    if (typeof nameOrObject === 'object' && nameOrObject?.icon) {
+      const icon = nameOrObject.icon
+      // Only use if it's a valid image URL (not an emoji or text)
+      if (typeof icon === 'string' && (icon.startsWith('http') || icon.startsWith('/') || icon.startsWith('blob:'))) {
+        return icon
+      }
+      // Emoji or invalid URL - ignore and use platform matching below
+    }
+    
+    let platformName = typeof nameOrObject === 'string' ? nameOrObject : nameOrObject?.name || ''
+    
+    // Extract platform name from category name (e.g., "TikTok - Recommended" -> "TikTok")
+    if (platformName.includes(' - ')) {
+      platformName = platformName.split(' - ')[0].trim()
+    }
+    
+    // Try exact match in hardcoded map
+    if (iconMap[platformName]) {
+      return iconMap[platformName]
+    }
+    
+    // Try matching the start of the platform name (case-insensitive)
     for (const [key, url] of Object.entries(iconMap)) {
-      if (categoryName.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(categoryName.toLowerCase())) {
+      if (platformName.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(platformName.toLowerCase())) {
         return url
       }
     }
+    
     return undefined
   }
 
@@ -383,21 +404,22 @@ export function MobileHighTrustDashboard({
                     sideOffset={4}
                   >
                     {categoriesWithServices.map((category) => {
-                      const iconUrl = getIconUrl(category.name)
+                      const iconUrl = getIconUrl(category)
                       return (
-                        <SelectItem key={category.id} value={category.id} className="truncate text-ellipsis">
-                          <div className="flex items-center gap-2">
+                        <SelectItem key={category.id} value={category.id}>
+                          <div className="flex items-center gap-2 min-w-0">
                             {iconUrl && (
                               <img
                                 src={iconUrl || "/placeholder.svg"}
                                 alt={category.name}
                                 className="h-5 w-5 rounded object-contain flex-shrink-0"
+                                crossOrigin="anonymous"
                                 onError={(e) => {
                                   e.currentTarget.style.display = "none"
                                 }}
                               />
                             )}
-                            <span>{category.name}</span>
+                            <span className="truncate">{category.name}</span>
                           </div>
                         </SelectItem>
                       )
@@ -445,21 +467,22 @@ export function MobileHighTrustDashboard({
                         sideOffset={4}
                       >
                         {filteredServices.map((service) => {
-                          const iconUrl = getIconUrl(service.name)
+                          const iconUrl = getIconUrl(service)
                           return (
-                            <SelectItem key={service.id} value={service.id} className="truncate text-ellipsis">
-                              <div className="flex items-center gap-2">
+                            <SelectItem key={service.id} value={service.id}>
+                              <div className="flex items-center gap-2 min-w-0">
                                 {iconUrl && (
                                   <img
                                     src={iconUrl || "/placeholder.svg"}
                                     alt={service.name}
                                     className="h-5 w-5 rounded object-contain flex-shrink-0"
+                                    crossOrigin="anonymous"
                                     onError={(e) => {
                                       e.currentTarget.style.display = "none"
                                     }}
                                   />
                                 )}
-                                <span>{service.name} - ${Number(service.price || service.base_price || 0).toFixed(2)}/1k</span>
+                                <span className="truncate">{service.name} - ${Number(service.price || service.base_price || 0).toFixed(2)}/1k</span>
                               </div>
                             </SelectItem>
                           )
