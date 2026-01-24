@@ -84,15 +84,15 @@ export function MobileHighTrustDashboard({
 
   // Platform icon mapping - PNG only (no GIFs for better performance)
   const iconMap: Record<string, string> = {
-    Instagram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-from-rawpixel-id-3344505-png-xDtnIBO3bc9t82kgmtCyYBnFkegScR.png",
-    TikTok: "", // Add TikTok PNG icon when ready
-    Facebook: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/facebook-RxpdvYtrTg1bsGUndmGLdWChd8onD6.png",
-    YouTube: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/youtube%20%281%29-07vpIxURnynwTMsjlHY7sISv5nHdvU.png",
-    Twitter: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/twitter-yUDtKy3fS31OodMEPl1luj7lSE1XFK.png",
-    Discord: "", // Add Discord PNG icon when ready
-    Telegram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/telegram-IKRhQNifTjNlijvJShg0wkSFQkxyj9.png",
-    LinkedIn: "", // Add LinkedIn PNG icon when ready
-    Spotify: "", // Add Spotify PNG icon when ready
+    Instagram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-from-rawpixel-id-3344505-png-MUwyzUmruwNctIiWklZ5p3woDYRXyQ.png",
+    TikTok: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/social-media-LukRdeHaWfMPqnPN0UopDTorIys0ZS.png",
+    Facebook: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/facebook-6RRn4IBRaNjBYVv9LYGM6eL41qQWlW.png",
+    YouTube: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/youtube%20%281%29-fnEdlaxiQiBGHtLVMsS2pDQKjwgtBu.png",
+    Twitter: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/twitter-29Fes12erxMIaAdspjd7dgcWfJcwBa.png",
+    Discord: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/discord-viy5WuDAnWXu9jECoyCcdiaYJjZ9l0.png",
+    Telegram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/telegram-9xtdNkV3zP6wfwWNpx57A1hNZvEqK2.png",
+    LinkedIn: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/linkedin-x8OqmW2CILJ7lo8H5FhKD888W7Z6eN.png",
+    Spotify: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/spotify-7ygXrRUZpZh0pQSmRoDdDCRstAA6Oa.png",
   }
 
   const getIconUrl = (nameOrObject: string | any): string | undefined => {

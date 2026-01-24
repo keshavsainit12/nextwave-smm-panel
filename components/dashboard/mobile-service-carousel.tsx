@@ -17,11 +17,15 @@ const getIconUrl = (platformOrName: string | any) => {
   const platform = typeof platformOrName === 'string' ? platformOrName : platformOrName?.name || ''
   
   const iconMap: Record<string, string> = {
-    Instagram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-from-rawpixel-id-3344505-png-xDtnIBO3bc9t82kgmtCyYBnFkegScR.png",
-    YouTube: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/youtube%20%281%29-07vpIxURnynwTMsjlHY7sISv5nHdvU.png",
-    Facebook: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/facebook-RxpdvYtrTg1bsGUndmGLdWChd8onD6.png",
-    Telegram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/telegram-IKRhQNifTjNlijvJShg0wkSFQkxyj9.png",
-    Twitter: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/twitter-yUDtKy3fS31OodMEPl1luj7lSE1XFK.png",
+    Instagram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-from-rawpixel-id-3344505-png-MUwyzUmruwNctIiWklZ5p3woDYRXyQ.png",
+    YouTube: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/youtube%20%281%29-fnEdlaxiQiBGHtLVMsS2pDQKjwgtBu.png",
+    Facebook: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/facebook-6RRn4IBRaNjBYVv9LYGM6eL41qQWlW.png",
+    Telegram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/telegram-9xtdNkV3zP6wfwWNpx57A1hNZvEqK2.png",
+    Twitter: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/twitter-29Fes12erxMIaAdspjd7dgcWfJcwBa.png",
+    TikTok: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/social-media-LukRdeHaWfMPqnPN0UopDTorIys0ZS.png",
+    Discord: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/discord-viy5WuDAnWXu9jECoyCcdiaYJjZ9l0.png",
+    LinkedIn: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/linkedin-x8OqmW2CILJ7lo8H5FhKD888W7Z6eN.png",
+    Spotify: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/spotify-7ygXrRUZpZh0pQSmRoDdDCRstAA6Oa.png",
   }
   return iconMap[platform as keyof typeof iconMap] || ""
 }

@@ -55,17 +55,17 @@ export function DesktopDashboard({
   const router = useRouter()
   const { toast } = useToast()
 
-  // Hardcoded icon mapping - Using Blob Storage URLs
+  // Hardcoded icon mapping - Using Blob Storage PNG URLs (no GIFs)
   const iconMap: Record<string, string> = {
-    Instagram: "/images/icons8-instagram.gif",
-    TikTok: "/images/icons8-tiktok.gif",
-    Facebook: "/images/icons8-facebook-circled.gif",
-    YouTube: "/images/icons8-youtube.gif",
-    Twitter: "/images/icons8-twitter-logo.gif",
-    Discord: "/images/icons8-discord.gif",
-    Telegram: "/images/icons8-telegram-logo.gif",
-    LinkedIn: "/images/icons8-linkedin.gif",
-    Spotify: "/images/icons8-spotify.gif",
+    Instagram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-from-rawpixel-id-3344505-png-MUwyzUmruwNctIiWklZ5p3woDYRXyQ.png",
+    TikTok: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/social-media-LukRdeHaWfMPqnPN0UopDTorIys0ZS.png",
+    Facebook: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/facebook-6RRn4IBRaNjBYVv9LYGM6eL41qQWlW.png",
+    YouTube: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/youtube%20%281%29-fnEdlaxiQiBGHtLVMsS2pDQKjwgtBu.png",
+    Twitter: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/twitter-29Fes12erxMIaAdspjd7dgcWfJcwBa.png",
+    Discord: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/discord-viy5WuDAnWXu9jECoyCcdiaYJjZ9l0.png",
+    Telegram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/telegram-9xtdNkV3zP6wfwWNpx57A1hNZvEqK2.png",
+    LinkedIn: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/linkedin-x8OqmW2CILJ7lo8H5FhKD888W7Z6eN.png",
+    Spotify: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/spotify-7ygXrRUZpZh0pQSmRoDdDCRstAA6Oa.png",
   }
 
   const getIconUrl = (name: string): string | undefined => {
