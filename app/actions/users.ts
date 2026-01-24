@@ -118,6 +118,7 @@ export async function updateUserProfile(
   userId: string,
   data: {
     full_name?: string
+    username?: string
     language?: string
   },
 ) {

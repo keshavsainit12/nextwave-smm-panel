@@ -30,8 +30,10 @@ export default async function SettingsPage() {
     <div className="p-4 sm:p-6">
       <UserSettingsForm
         userData={{
+          id: user.id,
           email: user.email || "",
           full_name: userData.full_name || "",
+          username: userData.username || "",
           language: userData.language || "English",
           two_factor_enabled: userData.two_factor_enabled || false,
         }}

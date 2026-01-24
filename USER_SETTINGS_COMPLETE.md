@@ -50,20 +50,20 @@
 
 ## Database Changes
 
-```sql
+\`\`\`sql
 -- Added columns to users table
 ALTER TABLE users ADD COLUMN IF NOT EXISTS language VARCHAR(50) DEFAULT 'English';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_enabled BOOLEAN DEFAULT false;
-```
+\`\`\`
 
 ## Testing
 
 Test locally:
-```
+\`\`\`
 1. Go to /dashboard/settings
 2. Update username/language → Click Save
 3. Change password → Fill all 3 fields → Click Change
 4. Toggle 2FA → Checkbox changes state
-```
+\`\`\`
 
 All features are live and ready to use!

@@ -2,10 +2,10 @@
 
 ## Your reCAPTCHA Keys
 
-```
+\`\`\`
 Site Key (Public):     6Lea01QsAAAAAG7Wv83BSoSV7NWF14KLe6poX4As
 Secret Key (Private):  6Lea01QsAAAAAFmpctyqalpZY9iGhywZrEMKAD3F
-```
+\`\`\`
 
 ## Step 1: Add Environment Variables to Vercel
 

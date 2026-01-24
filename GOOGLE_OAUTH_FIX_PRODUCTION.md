@@ -15,10 +15,10 @@ Your app is running at `https://www.nextwavesmm.com` but your Supabase OAuth con
 ### Add Redirect URIs:
 You need to add **BOTH** URLs to support local development AND production:
 
-```
+\`\`\`
 http://localhost:3000/auth/callback
 https://www.nextwavesmm.com/auth/callback
-```
+\`\`\`
 
 **Important:** These must be on separate lines or added individually in Supabase
 
@@ -34,16 +34,16 @@ https://www.nextwavesmm.com/auth/callback
 
 ### Update Authorized Redirect URIs:
 Add both URLs:
-```
+\`\`\`
 http://localhost:3000/auth/callback
 https://www.nextwavesmm.com/auth/callback
-```
+\`\`\`
 
 ### Important: Also add JavaScript Origins:
-```
+\`\`\`
 http://localhost:3000
 https://www.nextwavesmm.com
-```
+\`\`\`
 
 ---
 

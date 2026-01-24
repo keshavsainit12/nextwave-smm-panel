@@ -12,8 +12,10 @@ import { updateUserProfile, updateUserPassword, enableTwoFactorAuth, disableTwoF
 import { createClient } from '@/lib/supabase/client'
 
 interface UserData {
+  id: string
   email: string
   full_name: string
+  username?: string
   language?: string
   two_factor_enabled?: boolean
 }
@@ -21,6 +23,7 @@ interface UserData {
 export default function UserSettingsForm({ userData }: { userData: UserData }) {
   const [formData, setFormData] = useState({
     full_name: userData.full_name || '',
+    username: userData.username || '',
     language: userData.language || 'English',
     currentPassword: '',
     newPassword: '',
@@ -60,6 +63,7 @@ export default function UserSettingsForm({ userData }: { userData: UserData }) {
     try {
       const result = await updateUserProfile(userId, {
         full_name: formData.full_name,
+        username: formData.username,
         language: formData.language,
       })
 
@@ -190,15 +194,16 @@ export default function UserSettingsForm({ userData }: { userData: UserData }) {
 
             {/* Username */}
             <div className="space-y-2">
-              <Label htmlFor="full_name" className="text-sm font-medium">Username</Label>
+              <Label htmlFor="username" className="text-sm font-medium">Username</Label>
               <Input
-                id="full_name"
-                name="full_name"
+                id="username"
+                name="username"
                 type="text"
-                value={formData.full_name}
+                value={formData.username}
                 onChange={handleInputChange}
-                placeholder="Enter your full name"
+                placeholder="Enter your username"
               />
+              <p className="text-xs text-gray-500">Your unique username for the platform</p>
             </div>
 
             {/* Language */}
