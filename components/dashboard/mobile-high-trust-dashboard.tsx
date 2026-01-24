@@ -9,6 +9,7 @@ import { placeOrder } from "@/app/actions/orders"
 import Link from "next/link"
 import { MobileServiceCarousel } from "./mobile-service-carousel"
 import { DashboardFooter } from "./dashboard-footer"
+import { CouponPasteCard } from "./coupon-paste-card"
 import {
   Wallet,
   ShoppingCart,
@@ -353,6 +354,11 @@ export function MobileHighTrustDashboard({
                 </p>
               </div>
             </div>
+          </div>
+
+          {/* Coupon Paste Card */}
+          <div className="px-4 py-4">
+            <CouponPasteCard />
           </div>
 
           {/* Section Header */}

@@ -214,49 +214,64 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
           </div>
 
           {/* Coupon Code Input */}
-          <div className="space-y-2">
-            <Label htmlFor="coupon" className="text-sm font-semibold text-slate-700">Coupon Code (Optional)</Label>
-            <div className="flex gap-2">
-              <Input
-                id="coupon"
-                placeholder="Enter coupon code"
-                value={couponCode}
-                onChange={(e) => {
-                  setCouponCode(e.target.value.toUpperCase())
-                  if (couponDiscount > 0) setCouponDiscount(0)
-                }}
-                disabled={loading || validateCouponLoading || couponDiscount > 0}
-                className="h-11 bg-white border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 uppercase"
-              />
-              {couponDiscount > 0 ? (
+          <div className="space-y-2 p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+            <Label htmlFor="coupon" className="text-sm font-bold text-slate-900 dark:text-white">Apply Coupon Code (Optional)</Label>
+            
+            {couponDiscount > 0 ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
+                  <div>
+                    <p className="text-xs text-green-600 dark:text-green-400 font-medium">Coupon Applied</p>
+                    <p className="text-lg font-bold text-green-700 dark:text-green-300">{couponCode}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-green-600 dark:text-green-400">Discount</p>
+                    <p className="text-2xl font-bold text-green-700 dark:text-green-300">{couponDiscount}%</p>
+                  </div>
+                </div>
                 <Button
                   type="button"
                   onClick={handleRemoveCoupon}
                   variant="outline"
-                  className="px-4 h-11 text-red-600 border-red-200 hover:bg-red-50"
+                  className="w-full text-red-600 border-red-200 hover:bg-red-50 dark:hover:bg-red-950/30"
                 >
-                  Remove
+                  Remove Coupon
                 </Button>
-              ) : (
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Input
+                  id="coupon"
+                  placeholder="SAVE10, WELCOME, etc..."
+                  value={couponCode}
+                  onChange={(e) => {
+                    setCouponCode(e.target.value.toUpperCase())
+                    if (couponDiscount > 0) setCouponDiscount(0)
+                  }}
+                  disabled={loading || validateCouponLoading}
+                  className="h-11 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500/20 uppercase font-semibold"
+                />
                 <Button
                   type="button"
                   onClick={handleValidateCoupon}
                   disabled={!couponCode.trim() || validateCouponLoading || loading}
-                  className="px-4 h-11 bg-slate-900 hover:bg-slate-800 text-white"
+                  className="px-6 h-11 bg-blue-600 hover:bg-blue-700 text-white font-semibold"
                 >
-                  {validateCouponLoading ? "..." : "Apply"}
+                  {validateCouponLoading ? "Checking..." : "Apply"}
                 </Button>
-              )}
-            </div>
-            {couponError && (
-              <p className="text-xs text-red-600">{couponError}</p>
-            )}
-            {couponDiscount > 0 && (
-              <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-lg">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                <p className="text-sm text-green-700 font-medium">{couponDiscount}% discount applied!</p>
               </div>
             )}
+
+            {couponError && (
+              <Alert variant="destructive" className="border-red-300 bg-red-50 dark:bg-red-950/30">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-red-700 dark:text-red-300">{couponError}</AlertDescription>
+              </Alert>
+            )}
+
+            <p className="text-xs text-slate-600 dark:text-slate-400 italic">
+              💡 Have a coupon code? Enter it above to get instant discount on this order!
+            </p>
           </div>
 
           {/* Price Breakdown Card */}

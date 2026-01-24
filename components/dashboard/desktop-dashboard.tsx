@@ -8,6 +8,7 @@ import { placeOrder } from "@/app/actions/orders"
 import Link from "next/link"
 import { ServiceCards } from "./service-cards-section"
 import { DashboardFooter } from "./dashboard-footer"
+import { CouponPasteCard } from "./coupon-paste-card"
 import {
   Info,
   Star,
@@ -298,6 +299,11 @@ export function DesktopDashboard({
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Coupon Paste Card */}
+      <div className="max-w-2xl">
+        <CouponPasteCard />
       </div>
 
       {/* Order Section */}
