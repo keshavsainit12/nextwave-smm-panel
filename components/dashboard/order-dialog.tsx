@@ -50,11 +50,31 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
     setCouponError(null)
 
     try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 8000) // 8s timeout
+
       const response = await fetch("/api/v1/validate-coupon", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ couponCode: couponCode.toUpperCase() }),
+        signal: controller.signal,
       })
+
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Coupon code not found")
+        } else if (response.status === 410) {
+          throw new Error("This coupon has expired")
+        } else if (response.status === 429) {
+          throw new Error("Too many validation attempts. Please try again in a moment")
+        } else if (response.status >= 500) {
+          throw new Error("Server error. Please try again shortly")
+        } else {
+          throw new Error("Failed to validate coupon")
+        }
+      }
 
       const data = await response.json()
 
@@ -70,8 +90,13 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
         setCouponDiscount(0)
       }
     } catch (err) {
-      setCouponError("Failed to validate coupon")
+      if (err instanceof DOMException && err.name === "AbortError") {
+        setCouponError("Validation timed out. Please try again")
+      } else {
+        setCouponError(err instanceof Error ? err.message : "Failed to validate coupon")
+      }
       setCouponDiscount(0)
+      console.error("[v0] Coupon validation error:", err)
     } finally {
       setValidateCouponLoading(false)
     }
@@ -89,6 +114,15 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
     setError(null)
 
     try {
+      if (!link.trim()) {
+        throw new Error("Please enter a valid link")
+      }
+
+      if (quantity < (service.min_quantity || 100)) {
+        throw new Error(`Minimum quantity is ${service.min_quantity || 100}`)
+      }
+
+      console.log("[v0] Placing order with coupon:", couponCode || "none")
       const result = await placeOrder(service.id, link, quantity, couponCode || undefined)
 
       if (result.error) {
@@ -105,10 +139,12 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
       router.push("/dashboard/orders")
       router.refresh()
     } catch (err: any) {
-      setError(err.message)
+      const errorMessage = err instanceof Error ? err.message : "An error occurred while placing your order"
+      setError(errorMessage)
+      console.error("[v0] Order placement error:", err)
       toast({
         title: "Order Failed",
-        description: err.message,
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
