@@ -366,7 +366,7 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
     return {
       success: false,
       error: error instanceof Error ? error.message : "Payment processing failed"
-    }
+    };
   }
 }
 
