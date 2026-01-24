@@ -190,9 +190,20 @@ function SignupContent() {
     <div className="relative flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 overflow-hidden bg-transparent">
       <Script
         src="https://www.google.com/recaptcha/api.js"
-        strategy="lazyOnload"
+        strategy="afterInteractive"
+        async
+        defer
         onLoad={() => {
           console.log("[v0] reCAPTCHA API script loaded successfully")
+          // Force reCAPTCHA to render after script loads
+          if (window.grecaptcha && window.grecaptcha.render) {
+            setTimeout(() => {
+              window.grecaptcha.render("recaptcha-container", {
+                sitekey: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
+                callback: "handleRecaptchaChange",
+              })
+            }, 100)
+          }
         }}
         onError={() => {
           console.error("[v0] Failed to load reCAPTCHA script")
@@ -312,8 +323,9 @@ function SignupContent() {
 
             <div className="flex justify-center py-4">
               <div
-                className="g_recaptcha"
-                data-sitekey="6Lea01QsAAAAAG7Wv83BSoSV7NWF14KLe6poX4As"
+                id="recaptcha-container"
+                className="g_recaptcha flex justify-center"
+                data-sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
                 data-callback="handleRecaptchaChange"
               />
             </div>
