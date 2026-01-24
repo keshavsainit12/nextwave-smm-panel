@@ -27,17 +27,27 @@ export default async function SettingsPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6">
-      <UserSettingsForm
-        userData={{
-          id: user.id,
-          email: user.email || "",
-          full_name: userData.full_name || "",
-          username: userData.username || "",
-          language: userData.language || "English",
-          two_factor_enabled: userData.two_factor_enabled || false,
-        }}
-      />
+    <div className="space-y-4 sm:space-y-6 md:space-y-8 p-3 sm:p-4 md:p-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">Settings</h1>
+        <p className="text-sm sm:text-base text-muted-foreground mt-1">Manage your account settings and preferences</p>
+      </div>
+
+      {/* Settings Form Card */}
+      <div className="bg-white dark:bg-slate-900 rounded-lg sm:rounded-xl border border-gray-200 dark:border-gray-800 p-4 sm:p-6 md:p-8">
+        <UserSettingsForm
+          userData={{
+            id: user.id,
+            email: user.email || "",
+            full_name: userData.full_name || "",
+            username: userData.username || "",
+            language: userData.language || "English",
+            currency: userData.currency || "USD",
+            two_factor_enabled: userData.two_factor_enabled || false,
+          }}
+        />
+      </div>
     </div>
   )
 }
