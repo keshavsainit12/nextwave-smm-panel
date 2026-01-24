@@ -30,6 +30,12 @@ import {
   UserCircle,
 } from "lucide-react"
 
+// Declare getIconEmoji function or import it from the correct module
+const getIconEmoji = (categoryOrService: any) => {
+  // Implement getIconEmoji logic here
+  return null // Placeholder return value
+}
+
 export function MobileHighTrustDashboard({
   services,
   categories,
@@ -75,21 +81,20 @@ export function MobileHighTrustDashboard({
     return categories.filter((category) => services.some((s) => s.category_id === category.id))
   }, [categories, services])
 
-  // Platform emoji mapping - Using Unicode emojis as visual indicators
-  const emojiMap: Record<string, string> = {
-    Instagram: "📷",
-    TikTok: "🎵",
-    Facebook: "👥",
-    YouTube: "▶️",
-    Twitter: "𝕏",
-    Discord: "💬",
-    Telegram: "✈️",
-    LinkedIn: "💼",
-    Spotify: "🎵",
-    SEO: "🔍",
+  // Platform icon mapping - Using animated GIF URLs from blob storage
+  const iconMap: Record<string, string> = {
+    Instagram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-instagram-Y6Ka1ocAALzf5J8Hu64Toiy50JdPFd.gif",
+    TikTok: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-tiktok-EzflMkAJ5ndq4gRIi5nzmBOoM1OvUF.gif",
+    Facebook: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-facebook-circled-EtRgurnTPAHD2yxFZbazoJxbrZYTq9.gif",
+    YouTube: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-youtube-M93kjqYJSjNU8cGtu7AQA1RKroGXxQ.gif",
+    Twitter: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-twitter-logo.gif",
+    Discord: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-discord-mNk8wSFfWYQoBZCDbcO2VNGpaupSgy.gif",
+    Telegram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-telegram-logo-gdYZ4CI62yYQFzmsC9hgp5SCpNecjH.gif",
+    LinkedIn: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-linkedin-j6nqGqyCXXSRbGjpQ6hLsVTKXmXfdX.gif",
+    Spotify: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-spotify-2iAARTR3O1EPL2XispaD2uZe9tLu3S.gif",
   }
 
-  const getIconEmoji = (nameOrObject: string | any) => {
+  const getIconUrl = (nameOrObject: string | any): string | undefined => {
     let platformName = typeof nameOrObject === 'string' ? nameOrObject : nameOrObject?.name || ''
     
     // Extract platform name from category name (e.g., "TikTok - Recommended" -> "TikTok")
@@ -97,24 +102,19 @@ export function MobileHighTrustDashboard({
       platformName = platformName.split(' - ')[0].trim()
     }
     
-    // Try exact match in emoji map
-    if (emojiMap[platformName]) {
-      return emojiMap[platformName]
+    // Try exact match in icon map
+    if (iconMap[platformName]) {
+      return iconMap[platformName]
     }
     
     // Try matching the start of the platform name (case-insensitive)
-    for (const [key, emoji] of Object.entries(emojiMap)) {
+    for (const [key, url] of Object.entries(iconMap)) {
       if (platformName.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(platformName.toLowerCase())) {
-        return emoji
+        return url
       }
     }
     
-    return "🔷" // Default emoji
-  }
-
-  const getIconUrl = (categoryOrService: any) => {
-    // Implement getIconUrl logic here
-    return null // Placeholder return value
+    return undefined
   }
 
   const filteredServices = useMemo(() => {
@@ -400,11 +400,21 @@ export function MobileHighTrustDashboard({
                     sideOffset={4}
                   >
                     {categoriesWithServices.map((category) => {
-                      const emoji = getIconEmoji(category)
+                      const iconUrl = getIconUrl(category)
                       return (
                         <SelectItem key={category.id} value={category.id}>
                           <div className="flex items-center gap-2">
-                            <span className="text-lg">{emoji}</span>
+                            {iconUrl && (
+                              <img
+                                src={iconUrl}
+                                alt={category.name}
+                                className="h-5 w-5 rounded object-contain"
+                                crossOrigin="anonymous"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = "none"
+                                }}
+                              />
+                            )}
                             <span className="truncate">{category.name}</span>
                           </div>
                         </SelectItem>
@@ -453,11 +463,21 @@ export function MobileHighTrustDashboard({
                         sideOffset={4}
                       >
                         {filteredServices.map((service) => {
-                          const emoji = getIconEmoji(service)
+                          const iconUrl = getIconUrl(service)
                           return (
                             <SelectItem key={service.id} value={service.id}>
                               <div className="flex items-center gap-2">
-                                <span className="text-lg">{emoji}</span>
+                                {iconUrl && (
+                                  <img
+                                    src={iconUrl}
+                                    alt={service.name}
+                                    className="h-5 w-5 rounded object-contain"
+                                    crossOrigin="anonymous"
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = "none"
+                                    }}
+                                  />
+                                )}
                                 <span className="truncate">{service.name} - ${Number(service.price || service.base_price || 0).toFixed(2)}/1k</span>
                               </div>
                             </SelectItem>
