@@ -81,15 +81,15 @@ export function MobileHighTrustDashboard({
     return categories.filter((category) => services.some((s) => s.category_id === category.id))
   }, [categories, services])
 
-  // Platform icon mapping - Using animated GIF URLs from blob storage
+  // Platform icon mapping - Using PNG icons from blob storage
   const iconMap: Record<string, string> = {
-    Instagram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-instagram-Y6Ka1ocAALzf5J8Hu64Toiy50JdPFd.gif",
+    Instagram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-from-rawpixel-id-3344505-png-xDtnIBO3bc9t82kgmtCyYBnFkegScR.png",
     TikTok: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-tiktok-EzflMkAJ5ndq4gRIi5nzmBOoM1OvUF.gif",
-    Facebook: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-facebook-circled-EtRgurnTPAHD2yxFZbazoJxbrZYTq9.gif",
-    YouTube: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-youtube-M93kjqYJSjNU8cGtu7AQA1RKroGXxQ.gif",
-    Twitter: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-twitter-logo.gif",
+    Facebook: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/facebook-RxpdvYtrTg1bsGUndmGLdWChd8onD6.png",
+    YouTube: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/youtube%20%281%29-07vpIxURnynwTMsjlHY7sISv5nHdvU.png",
+    Twitter: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/twitter-yUDtKy3fS31OodMEPl1luj7lSE1XFK.png",
     Discord: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-discord-mNk8wSFfWYQoBZCDbcO2VNGpaupSgy.gif",
-    Telegram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-telegram-logo-gdYZ4CI62yYQFzmsC9hgp5SCpNecjH.gif",
+    Telegram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/telegram-IKRhQNifTjNlijvJShg0wkSFQkxyj9.png",
     LinkedIn: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-linkedin-j6nqGqyCXXSRbGjpQ6hLsVTKXmXfdX.gif",
     Spotify: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-spotify-2iAARTR3O1EPL2XispaD2uZe9tLu3S.gif",
   }

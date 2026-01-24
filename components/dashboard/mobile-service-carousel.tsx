@@ -17,11 +17,11 @@ const getIconUrl = (platformOrName: string | any) => {
   const platform = typeof platformOrName === 'string' ? platformOrName : platformOrName?.name || ''
   
   const iconMap: Record<string, string> = {
-    Instagram: "/images/image-from-rawpixel-id-3344505-png.png",
-    YouTube: "/images/youtube-20-281-29.png",
-    Facebook: "/images/facebook.png",
-    Telegram: "/images/telegram.png",
-    Twitter: "/images/twitter.png",
+    Instagram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-from-rawpixel-id-3344505-png-xDtnIBO3bc9t82kgmtCyYBnFkegScR.png",
+    YouTube: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/youtube%20%281%29-07vpIxURnynwTMsjlHY7sISv5nHdvU.png",
+    Facebook: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/facebook-RxpdvYtrTg1bsGUndmGLdWChd8onD6.png",
+    Telegram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/telegram-IKRhQNifTjNlijvJShg0wkSFQkxyj9.png",
+    Twitter: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/twitter-yUDtKy3fS31OodMEPl1luj7lSE1XFK.png",
   }
   return iconMap[platform as keyof typeof iconMap] || ""
 }
