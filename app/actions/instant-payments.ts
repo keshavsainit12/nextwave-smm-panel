@@ -163,6 +163,7 @@ interface PendingUser {
 }
 
 export async function createInstantPayment(params: CreateInstantPaymentParams): Promise<PaymentResponse> {
+  try {
     console.log("[v0] Creating instant payment with params:", {
       userId: params.userId,
       amount: params.amount,
