@@ -1,4 +1,4 @@
-import { createServerClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import UserSettingsForm from "@/components/dashboard/user-settings-form"
 
@@ -8,7 +8,7 @@ export const metadata = {
 }
 
 export default async function SettingsPage() {
-  const supabase = await createServerClient()
+  const supabase = await createClient()
 
   // Get current user
   const {
