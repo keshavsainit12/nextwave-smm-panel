@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { MobileOrdersHistory } from "@/components/dashboard/mobile-orders-history"
+import { redirect } from "next/navigation"
 
 export default async function OrdersPage() {
   const supabase = await createClient()
@@ -7,10 +8,14 @@ export default async function OrdersPage() {
     data: { user },
   } = await supabase.auth.getUser()
 
+  if (!user) {
+    redirect("/auth/login")
+  }
+
   const { data: orders } = await supabase
     .from("orders")
-    .select("*, services(id, name, icon, platform, has_refill, category_id, service_categories!inner(id, name, icon))")
-    .eq("user_id", user!.id)
+    .select("*, services(id, name, icon, platform, has_refill, category_id, service_categories(id, name, icon))")
+    .eq("user_id", user.id)
     .order("created_at", { ascending: false })
 
   // Transform orders to use category icon if service icon is missing
@@ -43,6 +48,9 @@ export default async function OrdersPage() {
               <thead className="bg-gray-50 dark:bg-gray-900/50">
                 <tr className="border-b border-gray-200 dark:border-gray-700">
                   <th className="px-6 py-3 text-left text-xs font-bold uppercase text-gray-600 dark:text-gray-400">
+                    Order ID
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-bold uppercase text-gray-600 dark:text-gray-400">
                     Service
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-bold uppercase text-gray-600 dark:text-gray-400">
@@ -62,6 +70,9 @@ export default async function OrdersPage() {
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {transformedOrders.map((order: any) => (
                   <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-900/30 transition-colors">
+                    <td className="px-6 py-4 font-mono text-sm text-gray-600">
+                      <span className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded font-bold">#{order.order_id}</span>
+                    </td>
                     <td className="px-6 py-4 font-medium">
                       <div className="flex items-center gap-3">
                         {order.services?.icon && (

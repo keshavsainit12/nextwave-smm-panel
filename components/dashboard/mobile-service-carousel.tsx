@@ -5,15 +5,27 @@ import { ChevronLeft, ChevronRight, Star, Shield } from "lucide-react"
 
 interface ServiceCarouselProps {
   onSelectCategory: (categoryName: string) => void
+  onSelectService?: (service: any) => void
 }
 
-const getIconUrl = (platform: string) => {
+const getIconUrl = (platformOrName: string | any) => {
+  // If it's an object with an icon property, use it first
+  if (typeof platformOrName === 'object' && platformOrName?.icon) {
+    return platformOrName.icon
+  }
+  
+  const platform = typeof platformOrName === 'string' ? platformOrName : platformOrName?.name || ''
+  
   const iconMap: Record<string, string> = {
-    Instagram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-from-rawpixel-id-3344505-png-26OEaERgfRA2szq1ynwrYmHizPyhpM.png",
-    YouTube: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/youtube%20%281%29-vLiOrlbLFV57Tue7SrmDV7Frnkb1uZ.png",
-    Facebook: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/facebook-5KZKPoiTruTw0y6Y5Q58NACnBWPhD9.png",
-    Telegram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/telegram-Zsh1cuHtI9tmxUm9E19up6lNY3iSYW.png",
-    Twitter: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/twitter-7UdPUD56etBYgs0HoboaabXKV4Bx0r.png",
+    Instagram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-from-rawpixel-id-3344505-png-MUwyzUmruwNctIiWklZ5p3woDYRXyQ.png",
+    YouTube: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/youtube%20%281%29-fnEdlaxiQiBGHtLVMsS2pDQKjwgtBu.png",
+    Facebook: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/facebook-6RRn4IBRaNjBYVv9LYGM6eL41qQWlW.png",
+    Telegram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/telegram-9xtdNkV3zP6wfwWNpx57A1hNZvEqK2.png",
+    Twitter: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/twitter-29Fes12erxMIaAdspjd7dgcWfJcwBa.png",
+    TikTok: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/social-media-LukRdeHaWfMPqnPN0UopDTorIys0ZS.png",
+    Discord: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/discord-viy5WuDAnWXu9jECoyCcdiaYJjZ9l0.png",
+    LinkedIn: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/linkedin-x8OqmW2CILJ7lo8H5FhKD888W7Z6eN.png",
+    Spotify: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/spotify-7ygXrRUZpZh0pQSmRoDdDCRstAA6Oa.png",
   }
   return iconMap[platform as keyof typeof iconMap] || ""
 }
@@ -71,7 +83,7 @@ const platformConfig = [
   },
 ]
 
-export function MobileServiceCarousel({ onSelectCategory }: ServiceCarouselProps) {
+export function MobileServiceCarousel({ onSelectCategory, onSelectService }: ServiceCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [autoPlay, setAutoPlay] = useState(true)
 
@@ -99,27 +111,31 @@ export function MobileServiceCarousel({ onSelectCategory }: ServiceCarouselProps
   }
 
   const handleSelectService = (categoryName: string) => {
+    // Emit both callbacks for carousel selection and direct service ordering
     onSelectCategory(categoryName)
+    
+    // Trigger scroll to Place Order button (after form renders)
     setTimeout(() => {
-      const serviceSection = document.getElementById("service-selection-section")
-      if (serviceSection) {
-        serviceSection.scrollIntoView({ behavior: "smooth", block: "start" })
+      const placeOrderButton = document.getElementById("place-order-button")
+      if (placeOrderButton) {
+        // Scroll with offset to show the button properly
+        placeOrderButton.scrollIntoView({ behavior: "smooth", block: "center" })
       }
-    }, 300)
+    }, 100)
   }
 
   const currentPlatform = platformConfig[currentIndex]
 
   return (
     <div className="w-full">
-      {/* Header Section */}
-      <div className="mb-8">
-        <div className="flex items-center gap-2">
-          <h2 className="text-2xl font-bold text-slate-900 font-poppins">🔥</h2>
-          <h2 className="text-2xl font-bold text-slate-900 font-poppins">Hot Offers</h2>
-          <h2 className="text-2xl font-bold text-slate-900 font-poppins">This Week</h2>
+      {/* Header Section - Better spacing and typography */}
+      <div className="mb-6 pt-2">
+        <div className="flex items-baseline gap-2">
+          <span className="text-3xl">🔥</span>
+          <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Hot Offers</h2>
+          <p className="text-2xl md:text-3xl font-black text-blue-600 tracking-tight">This Week</p>
         </div>
-        <p className="text-sm text-slate-500 mt-2">Limited time deals • Swipe to explore</p>
+        <p className="text-sm text-slate-500 mt-3 font-medium">Limited time deals • Swipe to explore</p>
       </div>
 
       {/* Carousel Container */}

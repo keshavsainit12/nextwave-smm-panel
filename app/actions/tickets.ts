@@ -11,11 +11,8 @@ export async function createTicket(formData: FormData) {
     } = await supabase.auth.getUser()
 
     if (!user) {
-      console.error("[v0] No user found")
       return { success: false, error: "Unauthorized" }
     }
-
-    console.log("[v0] Creating ticket for user:", user.id)
 
     const { data: ticket, error: ticketError } = await supabase
       .from("support_tickets")
@@ -24,12 +21,12 @@ export async function createTicket(formData: FormData) {
         subject: formData.get("subject") as string,
         priority: formData.get("priority") as string,
         status: "open",
+        order_id: formData.get("order_id") as string | null,
       })
       .select()
       .single()
 
     if (ticketError) {
-      console.error("[v0] Ticket creation error:", ticketError)
       return { success: false, error: ticketError.message }
     }
 
@@ -41,16 +38,13 @@ export async function createTicket(formData: FormData) {
     })
 
     if (messageError) {
-      console.error("[v0] Message creation error:", messageError)
       return { success: false, error: messageError.message }
     }
 
-    console.log("[v0] Ticket created successfully:", ticket.id)
     revalidatePath("/dashboard/tickets")
 
     return { success: true, ticketId: ticket.id }
   } catch (error) {
-    console.error("[v0] Unexpected error in createTicket:", error)
     return { success: false, error: "An unexpected error occurred" }
   }
 }
@@ -66,8 +60,6 @@ export async function addTicketMessage(ticketId: string, message: string) {
       throw new Error("Unauthorized")
     }
 
-    console.log("[v0] Adding message to ticket:", ticketId)
-
     const { error: insertError } = await supabase.from("ticket_messages").insert({
       ticket_id: ticketId,
       user_id: user.id,
@@ -76,7 +68,6 @@ export async function addTicketMessage(ticketId: string, message: string) {
     })
 
     if (insertError) {
-      console.error("[v0] Insert message error:", insertError)
       throw insertError
     }
 
@@ -86,16 +77,13 @@ export async function addTicketMessage(ticketId: string, message: string) {
       .eq("id", ticketId)
 
     if (updateError) {
-      console.error("[v0] Update ticket error:", updateError)
       throw updateError
     }
 
-    console.log("[v0] Message added successfully")
     revalidatePath(`/dashboard/tickets/${ticketId}`)
     revalidatePath("/dashboard/tickets")
     revalidatePath("/admin-panel-2024/tickets")
   } catch (error) {
-    console.error("[v0] Add ticket message error:", error)
     throw error
   }
 }

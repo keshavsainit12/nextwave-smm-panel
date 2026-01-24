@@ -1,7 +1,7 @@
 // Company branding constants
 export const COMPANY_NAME = "NextWave SMM"
 export const COMPANY_EMAIL = "nextwavesmm07@gmail.com"
-export const COMPANY_WEBSITE = "https://nextwavesmm.vercel.app"
+export const COMPANY_WEBSITE = "https://nextwavesmm.com"
 export const COMPANY_SUPPORT_EMAIL = "support@nextwavesmm.com"
 
 // OAuth Configuration - client side only

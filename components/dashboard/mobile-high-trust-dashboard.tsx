@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast"
 import { placeOrder } from "@/app/actions/orders"
 import Link from "next/link"
 import { MobileServiceCarousel } from "./mobile-service-carousel"
+import { DashboardFooter } from "./dashboard-footer"
 import {
   Wallet,
   ShoppingCart,
@@ -29,6 +30,12 @@ import {
   ListOrdered,
   UserCircle,
 } from "lucide-react"
+
+// Declare getIconEmoji function or import it from the correct module
+const getIconEmoji = (categoryOrService: any) => {
+  // Implement getIconEmoji logic here
+  return null // Placeholder return value
+}
 
 export function MobileHighTrustDashboard({
   services,
@@ -75,28 +82,39 @@ export function MobileHighTrustDashboard({
     return categories.filter((category) => services.some((s) => s.category_id === category.id))
   }, [categories, services])
 
-  // Hardcoded icon mapping - Using Blob Storage URLs
+  // Platform icon mapping - PNG only (no GIFs for better performance)
   const iconMap: Record<string, string> = {
-    Instagram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-instagram-Y6Ka1ocAALzf5J8Hu64Toiy50JdPFd.gif",
-    TikTok: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-tiktok-EzflMkAJ5ndq4gRIi5nzmBOoM1OvUF.gif",
-    Facebook: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-facebook-circled-EtRgurnTPAHD2yxFZbazoJxbrZYTq9.gif",
-    YouTube: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-youtube-M93kjqYJSjNU8cGtu7AQA1RKroGXxQ.gif",
-    Twitter: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-twitter-logo.gif",
-    Discord: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-discord-mNk8wSFfWYQoBZCDbcO2VNGpaupSgy.gif",
-    Telegram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-telegram-logo-gdYZ4CI62yYQFzmsC9hgp5SCpNecjH.gif",
-    LinkedIn: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-linkedin-j6nqGqyCXXSRbGjpQ6hLsVTKXmXfdX.gif",
-    Spotify: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/icons8-spotify-2iAARTR3O1EPL2XispaD2uZe9tLu3S.gif",
+    Instagram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-from-rawpixel-id-3344505-png-MUwyzUmruwNctIiWklZ5p3woDYRXyQ.png",
+    TikTok: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/social-media-LukRdeHaWfMPqnPN0UopDTorIys0ZS.png",
+    Facebook: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/facebook-6RRn4IBRaNjBYVv9LYGM6eL41qQWlW.png",
+    YouTube: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/youtube%20%281%29-fnEdlaxiQiBGHtLVMsS2pDQKjwgtBu.png",
+    Twitter: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/twitter-29Fes12erxMIaAdspjd7dgcWfJcwBa.png",
+    Discord: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/discord-viy5WuDAnWXu9jECoyCcdiaYJjZ9l0.png",
+    Telegram: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/telegram-9xtdNkV3zP6wfwWNpx57A1hNZvEqK2.png",
+    LinkedIn: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/linkedin-x8OqmW2CILJ7lo8H5FhKD888W7Z6eN.png",
+    Spotify: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/spotify-7ygXrRUZpZh0pQSmRoDdDCRstAA6Oa.png",
   }
 
-  const getIconUrl = (categoryName: string) => {
-    // Try exact match first
-    if (iconMap[categoryName]) return iconMap[categoryName]
-    // Try matching the start of the category name
+  const getIconUrl = (nameOrObject: string | any): string | undefined => {
+    let platformName = typeof nameOrObject === 'string' ? nameOrObject : nameOrObject?.name || ''
+    
+    // Extract platform name from category name (e.g., "TikTok - Recommended" -> "TikTok")
+    if (platformName.includes(' - ')) {
+      platformName = platformName.split(' - ')[0].trim()
+    }
+    
+    // Try exact match in icon map
+    if (iconMap[platformName]) {
+      return iconMap[platformName]
+    }
+    
+    // Try matching the start of the platform name (case-insensitive)
     for (const [key, url] of Object.entries(iconMap)) {
-      if (categoryName.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(categoryName.toLowerCase())) {
+      if (platformName.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(platformName.toLowerCase())) {
         return url
       }
     }
+    
     return undefined
   }
 
@@ -383,21 +401,22 @@ export function MobileHighTrustDashboard({
                     sideOffset={4}
                   >
                     {categoriesWithServices.map((category) => {
-                      const iconUrl = getIconUrl(category.name)
+                      const iconUrl = getIconUrl(category)
                       return (
-                        <SelectItem key={category.id} value={category.id} className="truncate text-ellipsis">
+                        <SelectItem key={category.id} value={category.id}>
                           <div className="flex items-center gap-2">
                             {iconUrl && (
                               <img
                                 src={iconUrl || "/placeholder.svg"}
                                 alt={category.name}
-                                className="h-5 w-5 rounded object-contain flex-shrink-0"
+                                className="h-5 w-5 rounded object-contain"
+                                crossOrigin="anonymous"
                                 onError={(e) => {
                                   e.currentTarget.style.display = "none"
                                 }}
                               />
                             )}
-                            <span>{category.name}</span>
+                            <span className="truncate">{category.name}</span>
                           </div>
                         </SelectItem>
                       )
@@ -445,21 +464,22 @@ export function MobileHighTrustDashboard({
                         sideOffset={4}
                       >
                         {filteredServices.map((service) => {
-                          const iconUrl = getIconUrl(service.name)
+                          const iconUrl = getIconUrl(service)
                           return (
-                            <SelectItem key={service.id} value={service.id} className="truncate text-ellipsis">
+                            <SelectItem key={service.id} value={service.id}>
                               <div className="flex items-center gap-2">
                                 {iconUrl && (
                                   <img
                                     src={iconUrl || "/placeholder.svg"}
                                     alt={service.name}
-                                    className="h-5 w-5 rounded object-contain flex-shrink-0"
+                                    className="h-5 w-5 rounded object-contain"
+                                    crossOrigin="anonymous"
                                     onError={(e) => {
                                       e.currentTarget.style.display = "none"
                                     }}
                                   />
                                 )}
-                                <span>{service.name} - ${Number(service.price || service.base_price || 0).toFixed(2)}/1k</span>
+                                <span className="truncate">{service.name} - ${Number(service.price || service.base_price || 0).toFixed(2)}/1k</span>
                               </div>
                             </SelectItem>
                           )
@@ -604,6 +624,7 @@ export function MobileHighTrustDashboard({
                   </div>
 
                   <button
+                    id="place-order-button"
                     type="submit"
                     disabled={loading || !selectedService || !link.trim()}
                     className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl h-14 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-base font-bold leading-normal transition-all hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/25"
@@ -661,6 +682,9 @@ export function MobileHighTrustDashboard({
             </div>
           )}
         </main>
+
+        {/* Dashboard Footer */}
+        <DashboardFooter />
 
         {/* Bottom Navigation */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-4 py-2 flex justify-around items-center z-20">

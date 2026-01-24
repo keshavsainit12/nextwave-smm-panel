@@ -157,6 +157,7 @@ CREATE TABLE IF NOT EXISTS crypto_deposits (
 CREATE TABLE IF NOT EXISTS support_tickets (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  order_id UUID REFERENCES orders(id) ON DELETE SET NULL,
   subject TEXT NOT NULL,
   status TEXT DEFAULT 'open' CHECK (status IN ('open', 'replied', 'closed')),
   priority TEXT DEFAULT 'normal' CHECK (priority IN ('low', 'normal', 'high', 'urgent')),

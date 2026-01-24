@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { generateApiKey, regenerateApiKey, revokeApiKey } from "@/app/actions/api-access"
 import { CopyButton } from "@/components/dashboard/copy-button"
-import { AlertCircle, RefreshCw, Trash2 } from "lucide-react"
+import { AlertCircle, RefreshCw, Trash2, Download } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { APP_URL } from "@/lib/config"
 
 export default async function ApiAccessPage() {
   const supabase = await createClient()
@@ -13,7 +14,9 @@ export default async function ApiAccessPage() {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const { data: userData } = await supabase.from("users").select("api_key, role").eq("id", user!.id).single()
+  const { data: userData } = await supabase.from("users").select("api_key, role, price_multiplier").eq("id", user!.id).single()
+
+  const apiBaseUrl = `${APP_URL}/api/v1`
 
   return (
     <div className="space-y-6">
@@ -47,6 +50,16 @@ export default async function ApiAccessPage() {
                   {userData.api_key}
                 </code>
                 <CopyButton text={userData.api_key} />
+              </div>
+              <div className="grid grid-cols-2 gap-3 p-3 bg-white/50 dark:bg-slate-900/50 rounded-lg">
+                <div>
+                  <p className="text-xs text-muted-foreground font-semibold">Price Multiplier</p>
+                  <p className="text-lg font-bold text-blue-600">{userData.price_multiplier?.toFixed(2) || "3.00"}x</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground font-semibold">Status</p>
+                  <p className="text-lg font-bold text-green-600">Active</p>
+                </div>
               </div>
               <p className="text-xs text-blue-700 dark:text-blue-300">
                 Keep your API key secure. Do not share it publicly or commit it to version control.
@@ -84,73 +97,90 @@ export default async function ApiAccessPage() {
         </CardContent>
       </Card>
 
+      {/* Quick Start Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Start</CardTitle>
+          <CardDescription>Get started with the API in minutes</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <h4 className="font-semibold text-sm mb-2 text-blue-900 dark:text-blue-100">1. Base URL</h4>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 bg-white dark:bg-slate-900 p-2 rounded text-sm font-mono border overflow-x-auto">
+                {apiBaseUrl}
+              </code>
+              <CopyButton text={apiBaseUrl} />
+            </div>
+          </div>
+
+          <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+            <h4 className="font-semibold text-sm mb-2 text-purple-900 dark:text-purple-100">2. Authentication Header</h4>
+            <pre className="bg-white dark:bg-slate-900 p-3 rounded text-xs font-mono border overflow-x-auto">
+{`Authorization: Bearer YOUR_API_KEY`}
+            </pre>
+          </div>
+
+          <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+            <h4 className="font-semibold text-sm mb-2 text-green-900 dark:text-green-100">3. Your Prices</h4>
+            <p className="text-sm text-muted-foreground mb-2">
+              All prices returned by the API are automatically calculated with your <span className="font-semibold">{userData?.price_multiplier?.toFixed(2) || "3.00"}x</span> multiplier
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* API Documentation */}
       <Card>
         <CardHeader>
-          <CardTitle>API Documentation</CardTitle>
-          <CardDescription>Available endpoints and usage examples</CardDescription>
+          <CardTitle>API Endpoints</CardTitle>
+          <CardDescription>Available operations and examples</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <h3 className="font-semibold text-lg">Base URL</h3>
-            <code className="block bg-muted p-3 rounded text-sm font-mono border">
-              https://nextwavesmm.com/api/v1
-            </code>
-            <p className="text-xs text-muted-foreground">Replace with your actual domain</p>
-          </div>
-
-          <div className="space-y-2">
-            <h3 className="font-semibold text-lg">Authentication</h3>
-            <p className="text-sm text-muted-foreground">Include your API key in the request header:</p>
-            <pre className="bg-muted p-4 rounded text-xs overflow-x-auto border font-mono">
-              {`Authorization: Bearer YOUR_API_KEY
-Accept: application/json
-Content-Type: application/json`}
-            </pre>
-          </div>
-
-          <div className="space-y-2">
-            <h3 className="font-semibold text-lg">Get Balance</h3>
-            <p className="text-sm text-muted-foreground">Check your current account balance</p>
-            <code className="block bg-muted p-2 rounded text-sm font-mono">GET /api/v1/balance</code>
-            <pre className="bg-muted p-4 rounded text-xs overflow-x-auto border font-mono">
-              {`{
-  "status": "success",
-  "balance": 250.50,
-  "currency": "USD"
-}`}
-            </pre>
-          </div>
-
-          <div className="space-y-2">
-            <h3 className="font-semibold text-lg">Get Services</h3>
-            <p className="text-sm text-muted-foreground">List all available services with pricing</p>
-            <code className="block bg-muted p-2 rounded text-sm font-mono">GET /api/v1/services</code>
-            <pre className="bg-muted p-4 rounded text-xs overflow-x-auto border font-mono">
-              {`{
+          {/* Get Services */}
+          <div className="border-l-4 border-blue-500 pl-4">
+            <h3 className="font-semibold text-lg mb-2">Get Services</h3>
+            <p className="text-sm text-muted-foreground mb-2">List all available services with your custom pricing</p>
+            <code className="block bg-muted p-2 rounded text-sm font-mono mb-2">GET /services</code>
+            <pre className="bg-muted p-3 rounded text-xs overflow-x-auto border font-mono">
+{`{
   "status": "success",
   "services": [
     {
-      "id": "123",
+      "id": "service-id",
       "name": "Instagram Followers",
-      "price": 5.00,
-      "min": 100,
-      "max": 10000,
-      "category": "instagram"
+      "price": "2.99",
+      "min": 10,
+      "max": 50000,
+      "category": "Instagram"
     }
   ]
 }`}
             </pre>
           </div>
 
-          <div className="space-y-2">
-            <h3 className="font-semibold text-lg">Place Order</h3>
-            <p className="text-sm text-muted-foreground">Create a new service order</p>
-            <code className="block bg-muted p-2 rounded text-sm font-mono">POST /api/v1/order</code>
-            <pre className="bg-muted p-4 rounded text-xs overflow-x-auto border font-mono">
-              {`// Request Body
+          {/* Get Balance */}
+          <div className="border-l-4 border-purple-500 pl-4">
+            <h3 className="font-semibold text-lg mb-2">Check Balance</h3>
+            <p className="text-sm text-muted-foreground mb-2">Get your current account balance</p>
+            <code className="block bg-muted p-2 rounded text-sm font-mono mb-2">GET /balance</code>
+            <pre className="bg-muted p-3 rounded text-xs overflow-x-auto border font-mono">
+{`{
+  "status": "success",
+  "balance": 250.50
+}`}
+            </pre>
+          </div>
+
+          {/* Place Order */}
+          <div className="border-l-4 border-green-500 pl-4">
+            <h3 className="font-semibold text-lg mb-2">Place Order</h3>
+            <p className="text-sm text-muted-foreground mb-2">Create a new service order</p>
+            <code className="block bg-muted p-2 rounded text-sm font-mono mb-2">POST /order</code>
+            <pre className="bg-muted p-3 rounded text-xs overflow-x-auto border font-mono">
+{`// Request
 {
-  "service_id": "123",
+  "service_id": "service-id",
   "link": "https://instagram.com/username",
   "quantity": 1000
 }
@@ -158,30 +188,25 @@ Content-Type: application/json`}
 // Response
 {
   "status": "success",
-  "order_id": "abc-123-def",
-  "charge": 5.00,
-  "balance_after": 245.50
+  "order_id": "order-id",
+  "charge": 2.99,
+  "order_status": "pending"
 }`}
             </pre>
           </div>
 
-          <div className="space-y-2">
-            <h3 className="font-semibold text-lg">Check Order Status</h3>
-            <p className="text-sm text-muted-foreground">Get the status of an existing order</p>
-            <code className="block bg-muted p-2 rounded text-sm font-mono">
-              GET /api/v1/order?order_id=abc-123-def
-            </code>
-            <pre className="bg-muted p-4 rounded text-xs overflow-x-auto border font-mono">
-              {`{
+          {/* Check Order Status */}
+          <div className="border-l-4 border-orange-500 pl-4">
+            <h3 className="font-semibold text-lg mb-2">Check Order Status</h3>
+            <p className="text-sm text-muted-foreground mb-2">Get the status of an existing order</p>
+            <code className="block bg-muted p-2 rounded text-sm font-mono mb-2">GET /order?order_id=ORDER_ID</code>
+            <pre className="bg-muted p-3 rounded text-xs overflow-x-auto border font-mono">
+{`{
   "status": "success",
-  "order": {
-    "id": "abc-123-def",
-    "status": "completed",
-    "service_id": "123",
-    "quantity": 1000,
-    "charge": 5.00,
-    "created_at": "2024-01-20T10:30:00Z"
-  }
+  "order_id": "order-id",
+  "order_status": "completed",
+  "quantity": 1000,
+  "link": "https://instagram.com/username"
 }`}
             </pre>
           </div>
@@ -189,9 +214,107 @@ Content-Type: application/json`}
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Each user has their own unique API key. Do not share keys between users. Regenerate your key if you believe it has been compromised.
+              Each user has their own unique API key and custom pricing. All API responses automatically use your price multiplier.
             </AlertDescription>
           </Alert>
+        </CardContent>
+      </Card>
+
+      {/* Code Examples */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Code Examples</CardTitle>
+          <CardDescription>Integration examples in popular languages</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <h4 className="font-semibold text-sm">Python</h4>
+            <pre className="bg-muted p-3 rounded text-xs overflow-x-auto border font-mono">
+{`import requests
+
+API_KEY = "your_api_key"
+BASE_URL = "${apiBaseUrl}"
+
+headers = {"Authorization": f"Bearer {API_KEY}"}
+
+# Get services
+response = requests.get(f"{BASE_URL}/services", headers=headers)
+print(response.json())
+
+# Place order
+order_data = {
+    "service_id": "service-id",
+    "link": "https://instagram.com/username",
+    "quantity": 1000
+}
+response = requests.post(f"{BASE_URL}/order", json=order_data, headers=headers)
+print(response.json())`}
+            </pre>
+          </div>
+
+          <div className="space-y-2">
+            <h4 className="font-semibold text-sm">JavaScript / Node.js</h4>
+            <pre className="bg-muted p-3 rounded text-xs overflow-x-auto border font-mono">
+{`const API_KEY = "your_api_key";
+const BASE_URL = "${apiBaseUrl}";
+
+const headers = {
+  "Authorization": \`Bearer \${API_KEY}\`,
+  "Content-Type": "application/json"
+};
+
+// Get services
+fetch(\`\${BASE_URL}/services\`, { headers })
+  .then(r => r.json())
+  .then(console.log);
+
+// Place order
+fetch(\`\${BASE_URL}/order\`, {
+  method: "POST",
+  headers,
+  body: JSON.stringify({
+    service_id: "service-id",
+    link: "https://instagram.com/username",
+    quantity: 1000
+  })
+}).then(r => r.json()).then(console.log);`}
+            </pre>
+          </div>
+
+          <div className="space-y-2">
+            <h4 className="font-semibold text-sm">cURL</h4>
+            <pre className="bg-muted p-3 rounded text-xs overflow-x-auto border font-mono">
+{`# Get services
+curl -X GET "${apiBaseUrl}/services" \\
+  -H "Authorization: Bearer YOUR_API_KEY"
+
+# Place order
+curl -X POST "${apiBaseUrl}/order" \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "service_id": "service-id",
+    "link": "https://instagram.com/username",
+    "quantity": 1000
+  }'`}
+            </pre>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Download Documentation */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Full Documentation</CardTitle>
+          <CardDescription>Download complete API documentation with all endpoints</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <a href="/API_COMPLETE_DOCUMENTATION.md" download>
+            <Button variant="outline" className="w-full gap-2 bg-transparent">
+              <Download className="h-4 w-4" />
+              Download Full Documentation (Markdown)
+            </Button>
+          </a>
         </CardContent>
       </Card>
     </div>
