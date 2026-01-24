@@ -75,30 +75,21 @@ export function MobileHighTrustDashboard({
     return categories.filter((category) => services.some((s) => s.category_id === category.id))
   }, [categories, services])
 
-  // Hardcoded icon mapping - Using Blob Storage URLs
-  const iconMap: Record<string, string> = {
-    Instagram: "/images/icons8-instagram.gif",
-    TikTok: "/images/icons8-tiktok.gif",
-    Facebook: "/images/icons8-facebook-circled.gif",
-    YouTube: "/images/icons8-youtube.gif",
-    Twitter: "/images/icons8-twitter-logo.gif",
-    Discord: "/images/icons8-discord.gif",
-    Telegram: "/images/icons8-telegram-logo.gif",
-    LinkedIn: "/images/icons8-linkedin.gif",
-    Spotify: "/images/icons8-spotify.gif",
+  // Platform emoji mapping - Using Unicode emojis as visual indicators
+  const emojiMap: Record<string, string> = {
+    Instagram: "📷",
+    TikTok: "🎵",
+    Facebook: "👥",
+    YouTube: "▶️",
+    Twitter: "𝕏",
+    Discord: "💬",
+    Telegram: "✈️",
+    LinkedIn: "💼",
+    Spotify: "🎵",
+    SEO: "🔍",
   }
 
-  const getIconUrl = (nameOrObject: string | any) => {
-    // If it's an object with an icon property, check if it's a valid URL
-    if (typeof nameOrObject === 'object' && nameOrObject?.icon) {
-      const icon = nameOrObject.icon
-      // Only use if it's a valid image URL (not an emoji or text)
-      if (typeof icon === 'string' && (icon.startsWith('http') || icon.startsWith('/') || icon.startsWith('blob:'))) {
-        return icon
-      }
-      // Emoji or invalid URL - ignore and use platform matching below
-    }
-    
+  const getIconEmoji = (nameOrObject: string | any) => {
     let platformName = typeof nameOrObject === 'string' ? nameOrObject : nameOrObject?.name || ''
     
     // Extract platform name from category name (e.g., "TikTok - Recommended" -> "TikTok")
@@ -106,19 +97,24 @@ export function MobileHighTrustDashboard({
       platformName = platformName.split(' - ')[0].trim()
     }
     
-    // Try exact match in hardcoded map
-    if (iconMap[platformName]) {
-      return iconMap[platformName]
+    // Try exact match in emoji map
+    if (emojiMap[platformName]) {
+      return emojiMap[platformName]
     }
     
     // Try matching the start of the platform name (case-insensitive)
-    for (const [key, url] of Object.entries(iconMap)) {
+    for (const [key, emoji] of Object.entries(emojiMap)) {
       if (platformName.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(platformName.toLowerCase())) {
-        return url
+        return emoji
       }
     }
     
-    return undefined
+    return "🔷" // Default emoji
+  }
+
+  const getIconUrl = (categoryOrService: any) => {
+    // Implement getIconUrl logic here
+    return null // Placeholder return value
   }
 
   const filteredServices = useMemo(() => {
@@ -404,21 +400,11 @@ export function MobileHighTrustDashboard({
                     sideOffset={4}
                   >
                     {categoriesWithServices.map((category) => {
-                      const iconUrl = getIconUrl(category)
+                      const emoji = getIconEmoji(category)
                       return (
                         <SelectItem key={category.id} value={category.id}>
-                          <div className="flex items-center gap-2 min-w-0">
-                            {iconUrl && (
-                              <img
-                                src={iconUrl || "/placeholder.svg"}
-                                alt={category.name}
-                                className="h-5 w-5 rounded object-contain flex-shrink-0"
-                                crossOrigin="anonymous"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = "none"
-                                }}
-                              />
-                            )}
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">{emoji}</span>
                             <span className="truncate">{category.name}</span>
                           </div>
                         </SelectItem>
@@ -467,21 +453,11 @@ export function MobileHighTrustDashboard({
                         sideOffset={4}
                       >
                         {filteredServices.map((service) => {
-                          const iconUrl = getIconUrl(service)
+                          const emoji = getIconEmoji(service)
                           return (
                             <SelectItem key={service.id} value={service.id}>
-                              <div className="flex items-center gap-2 min-w-0">
-                                {iconUrl && (
-                                  <img
-                                    src={iconUrl || "/placeholder.svg"}
-                                    alt={service.name}
-                                    className="h-5 w-5 rounded object-contain flex-shrink-0"
-                                    crossOrigin="anonymous"
-                                    onError={(e) => {
-                                      e.currentTarget.style.display = "none"
-                                    }}
-                                  />
-                                )}
+                              <div className="flex items-center gap-2">
+                                <span className="text-lg">{emoji}</span>
                                 <span className="truncate">{service.name} - ${Number(service.price || service.base_price || 0).toFixed(2)}/1k</span>
                               </div>
                             </SelectItem>
