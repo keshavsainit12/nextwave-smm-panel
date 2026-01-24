@@ -119,7 +119,7 @@ This document provides a complete debugging and enhancement plan for the NextWav
 - [ ] Feature flags configured
 
 ### Database Setup
-```sql
+\`\`\`sql
 -- Required migrations
 ALTER TABLE users ADD COLUMN IF NOT EXISTS currency TEXT DEFAULT 'USD';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS currency_updated_at TIMESTAMP DEFAULT NOW();
@@ -131,7 +131,7 @@ CREATE TABLE IF NOT EXISTS currency_changes (
   new_currency TEXT NOT NULL,
   changed_at TIMESTAMP DEFAULT NOW()
 );
-```
+\`\`\`
 
 ### Deployment Phases
 1. **Staging** (24 hours): Full QA testing
@@ -166,13 +166,13 @@ CREATE TABLE IF NOT EXISTS currency_changes (
 ## Monitoring & Success Metrics
 
 ### Key Performance Indicators
-```
+\`\`\`
 ✓ Order Page Load Time:           < 2 seconds
 ✓ Coupon Validation Time:         < 1 second
 ✓ Settings Save Success Rate:     > 99.5%
 ✓ Error Rate:                     < 0.1%
 ✓ User Satisfaction:              > 4.5/5
-```
+\`\`\`
 
 ### Alerts to Configure
 - Order load time > 5 seconds

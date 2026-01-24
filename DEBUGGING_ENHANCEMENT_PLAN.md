@@ -26,17 +26,17 @@ This document outlines a systematic approach to identify and resolve critical is
 ### Best Practices Implementation
 
 #### 1. Add Request Cancellation & Timeouts
-```typescript
+\`\`\`typescript
 // Use AbortController for request cancellation
 const controller = new AbortController()
 const timeoutId = setTimeout(() => controller.abort(), 10000) // 10s timeout
 
 fetch(url, { signal: controller.signal })
   .finally(() => clearTimeout(timeoutId))
-```
+\`\`\`
 
 #### 2. Implement Pagination for Orders
-```typescript
+\`\`\`typescript
 // Load 20 orders per page instead of all at once
 const pageSize = 20
 const offset = (currentPage - 1) * pageSize
@@ -45,10 +45,10 @@ const { data: orders } = await supabase
   .from("orders")
   .select(...)
   .range(offset, offset + pageSize - 1)
-```
+\`\`\`
 
 #### 3. Add Error Boundaries & Fallbacks
-```typescript
+\`\`\`typescript
 import { ErrorBoundary } from 'react-error-boundary'
 
 export function OrdersPage() {
@@ -58,7 +58,7 @@ export function OrdersPage() {
     </ErrorBoundary>
   )
 }
-```
+\`\`\`
 
 ---
 
@@ -83,7 +83,7 @@ export function OrdersPage() {
 ### Best Practices Implementation
 
 #### 1. Add Currency Support to Database Schema
-```sql
+\`\`\`sql
 -- Add currency column to users table
 ALTER TABLE users ADD COLUMN currency TEXT DEFAULT 'USD';
 ALTER TABLE users ADD COLUMN currency_updated_at TIMESTAMP DEFAULT NOW();
@@ -96,10 +96,10 @@ CREATE TABLE currency_changes (
   new_currency TEXT,
   changed_at TIMESTAMP DEFAULT NOW()
 );
-```
+\`\`\`
 
 #### 2. Implement Proper State Management
-```typescript
+\`\`\`typescript
 const [formData, setFormData] = useState({
   language: userData.language,
   currency: userData.currency || 'USD',
@@ -112,10 +112,10 @@ const handleChange = (field: string, value: string) => {
   setFormData(prev => ({ ...prev, [field]: value }))
   setChangedFields(prev => new Set(prev).add(field))
 }
-```
+\`\`\`
 
 #### 3. Add Validation & Confirmation
-```typescript
+\`\`\`typescript
 const handleSave = async () => {
   // Only update changed fields
   const updates = Array.from(changedFields).reduce((acc, field) => {
@@ -130,7 +130,7 @@ const handleSave = async () => {
     }
   }
 }
-```
+\`\`\`
 
 ---
 
@@ -155,7 +155,7 @@ const handleSave = async () => {
 ### Best Practices Implementation
 
 #### 1. Add Request Timeout & Retry Logic
-```typescript
+\`\`\`typescript
 const handleValidateCoupon = async (maxRetries = 2) => {
   let lastError: Error | null = null
 
@@ -191,10 +191,10 @@ const handleValidateCoupon = async (maxRetries = 2) => {
 
   throw lastError || new Error('Coupon validation failed')
 }
-```
+\`\`\`
 
 #### 2. Implement Coupon Caching
-```typescript
+\`\`\`typescript
 const couponCache = new Map<string, { discount: number; expiry: number }>()
 
 const getCachedCoupon = (code: string) => {
@@ -212,10 +212,10 @@ const setCachedCoupon = (code: string, discount: number) => {
     expiry: Date.now() + 60000 // 1 minute cache
   })
 }
-```
+\`\`\`
 
 #### 3. Add Comprehensive Error Handling
-```typescript
+\`\`\`typescript
 const handleValidateCoupon = async () => {
   setValidateCouponLoading(true)
   setCouponError(null)
@@ -251,7 +251,7 @@ const handleValidateCoupon = async () => {
     setValidateCouponLoading(false)
   }
 }
-```
+\`\`\`
 
 ---
 
@@ -284,7 +284,7 @@ const handleValidateCoupon = async () => {
 ### 3. User Experience Enhancements
 
 **Loading States:**
-```typescript
+\`\`\`typescript
 export function LoadingState({ message = 'Loading...' }) {
   return (
     <div className="flex items-center gap-2">
@@ -293,10 +293,10 @@ export function LoadingState({ message = 'Loading...' }) {
     </div>
   )
 }
-```
+\`\`\`
 
 **Optimistic Updates:**
-```typescript
+\`\`\`typescript
 const optimisticUpdate = async (action, newValue) => {
   // Update UI immediately
   setFormData(prev => ({ ...prev, ...newValue }))
@@ -310,12 +310,12 @@ const optimisticUpdate = async (action, newValue) => {
     showError(err)
   }
 }
-```
+\`\`\`
 
 ### 4. Monitoring & Debugging
 
 **Add Structured Logging:**
-```typescript
+\`\`\`typescript
 const logEvent = (eventName: string, data: any, level: 'info' | 'error' | 'warn' = 'info') => {
   const timestamp = new Date().toISOString()
   console.log(`[${timestamp}] [${level.toUpperCase()}] [${eventName}]`, data)
@@ -325,7 +325,7 @@ const logEvent = (eventName: string, data: any, level: 'info' | 'error' | 'warn'
     sendErrorToMonitoring(eventName, data)
   }
 }
-```
+\`\`\`
 
 ---
 
@@ -360,7 +360,7 @@ const logEvent = (eventName: string, data: any, level: 'info' | 'error' | 'warn'
 ## Testing Strategy
 
 ### Unit Tests
-```typescript
+\`\`\`typescript
 describe('Order Processing', () => {
   it('should timeout after 10 seconds', async () => {
     // Test timeout logic
@@ -370,16 +370,16 @@ describe('Order Processing', () => {
     // Test coupon calculation
   })
 })
-```
+\`\`\`
 
 ### Integration Tests
-```typescript
+\`\`\`typescript
 describe('Settings Form', () => {
   it('should save currency preference', async () => {
     // Test full flow
   })
 })
-```
+\`\`\`
 
 ### Manual Testing Checklist
 - [ ] Test order placement under slow network (3G throttle)

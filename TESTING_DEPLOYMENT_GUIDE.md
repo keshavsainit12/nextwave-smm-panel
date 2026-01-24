@@ -39,14 +39,14 @@
 - [ ] Test jumping to last page shows correct count
 
 #### Performance Testing
-```javascript
+\`\`\`javascript
 // In browser console:
 performance.mark('orders-start')
 // ... navigate to orders
 performance.mark('orders-end')
 performance.measure('orders-load', 'orders-start', 'orders-end')
 performance.getEntriesByName('orders-load')[0].duration // should be < 2000ms
-```
+\`\`\`
 
 #### Error Scenarios
 - [ ] Network offline - verify error message shows
@@ -57,7 +57,7 @@ performance.getEntriesByName('orders-load')[0].duration // should be < 2000ms
 ### Settings Form Testing
 
 #### Currency Changes
-```typescript
+\`\`\`typescript
 // Test Steps:
 1. Open Settings
 2. Change Language to "Spanish"
@@ -67,7 +67,7 @@ performance.getEntriesByName('orders-load')[0].duration // should be < 2000ms
 6. Click Save - verify saves successfully
 7. Refresh page - verify currency persists
 8. Check database: SELECT currency FROM users WHERE id = 'test_user'
-```
+\`\`\`
 
 #### Field Tracking
 - [ ] Change one field - verify only that field sends to server
@@ -84,7 +84,7 @@ performance.getEntriesByName('orders-load')[0].duration // should be < 2000ms
 ### Coupon Validation Testing
 
 #### Happy Path
-```typescript
+\`\`\`typescript
 // Test Steps:
 1. Open order dialog
 2. Enter valid coupon code: "SAVE10"
@@ -92,10 +92,10 @@ performance.getEntriesByName('orders-load')[0].duration // should be < 2000ms
 4. Verify shows "10% discount applied"
 5. Check order total updated
 6. Place order - verify coupon applied
-```
+\`\`\`
 
 #### Error Scenarios
-```typescript
+\`\`\`typescript
 // Timeout Test (simulate slow server)
 1. Open DevTools > Network > Slow 3G
 2. Enter coupon code
@@ -118,17 +118,17 @@ performance.getEntriesByName('orders-load')[0].duration // should be < 2000ms
 1. Click "Apply" 10 times rapidly
 2. Verify shows: "Too many validation attempts"
 3. Wait and retry - should work
-```
+\`\`\`
 
 ### Performance Metrics
 
 #### Acceptable Ranges
-```
+\`\`\`
 Order Page Load Time:     < 2 seconds
 Coupon Validation Time:   < 1 second
 Settings Save Time:       < 500ms
 Pagination Response Time: < 500ms
-```
+\`\`\`
 
 ---
 
@@ -144,7 +144,7 @@ Pagination Response Time: < 500ms
 
 ### Database Migration
 
-```sql
+\`\`\`sql
 -- Add currency support to users table
 BEGIN;
 
@@ -166,12 +166,12 @@ CREATE INDEX IF NOT EXISTS idx_currency_changes_user_id ON currency_changes(user
 CREATE INDEX IF NOT EXISTS idx_users_currency ON users(currency);
 
 COMMIT;
-```
+\`\`\`
 
 ### Deployment Process
 
 #### Stage 1: Pre-Production Testing (1-2 hours)
-```bash
+\`\`\`bash
 # 1. Deploy to staging environment
 git push origin staging
 
@@ -183,10 +183,10 @@ npm run migrate:staging
 
 # 4. Run manual QA checklist
 # (See Testing Checklist above)
-```
+\`\`\`
 
 #### Stage 2: Production Deployment (2-3 hours)
-```bash
+\`\`\`bash
 # 1. Create backup
 # (Handled by deployment system)
 
@@ -204,10 +204,10 @@ npm run logs:prod -- --follow
 
 # 6. Run smoke tests on production
 npm run test:smoke --env=prod
-```
+\`\`\`
 
 #### Stage 3: Validation (30 minutes)
-```bash
+\`\`\`bash
 # 1. Test key flows
 - [ ] Create order
 - [ ] Apply coupon
@@ -223,13 +223,13 @@ npm run test:smoke --env=prod
 - [ ] Page load times normal
 - [ ] Database query times acceptable
 - [ ] CPU/Memory usage stable
-```
+\`\`\`
 
 ### Rollback Plan
 
 If issues occur:
 
-```bash
+\`\`\`bash
 # Quick rollback (< 5 minutes)
 git revert HEAD
 
@@ -245,7 +245,7 @@ npm run cache:clear
 
 # Restart services
 npm run restart
-```
+\`\`\`
 
 ---
 
@@ -253,7 +253,7 @@ npm run restart
 
 ### Key Metrics to Watch
 
-```javascript
+\`\`\`javascript
 // 1. Error Rate
 ✓ Target: < 0.1%
 ✗ Alert: > 0.5%
@@ -269,11 +269,11 @@ npm run restart
 // 4. Settings Save Success
 ✓ Target: > 99.5%
 ✗ Alert: < 95%
-```
+\`\`\`
 
 ### Alert Configurations
 
-```yaml
+\`\`\`yaml
 alerts:
   - name: High Error Rate
     threshold: 0.5%
@@ -289,7 +289,7 @@ alerts:
     threshold: 5% failure rate
     window: 5 minutes
     action: Alert API Team
-```
+\`\`\`
 
 ---
 
@@ -297,7 +297,7 @@ alerts:
 
 ### Add Request Logging
 
-```typescript
+\`\`\`typescript
 // /lib/logging.ts
 export const logEvent = (
   eventName: string,
@@ -320,11 +320,11 @@ export const logEvent = (
     fetch('/api/v1/logs', { method: 'POST', body: JSON.stringify(logEntry) })
   }
 }
-```
+\`\`\`
 
 ### Log Usage Examples
 
-```typescript
+\`\`\`typescript
 // Order pagination
 logEvent('order-page-loaded', { page, totalPages, count })
 
@@ -336,14 +336,14 @@ logEvent('coupon-validation', { code, status, discount, duration })
 
 // Errors
 logEvent('coupon-validation-error', { error, code, retries }, 'error')
-```
+\`\`\`
 
 ---
 
 ## Rollout Strategy
 
 ### Option 1: Feature Flags (Recommended)
-```typescript
+\`\`\`typescript
 // Enable gradually
 - Day 1: 10% of users
 - Day 2: 25% of users
@@ -353,14 +353,14 @@ logEvent('coupon-validation-error', { error, code, retries }, 'error')
 // Configuration
 const isNewOrdersPaginationEnabled = 
   isFeatureFlagEnabled('orders-pagination', userId)
-```
+\`\`\`
 
 ### Option 2: Gradual Deployment
-```bash
+\`\`\`bash
 # Deploy to specific region first
 # Monitor for 24 hours
 # Then deploy globally
-```
+\`\`\`
 
 ---
 

@@ -149,13 +149,13 @@ This document tracks all code changes made to fix order responsiveness, settings
 ## Error Handling Improvements
 
 ### Order Page Errors
-```
+\`\`\`
 Before: Generic "Failed to load orders"
 After: Specific status with retry option
-```
+\`\`\`
 
 ### Coupon Validation Errors
-```
+\`\`\`
 Before: "Failed to validate coupon"
 After: 
 - "Coupon code not found"
@@ -163,30 +163,30 @@ After:
 - "Too many validation attempts"
 - "Validation timed out. Please try again"
 - "Server error. Please try again shortly"
-```
+\`\`\`
 
 ### Settings Errors
-```
+\`\`\`
 Before: Silent failures or generic errors
 After:
 - Field change tracking
 - Specific error messages
 - Confirmation for critical changes
 - Clear success feedback
-```
+\`\`\`
 
 ---
 
 ## Database Schema Changes Required
 
 ### New Columns (users table)
-```sql
+\`\`\`sql
 ALTER TABLE users ADD COLUMN currency TEXT DEFAULT 'USD';
 ALTER TABLE users ADD COLUMN currency_updated_at TIMESTAMP DEFAULT NOW();
-```
+\`\`\`
 
 ### New Table (currency_changes - optional)
-```sql
+\`\`\`sql
 CREATE TABLE currency_changes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -194,7 +194,7 @@ CREATE TABLE currency_changes (
   new_currency TEXT NOT NULL,
   changed_at TIMESTAMP DEFAULT NOW()
 );
-```
+\`\`\`
 
 ---
 

@@ -2,6 +2,7 @@ import type React from "react"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { AdminSidebar } from "@/components/admin/admin-sidebar"
+import { MobileAdminMenu } from "@/components/admin/mobile-admin-menu"
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies()
@@ -16,7 +17,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 z-30">
         <h1 className="text-xl font-bold text-slate-900 dark:text-white">Admin</h1>
-        <MobileAdminMenuButton />
+        <MobileAdminMenu />
       </div>
 
       <div className="flex flex-1 pt-16 lg:pt-0 lg:overflow-hidden">
@@ -33,15 +34,5 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </main>
       </div>
     </div>
-  )
-}
-
-function MobileAdminMenuButton() {
-  return (
-    <button className="lg:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-      <svg className="w-6 h-6 text-slate-900 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-      </svg>
-    </button>
   )
 }

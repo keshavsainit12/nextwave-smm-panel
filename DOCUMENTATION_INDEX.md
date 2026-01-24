@@ -242,7 +242,7 @@
 ## Database Migrations
 
 ### Required Changes
-```sql
+\`\`\`sql
 ALTER TABLE users ADD COLUMN currency TEXT DEFAULT 'USD';
 ALTER TABLE users ADD COLUMN currency_updated_at TIMESTAMP DEFAULT NOW();
 
@@ -253,7 +253,7 @@ CREATE TABLE currency_changes (
   new_currency TEXT,
   changed_at TIMESTAMP DEFAULT NOW()
 );
-```
+\`\`\`
 
 **Estimated Time**: 5-10 minutes
 **Rollback Time**: < 5 minutes
