@@ -115,19 +115,19 @@ function SignupContent() {
     const supabase = createClient()
 
     try {
-      const redirectUrl = process.env.NEXT_PUBLIC_APP_URL
-        ? `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`
-        : `${window.location.origin}/auth/callback`
-
+      // Supabase will use the callback URL configured in Supabase Dashboard
+      // NOT the redirectTo parameter - redirectTo is only for custom redirects
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: redirectUrl,
+          redirectTo: `${window.location.origin}/auth/callback`,
         },
       })
       if (error) throw error
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Google sign-up failed")
+      const errorMsg = err instanceof Error ? err.message : "Google sign-up failed"
+      console.error("[v0] Google sign-up error:", errorMsg)
+      setError(errorMsg)
       setIsGoogleLoading(false)
     }
   }
