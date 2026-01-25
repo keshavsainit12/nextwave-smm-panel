@@ -65,21 +65,26 @@ export async function signupUser(formData: {
   )
 
   try {
-    const { data: existingProfile } = await supabaseAdmin
+    console.log("[v0] Starting signup for email:", formData.email)
+    
+    // Check if user already exists
+    const { data: existingProfile, error: existingError } = await supabaseAdmin
       .from("users")
       .select("id, email")
-      .eq("email", formData.email)
+      .eq("email", formData.email.toLowerCase())
       .single()
 
     if (existingProfile) {
+      console.error("[v0] Email already exists:", formData.email)
       return {
         success: false,
         error: "An account with this email already exists. Please login instead.",
       }
     }
 
+    console.log("[v0] Creating auth user...")
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: formData.email,
+      email: formData.email.toLowerCase(),
       password: formData.password,
       email_confirm: true, // Skip email verification - user can login immediately
       user_metadata: {
@@ -90,43 +95,62 @@ export async function signupUser(formData: {
     })
 
     if (authError) {
+      console.error("[v0] Auth creation error:", authError.message, "Code:", authError.code)
       return {
         success: false,
-        error: authError.message,
+        error: authError.message || "Failed to create account",
       }
     }
 
     if (!authData.user) {
+      console.error("[v0] Auth user creation returned no user data")
       return {
         success: false,
-        error: "User creation failed",
+        error: "User creation failed - no user data returned",
       }
     }
 
-    const { data: profileCheck } = await supabaseAdmin.from("users").select("id").eq("id", authData.user.id).single()
+    console.log("[v0] Auth user created with ID:", authData.user.id)
+
+    // Check if profile already exists (shouldn't happen, but safety check)
+    const { data: profileCheck, error: profileCheckError } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("id", authData.user.id)
+      .single()
 
     if (profileCheck) {
-      return { success: true, userId: authData.user.id }
+      console.log("[v0] Profile already exists for user ID:", authData.user.id)
+      return { success: true, userId: authData.user.id, message: "Account already created" }
     }
 
+    // Generate referral code
     const referralCode = "REF" + Math.random().toString(36).substring(2, 10).toUpperCase()
+    console.log("[v0] Generated referral code:", referralCode)
 
+    // Check for referrer if referral code provided
     let referredById = null
-    if (formData.referralCode) {
-      const { data: referrerData } = await supabaseAdmin
+    if (formData.referralCode && formData.referralCode.trim()) {
+      console.log("[v0] Looking up referrer for code:", formData.referralCode)
+      const { data: referrerData, error: referrerError } = await supabaseAdmin
         .from("users")
         .select("id")
-        .eq("referral_code", formData.referralCode.toUpperCase())
+        .eq("referral_code", formData.referralCode.toUpperCase().trim())
         .single()
 
       if (referrerData) {
         referredById = referrerData.id
+        console.log("[v0] Found referrer:", referredById)
+      } else if (referrerError && referrerError.code !== "PGRST116") {
+        console.warn("[v0] Referrer lookup error:", referrerError.message)
       }
     }
 
+    // Create user profile
+    console.log("[v0] Creating user profile for ID:", authData.user.id)
     const { error: profileError } = await supabaseAdmin.from("users").insert({
       id: authData.user.id,
-      email: formData.email,
+      email: formData.email.toLowerCase(),
       full_name: formData.fullName,
       tier: 1,
       referral_code: referralCode,
@@ -138,16 +162,31 @@ export async function signupUser(formData: {
     })
 
     if (profileError) {
+      console.error("[v0] Profile creation error:", profileError.message, "Code:", profileError.code)
+      // Try to clean up the auth user if profile creation fails
+      try {
+        await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
+        console.log("[v0] Cleaned up auth user after profile creation failure")
+      } catch (cleanupError) {
+        console.warn("[v0] Failed to cleanup auth user:", cleanupError)
+      }
+      
       return {
         success: false,
         error: `Failed to create user profile: ${profileError.message}`,
       }
     }
 
+    console.log("[v0] User profile created successfully")
     revalidatePath("/auth")
 
-    return { success: true, userId: authData.user.id, message: "Account created successfully! You can now login." }
+    return { 
+      success: true, 
+      userId: authData.user.id, 
+      message: "Account created successfully! Email verification skipped. You can now login." 
+    }
   } catch (error) {
+    console.error("[v0] Signup catch error:", error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Signup failed",

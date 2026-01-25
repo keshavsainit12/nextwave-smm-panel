@@ -104,19 +104,34 @@ function SignupContent() {
         throw new Error(result.error || "Signup failed")
       }
 
-      console.log("[v0] User account created, attempting auto-login...")
-      const supabase = createClient()
-      const { error: loginError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      if (loginError) throw loginError
-
+      console.log("[v0] User account created successfully with ID:", result.userId)
       setSuccess(true)
-      setTimeout(() => {
-        router.push("/dashboard")
-      }, 2000)
+      
+      // Wait a bit for profile to be fully created, then login
+      setTimeout(async () => {
+        try {
+          console.log("[v0] Attempting auto-login after signup...")
+          const supabase = createClient()
+          const { data, error: loginError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          })
+          
+          if (loginError) {
+            console.error("[v0] Login error:", loginError.message)
+            throw loginError
+          }
+          
+          if (data.session) {
+            console.log("[v0] Auto-login successful, redirecting to dashboard...")
+            router.push("/dashboard")
+          }
+        } catch (err) {
+          console.error("[v0] Auto-login failed:", err)
+          // Fallback to login page if auto-login fails
+          setTimeout(() => router.push("/auth/login"), 1500)
+        }
+      }, 1000)
     } catch (error: unknown) {
       let errorMessage = "An error occurred during signup"
       if (error instanceof Error) {
@@ -176,7 +191,7 @@ function SignupContent() {
             </div>
             <div className="space-y-2">
               <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">Account created!</h2>
-              <p className="text-sm sm:text-base text-slate-600">Redirecting to your dashboard...</p>
+              <p className="text-sm sm:text-base text-slate-600">Email verification skipped. Logging you in and redirecting...</p>
             </div>
           </div>
         </div>

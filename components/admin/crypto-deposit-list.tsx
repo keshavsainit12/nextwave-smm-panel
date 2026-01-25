@@ -20,16 +20,18 @@ export function CryptoDepositList({ deposits }: { deposits: any[] }) {
     if (confirm("Approve this deposit and credit user balance?")) {
       setLoading(id)
       try {
+        console.log("[v0] Approving deposit:", id)
         const result = await approveDeposit(id)
         if (result.success) {
           toast.success("Deposit approved! User balance updated.")
-          router.refresh()
+          setTimeout(() => router.refresh(), 500)
         } else {
+          console.error("[v0] Approval failed:", result.error)
           toast.error(result.error || "Failed to approve deposit")
         }
       } catch (error: any) {
-        console.error("[v0] Approve error:", error)
-        toast.error(error?.message || "Failed to approve deposit")
+        console.error("[v0] Approve error caught:", error)
+        toast.error(error?.message || "An unexpected error occurred")
       } finally {
         setLoading(null)
       }
@@ -41,16 +43,18 @@ export function CryptoDepositList({ deposits }: { deposits: any[] }) {
     if (reason && reason.trim()) {
       setLoading(id)
       try {
+        console.log("[v0] Rejecting deposit:", id, "Reason:", reason)
         const result = await rejectDeposit(id, reason)
         if (result.success) {
           toast.success("Deposit rejected successfully")
-          router.refresh()
+          setTimeout(() => router.refresh(), 500)
         } else {
+          console.error("[v0] Rejection failed:", result.error)
           toast.error(result.error || "Failed to reject deposit")
         }
       } catch (error: any) {
-        console.error("[v0] Reject error:", error)
-        toast.error(error?.message || "Failed to reject deposit")
+        console.error("[v0] Reject error caught:", error)
+        toast.error(error?.message || "An unexpected error occurred")
       } finally {
         setLoading(null)
       }
