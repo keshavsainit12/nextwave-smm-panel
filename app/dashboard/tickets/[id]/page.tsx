@@ -7,7 +7,8 @@ import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 
-export default async function TicketDetailPage({ params }: { params: { id: string } }) {
+export default async function TicketDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const supabase = await createClient()
   const {
     data: { user },
@@ -17,20 +18,26 @@ export default async function TicketDetailPage({ params }: { params: { id: strin
     notFound()
   }
 
-  // Fetch ticket with messages in single query
+  // Fetch ticket first
   const { data: ticket, error: ticketError } = await supabase
     .from("support_tickets")
-    .select("*, ticket_messages(id, message, is_admin, created_at, user_id, users!inner(full_name, email))")
-    .eq("id", params.id)
+    .select("*")
+    .eq("id", id)
     .eq("user_id", user.id)
     .single()
 
   if (ticketError || !ticket) {
-    console.error("[v0] Ticket fetch error:", ticketError)
     notFound()
   }
 
-  const messages = ticket.ticket_messages || []
+  // Fetch messages separately for better reliability
+  const { data: messagesData } = await supabase
+    .from("ticket_messages")
+    .select("id, message, is_admin, created_at, user_id")
+    .eq("ticket_id", id)
+    .order("created_at", { ascending: true })
+
+  const messages = messagesData || []
 
   return (
     <div className="min-h-screen bg-[#f6f6f8] p-4 pb-24 md:pb-6">
