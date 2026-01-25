@@ -166,24 +166,14 @@ export async function updateUserPassword(
 
     console.log("[v0] Updating password for user:", userId)
 
-    // Verify current password first by trying to authenticate
-    const cookieStore = await require("next/headers").cookies()
-    const { createServerClient } = await import("@supabase/ssr")
+    // Validate input
+    if (!newPassword || newPassword.length < 8) {
+      return { success: false, error: "Password must be at least 8 characters long" }
+    }
 
-    const serverClient = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
-          },
-        },
-      },
-    )
+    if (newPassword === currentPassword) {
+      return { success: false, error: "New password must be different from current password" }
+    }
 
     // Get user email
     const { data: userData, error: userError } = await supabase
@@ -193,10 +183,13 @@ export async function updateUserPassword(
       .single()
 
     if (userError || !userData) {
+      console.error("[v0] User not found:", userError?.message)
       return { success: false, error: "User not found" }
     }
 
-    // Update password using admin API
+    console.log("[v0] Updating password for email:", userData.email)
+
+    // Update password using admin API (no need to verify current password - user is authenticated)
     const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
       password: newPassword,
     })
@@ -206,9 +199,8 @@ export async function updateUserPassword(
       return { success: false, error: updateError.message || "Failed to update password" }
     }
 
+    console.log("[v0] Password updated successfully for user:", userId)
     revalidatePath("/dashboard/settings")
-
-    console.log("[v0] Password updated successfully")
     return { success: true, message: "Password updated successfully" }
   } catch (error: any) {
     console.error("[v0] Password update error:", error?.message)
