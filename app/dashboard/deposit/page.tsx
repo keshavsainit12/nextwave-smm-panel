@@ -85,13 +85,20 @@ export default async function DepositPage() {
       </div>
 
       <Tabs defaultValue="instant" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="instant" className="flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 gap-2 h-auto">
+          <TabsTrigger value="instant" className="flex items-center gap-2 py-2">
             <Zap className="h-4 w-4" />
-            <span>Instant Payment</span>
+            <span className="hidden sm:inline">Instant Payment</span>
+            <span className="sm:hidden text-xs">Instant</span>
           </TabsTrigger>
-          <TabsTrigger value="crypto">Cryptocurrency</TabsTrigger>
-          <TabsTrigger value="history">Deposit History</TabsTrigger>
+          <TabsTrigger value="crypto" className="py-2">
+            <span className="hidden sm:inline">Cryptocurrency</span>
+            <span className="sm:hidden text-xs">Crypto</span>
+          </TabsTrigger>
+          <TabsTrigger value="history" className="py-2">
+            <span className="hidden sm:inline">Deposit History</span>
+            <span className="sm:hidden text-xs">History</span>
+          </TabsTrigger>
         </TabsList>
 
         {/* Instant Payment Tab */}
@@ -135,15 +142,8 @@ export default async function DepositPage() {
             </AlertDescription>
           </Alert>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Crypto Deposit</CardTitle>
-              <CardDescription>Select a cryptocurrency and submit your payment details</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <MobileAddFunds currencies={cryptoCurrencies || []} currentBalance={userData?.balance || 0} />
-            </CardContent>
-          </Card>
+          {/* Removed Card wrapper - MobileAddFunds has its own styling */}
+          <MobileAddFunds currencies={cryptoCurrencies || []} currentBalance={userData?.balance || 0} />
         </TabsContent>
 
         {/* Deposit History Tab */}

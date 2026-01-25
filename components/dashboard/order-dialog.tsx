@@ -122,26 +122,35 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
         throw new Error(`Minimum quantity is ${service.min_quantity || 100}`)
       }
 
-      console.log("[v0] Placing order with coupon:", couponCode || "none")
+      console.log("[v0] Submitting order - Link:", link, "Quantity:", quantity, "Price:", discountedTotal)
       const result = await placeOrder(service.id, link, quantity, couponCode || undefined)
 
       if (result.error) {
+        console.error("[v0] Order placement returned error:", result.error)
         throw new Error(result.error)
       }
 
+      if (!result.success) {
+        console.error("[v0] Order placement failed - no success flag")
+        throw new Error("Order placement failed - please try again")
+      }
+
+      console.log("[v0] Order placed successfully with ID:", result.orderId)
       toast({
         title: "Order Placed Successfully!",
-        description: `Your order has been placed and will be processed shortly.`,
+        description: `Your order #${result.orderId} has been placed and will be processed shortly.`,
         duration: 5000,
       })
 
       onClose()
-      router.push("/dashboard/orders")
-      router.refresh()
+      setTimeout(() => {
+        router.refresh()
+        router.push("/dashboard/orders")
+      }, 500)
     } catch (err: any) {
       const errorMessage = err instanceof Error ? err.message : "An error occurred while placing your order"
+      console.error("[v0] Order error caught:", errorMessage)
       setError(errorMessage)
-      console.error("[v0] Order placement error:", err)
       toast({
         title: "Order Failed",
         description: errorMessage,

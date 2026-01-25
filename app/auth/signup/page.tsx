@@ -6,13 +6,11 @@ import { createClient } from "@/lib/supabase/client"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, Loader2 } from "lucide-react"
-import { signupUser, verifyRecaptcha } from "@/app/actions/auth"
-import Script from "next/script"
+import { signupUser } from "@/app/actions/auth"
 
 // Declare global to avoid TypeScript errors
 declare global {
   interface Window {
-    handleRecaptchaChange: (token: string) => void
     grecaptcha?: any
   }
 }
@@ -27,22 +25,7 @@ function SignupContent() {
   const [success, setSuccess] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   const router = useRouter()
-
-  useEffect(() => {
-    // Setup reCAPTCHA callback - make it globally accessible
-    const handleRecaptchaChange = (token: string) => {
-      console.log("[v0] reCAPTCHA token received:", token ? "Valid" : "Invalid")
-      setCaptchaToken(token)
-      if (error === "Please complete the reCAPTCHA verification") {
-        setError(null)
-      }
-    }
-    
-    // Assign to window so reCAPTCHA can call it
-    window.handleRecaptchaChange = handleRecaptchaChange
-  }, [error])
 
   const validateForm = () => {
     if (!fullName.trim()) {
@@ -61,16 +44,12 @@ function SignupContent() {
       setError("Passwords do not match")
       return false
     }
-    if (!captchaToken) {
-      setError("Please complete the reCAPTCHA verification")
-      return false
-    }
     return true
   }
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("[v0] Signup form submitted - Captcha token:", captchaToken ? "Present" : "Missing")
+    console.log("[v0] Signup form submitted")
     
     if (!validateForm()) {
       console.log("[v0] Form validation failed")
@@ -81,17 +60,6 @@ function SignupContent() {
     setError(null)
 
     try {
-      // Verify reCAPTCHA token
-      if (captchaToken) {
-        console.log("[v0] Verifying reCAPTCHA token...")
-        const recaptchaResult = await verifyRecaptcha(captchaToken)
-        console.log("[v0] reCAPTCHA verification result:", recaptchaResult)
-        
-        if (!recaptchaResult.success) {
-          throw new Error("reCAPTCHA verification failed. Please try again.")
-        }
-      }
-
       console.log("[v0] Creating user account...")
       const result = await signupUser({
         email,
@@ -104,19 +72,34 @@ function SignupContent() {
         throw new Error(result.error || "Signup failed")
       }
 
-      console.log("[v0] User account created, attempting auto-login...")
-      const supabase = createClient()
-      const { error: loginError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      if (loginError) throw loginError
-
+      console.log("[v0] User account created successfully with ID:", result.userId)
       setSuccess(true)
-      setTimeout(() => {
-        router.push("/dashboard")
-      }, 2000)
+      
+      // Wait a bit for profile to be fully created, then login
+      setTimeout(async () => {
+        try {
+          console.log("[v0] Attempting auto-login after signup...")
+          const supabase = createClient()
+          const { data, error: loginError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          })
+          
+          if (loginError) {
+            console.error("[v0] Login error:", loginError.message)
+            throw loginError
+          }
+          
+          if (data.session) {
+            console.log("[v0] Auto-login successful, redirecting to dashboard...")
+            router.push("/dashboard")
+          }
+        } catch (err) {
+          console.error("[v0] Auto-login failed:", err)
+          // Fallback to login page if auto-login fails
+          setTimeout(() => router.push("/auth/login"), 1500)
+        }
+      }, 1000)
     } catch (error: unknown) {
       let errorMessage = "An error occurred during signup"
       if (error instanceof Error) {
@@ -176,7 +159,7 @@ function SignupContent() {
             </div>
             <div className="space-y-2">
               <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">Account created!</h2>
-              <p className="text-sm sm:text-base text-slate-600">Redirecting to your dashboard...</p>
+              <p className="text-sm sm:text-base text-slate-600">Email verification skipped. Logging you in and redirecting...</p>
             </div>
           </div>
         </div>
@@ -186,27 +169,6 @@ function SignupContent() {
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 overflow-hidden bg-transparent">
-      <Script
-        src="https://www.google.com/recaptcha/api.js"
-        strategy="afterInteractive"
-        async
-        defer
-        onLoad={() => {
-          console.log("[v0] reCAPTCHA API script loaded successfully")
-          // Force reCAPTCHA to render after script loads
-          if (window.grecaptcha && window.grecaptcha.render) {
-            setTimeout(() => {
-              window.grecaptcha.render("recaptcha-container", {
-                sitekey: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
-                callback: "handleRecaptchaChange",
-              })
-            }, 100)
-          }
-        }}
-        onError={() => {
-          console.error("[v0] Failed to load reCAPTCHA script")
-        }}
-      />
 
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
         <div className="absolute w-96 h-96 rounded-full blur-3xl opacity-40 bg-blue-500 -top-32 -left-32"></div>
@@ -319,15 +281,6 @@ function SignupContent() {
               />
             </div>
 
-            <div className="flex justify-center py-4">
-              <div
-                id="recaptcha-container"
-                className="g_recaptcha flex justify-center"
-                data-sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
-                data-callback="handleRecaptchaChange"
-              />
-            </div>
-
             {error && (
               <div className="text-sm text-red-600 bg-red-50/80 backdrop-blur border border-red-200/50 p-3 sm:p-4 rounded-2xl">
                 {error}
@@ -336,7 +289,7 @@ function SignupContent() {
 
             <button
               type="submit"
-              disabled={isLoading || !captchaToken}
+              disabled={isLoading}
               className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-3 sm:py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isLoading ? (

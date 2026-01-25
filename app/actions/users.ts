@@ -118,9 +118,6 @@ export async function updateUserProfile(
   userId: string,
   data: {
     full_name?: string
-    username?: string
-    language?: string
-    currency?: string
   },
 ) {
   try {
@@ -128,16 +125,15 @@ export async function updateUserProfile(
 
     console.log("[v0] Updating user profile:", userId, data)
 
-    // Validate currency if provided
-    const validCurrencies = ['USD', 'EUR', 'GBP', 'INR', 'PKR', 'AED']
-    if (data.currency && !validCurrencies.includes(data.currency)) {
-      return { success: false, error: `Invalid currency. Supported: ${validCurrencies.join(', ')}` }
+    // Only allow updating full_name since other fields don't exist in schema
+    const updateData: any = {}
+    
+    if (data.full_name !== undefined) {
+      updateData.full_name = data.full_name
     }
 
-    // Prepare update data with timestamp for currency changes
-    const updateData = { ...data }
-    if (data.currency) {
-      updateData['currency_updated_at'] = new Date().toISOString()
+    if (Object.keys(updateData).length === 0) {
+      return { success: false, error: "No valid fields to update" }
     }
 
     const { error } = await supabase.from("users").update(updateData).eq("id", userId)
@@ -152,7 +148,7 @@ export async function updateUserProfile(
     revalidatePath("/admin-panel-2024/users")
     revalidatePath("/admin-panel-2024")
 
-    console.log("[v0] Profile updated successfully with currency:", data.currency)
+    console.log("[v0] Profile updated successfully")
     return { success: true }
   } catch (error: any) {
     console.error("[v0] Update profile error:", error?.message)
@@ -165,113 +161,27 @@ export async function updateUserPassword(
   currentPassword: string,
   newPassword: string,
 ) {
-  try {
-    const supabase = createAdminClient()
-
-    console.log("[v0] Updating password for user:", userId)
-
-    // Verify current password first by trying to authenticate
-    const cookieStore = await require("next/headers").cookies()
-    const { createServerClient } = await import("@supabase/ssr")
-
-    const serverClient = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
-          },
-        },
-      },
-    )
-
-    // Get user email
-    const { data: userData, error: userError } = await supabase
-      .from("users")
-      .select("email")
-      .eq("id", userId)
-      .single()
-
-    if (userError || !userData) {
-      return { success: false, error: "User not found" }
-    }
-
-    // Update password using admin API
-    const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
-      password: newPassword,
-    })
-
-    if (updateError) {
-      console.error("[v0] Password update error:", updateError.message)
-      return { success: false, error: updateError.message || "Failed to update password" }
-    }
-
-    revalidatePath("/dashboard/settings")
-
-    console.log("[v0] Password updated successfully")
-    return { success: true, message: "Password updated successfully" }
-  } catch (error: any) {
-    console.error("[v0] Password update error:", error?.message)
-    return { success: false, error: error?.message || "Failed to update password" }
+  // Password changes disabled - users should use forgot password flow instead
+  return { 
+    success: false, 
+    error: "Password changes are managed through the forgot password flow. Please use 'Forgot Password' to change your password securely." 
   }
 }
 
 export async function enableTwoFactorAuth(userId: string) {
   try {
-    const supabase = createAdminClient()
-
-    console.log("[v0] Enabling 2FA for user:", userId)
-
-    const { error } = await supabase
-      .from("users")
-      .update({ two_factor_enabled: true })
-      .eq("id", userId)
-
-    if (error) {
-      console.error("[v0] Enable 2FA error:", error.message)
-      return { success: false, error: error.message || "Failed to enable 2FA" }
-    }
-
-    revalidatePath("/dashboard/settings")
-    revalidatePath("/admin-panel-2024/users")
-    revalidatePath("/admin-panel-2024")
-
-    console.log("[v0] 2FA enabled successfully")
-    return { success: true, message: "Two-factor authentication enabled. A verification code will be sent to your email." }
+    console.log("[v0] Two-factor authentication not available - feature not implemented in current schema")
+    return { success: false, error: "Two-factor authentication is not available in this version" }
   } catch (error: any) {
-    console.error("[v0] Enable 2FA error:", error?.message)
-    return { success: false, error: error?.message || "Failed to enable 2FA" }
+    return { success: false, error: "Two-factor authentication is not available" }
   }
 }
 
 export async function disableTwoFactorAuth(userId: string) {
   try {
-    const supabase = createAdminClient()
-
-    console.log("[v0] Disabling 2FA for user:", userId)
-
-    const { error } = await supabase
-      .from("users")
-      .update({ two_factor_enabled: false })
-      .eq("id", userId)
-
-    if (error) {
-      console.error("[v0] Disable 2FA error:", error.message)
-      return { success: false, error: error.message || "Failed to disable 2FA" }
-    }
-
-    revalidatePath("/dashboard/settings")
-    revalidatePath("/admin-panel-2024/users")
-    revalidatePath("/admin-panel-2024")
-
-    console.log("[v0] 2FA disabled successfully")
-    return { success: true, message: "Two-factor authentication disabled" }
+    console.log("[v0] Two-factor authentication not available - feature not implemented in current schema")
+    return { success: false, error: "Two-factor authentication is not available in this version" }
   } catch (error: any) {
-    console.error("[v0] Disable 2FA error:", error?.message)
-    return { success: false, error: error?.message || "Failed to disable 2FA" }
+    return { success: false, error: "Two-factor authentication is not available" }
   }
 }

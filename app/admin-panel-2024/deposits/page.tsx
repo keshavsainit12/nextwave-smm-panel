@@ -3,14 +3,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { CryptoDepositList } from "@/components/admin/crypto-deposit-list"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertTriangle } from "lucide-react"
+import { revalidatePath } from "next/cache"
+
+export const revalidate = 0 // Always fetch fresh data (no caching)
 
 export default async function AdminDepositsPage() {
   const supabase = createAdminClient()
   
-  // Fetch deposits with all related data - specify user_id relationship explicitly
+  // Fetch deposits - get user and crypto data separately to avoid object nesting
   const { data: deposits, error } = await supabase
     .from("crypto_deposits")
-    .select("*, user_id(id, email, full_name), crypto_currency_id(id, name, symbol)")
+    .select("*")
     .order("created_at", { ascending: false })
 
   console.log("[v0] Admin deposits query result:", { depositsCount: deposits?.length, error })
@@ -27,7 +30,45 @@ export default async function AdminDepositsPage() {
     )
   }
 
-  const pendingCount = deposits?.filter((d) => d.status === "pending").length || 0
+  // Fetch user and crypto data separately and enrich deposits
+  const userIds = [...new Set(deposits?.map((d) => d.user_id) || [])]
+  const cryptoIds = [...new Set(deposits?.map((d) => d.crypto_currency_id) || [])]
+
+  let usersMap: Record<string, any> = {}
+  let cryptoMap: Record<string, any> = {}
+
+  if (userIds.length > 0) {
+    const { data: users } = await supabase
+      .from("users")
+      .select("id, email, full_name")
+      .in("id", userIds)
+    
+    users?.forEach((user) => {
+      usersMap[user.id] = user
+    })
+  }
+
+  if (cryptoIds.length > 0) {
+    const { data: cryptos } = await supabase
+      .from("crypto_currencies")
+      .select("id, name, symbol")
+      .in("id", cryptoIds)
+    
+    cryptos?.forEach((crypto) => {
+      cryptoMap[crypto.id] = crypto
+    })
+  }
+
+  // Enrich deposits with user and crypto data
+  const enrichedDeposits = deposits?.map((d) => ({
+    ...d,
+    user_id: d.user_id, // Keep as string for the action
+    user_data: usersMap[d.user_id], // Add user data
+    crypto_currency_id: d.crypto_currency_id, // Keep as string for the action
+    crypto_data: cryptoMap[d.crypto_currency_id], // Add crypto data
+  })) || []
+
+  const pendingCount = enrichedDeposits?.filter((d) => d.status === "pending").length || 0
 
   return (
     <div className="space-y-6">
@@ -45,11 +86,11 @@ export default async function AdminDepositsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>All Deposits ({deposits?.length || 0})</CardTitle>
+          <CardTitle>All Deposits ({enrichedDeposits?.length || 0})</CardTitle>
           <CardDescription>Review crypto payment submissions from users</CardDescription>
         </CardHeader>
         <CardContent>
-          <CryptoDepositList deposits={deposits || []} />
+          <CryptoDepositList deposits={enrichedDeposits || []} />
         </CardContent>
       </Card>
     </div>

@@ -62,7 +62,7 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
     if (couponCode) {
       const { data: coupon, error: couponError } = await supabase
         .from("coupons")
-        .select("id, discount_percentage, active, expires_at, max_uses, used_count, per_user_limit")
+        .select("id, discount_type, discount_value, is_active, expires_at, max_uses, used_count, min_order_amount")
         .ilike("code", couponCode.trim())
         .single()
 
@@ -70,7 +70,7 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
         return { error: "Invalid coupon code" }
       }
 
-      if (!coupon.active) {
+      if (!coupon.is_active) {
         return { error: "This coupon is not active" }
       }
 
@@ -82,24 +82,23 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
         return { error: "This coupon has reached its usage limit" }
       }
 
-      // Check per-user limit
-      if (coupon.per_user_limit && coupon.per_user_limit > 0) {
-        const { data: userUsages } = await supabase
-          .from("coupon_usages")
-          .select("id")
-          .eq("coupon_id", coupon.id)
-          .eq("user_id", user.id)
-
-        if (userUsages && userUsages.length >= coupon.per_user_limit) {
-          return { error: `You have already used this coupon ${coupon.per_user_limit} time(s)` }
-        }
+      // Check minimum order amount
+      if (coupon.min_order_amount && price < coupon.min_order_amount) {
+        return { error: `Minimum order amount for this coupon is $${coupon.min_order_amount}` }
       }
 
       couponId = coupon.id
-      discountPercentage = coupon.discount_percentage || 0
-      price = price * (1 - discountPercentage / 100)
+      
+      // Calculate discount based on type
+      if (coupon.discount_type === "percentage") {
+        discountPercentage = Number(coupon.discount_value) || 0
+        price = price * (1 - discountPercentage / 100)
+      } else {
+        // Fixed discount
+        price = Math.max(0, price - Number(coupon.discount_value))
+      }
 
-      console.log(`[v0] Coupon applied: ${discountPercentage}% discount, new price: $${price.toFixed(2)}`)
+      console.log(`[v0] Coupon applied: ${coupon.discount_type} discount of ${coupon.discount_value}, new price: $${price.toFixed(2)}`)
     }
 
     if (isBulkBuy && quantity < 10000) {
@@ -107,12 +106,14 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
     }
 
     if (userData.balance < price) {
+      console.log(`[v0] Insufficient balance: need $${price.toFixed(2)}, have $${userData.balance.toFixed(2)}`)
       return { error: `Insufficient balance. You need $${price.toFixed(2)} but have $${userData.balance.toFixed(2)}` }
     }
 
     const balanceBefore = userData.balance
     const balanceAfter = balanceBefore - price
 
+    console.log(`[v0] Creating order in database...`)
     const orderResponse = await supabase
       .from("orders")
       .insert({
@@ -123,21 +124,21 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
         price,
         status: "pending",
         can_refill: service.has_refill || service.refill,
-        coupon_id: couponId,
-        discount_percentage: discountPercentage,
       })
       .select()
       .single()
     const order = orderResponse.data
     const orderError = orderResponse.error
 
-    if (orderError) {
-      console.error("[v0] Order creation error:", orderError)
-      return { error: orderError.message }
+    if (orderError || !order) {
+      console.error("[v0] Order creation error:", orderError?.message)
+      return { error: "Failed to create order in database" }
     }
 
-    // Deduct balance and update user stats
-    await supabase
+    console.log("[v0] Order created with ID:", order.id, "- Now deducting balance...")
+
+    // CRITICAL: Deduct balance FIRST before any other operations
+    const { error: balanceUpdateError } = await supabase
       .from("users")
       .update({
         balance: balanceAfter,
@@ -146,21 +147,18 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
       })
       .eq("id", user.id)
 
-    // Record coupon usage if coupon was used
-    if (couponId) {
-      await supabase.from("coupon_usages").insert({
-        coupon_id: couponId,
-        user_id: user.id,
-        order_id: order.id,
-        discount_amount: (quantity / 1000) * finalServicePrice * (discountPercentage / 100),
-      })
-
-      // Increment coupon usage count
-      await supabase.rpc("increment_coupon_usage", { coupon_id: couponId })
+    if (balanceUpdateError) {
+      console.error("[v0] Balance update error:", balanceUpdateError.message)
+      // Rollback order if balance update fails
+      await supabase.from("orders").delete().eq("id", order.id)
+      return { error: "Failed to deduct balance. Order cancelled." }
     }
 
-    // Create transaction record
-    await supabase.from("transactions").insert({
+    console.log(`[v0] Balance deducted successfully: $${balanceBefore.toFixed(2)} → $${balanceAfter.toFixed(2)}`)
+
+    // Record transaction
+    console.log("[v0] Recording transaction...")
+    const { error: transactionError } = await supabase.from("transactions").insert({
       user_id: user.id,
       order_id: order.id,
       type: "order",
@@ -170,33 +168,61 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
       status: "completed",
     })
 
-    console.log(`[v0] Balance deducted: $${balanceBefore.toFixed(2)} → $${balanceAfter.toFixed(2)}`)
+    if (transactionError) {
+      console.warn("[v0] Transaction record failed (non-critical):", transactionError.message)
+    }
+
+    // Record coupon usage if coupon was used
+    if (couponId) {
+      console.log("[v0] Recording coupon usage...")
+      const { error: couponUsageError } = await supabase.from("coupon_usage").insert({
+        coupon_id: couponId,
+        user_id: user.id,
+        order_id: order.id,
+        discount_amount: (quantity / 1000) * finalServicePrice * (discountPercentage / 100),
+      })
+
+      if (couponUsageError) {
+        console.warn("[v0] Coupon usage record failed (non-critical):", couponUsageError.message)
+      }
+
+      // Increment coupon usage count
+      const { error: couponIncrementError } = await supabase.rpc("increment_coupon_usage", { coupon_id: couponId })
+      if (couponIncrementError) {
+        console.warn("[v0] Coupon increment failed (non-critical):", couponIncrementError.message)
+      }
+    }
 
     // Send to API provider
     if (service.provider && service.provider.is_active && service.external_service_id) {
       try {
+        console.log("[v0] Sending order to external API provider...")
         const apiClient = new SMMApiClient(service.provider.api_url, service.provider.api_key)
-
         const apiResponse = await apiClient.createOrder(Number.parseInt(service.external_service_id), link, quantity)
 
-        console.log("[v0] API order created:", apiResponse.order)
+        console.log("[v0] API order created with ID:", apiResponse.order)
 
-        await supabase
+        const { error: apiUpdateError } = await supabase
           .from("orders")
           .update({
             external_order_id: String(apiResponse.order),
             status: "processing",
           })
           .eq("id", order.id)
+
+        if (apiUpdateError) {
+          console.warn("[v0] Failed to update order with external ID (non-critical):", apiUpdateError.message)
+        }
       } catch (error) {
-        console.error("[v0] Failed to send order to API:", error)
-        // Order stays in pending status if API fails
+        console.error("[v0] Failed to send order to API (non-critical):", error)
+        // Order stays in pending status if API fails - user still got charged and order is recorded
       }
     }
 
     revalidatePath("/dashboard")
     revalidatePath("/dashboard/orders")
 
+    console.log("[v0] Order placement completed successfully!")
     return { success: true, orderId: order.id }
   } catch (error) {
     console.error("[v0] Place order error:", error)
