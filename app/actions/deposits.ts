@@ -135,40 +135,47 @@ export async function approveDeposit(depositId: string) {
     const balanceBefore = Number(userData.balance) || 0
     const balanceAfter = balanceBefore + amount
 
-    console.log("[v0] Balance calculation - Before:", balanceBefore, "Adding:", amount, "After:", balanceAfter)
+    console.log("[v0] Balance calculation - Before:", balanceBefore, "Type:", typeof balanceBefore, "Adding:", amount, "Type:", typeof amount, "After:", balanceAfter)
 
     // Update deposit status FIRST
     console.log("[v0] Updating deposit status to approved...")
-    const { error: depositUpdateError } = await adminSupabase
+    const { data: depositUpdateData, error: depositUpdateError } = await adminSupabase
       .from("crypto_deposits")
       .update({
         status: "approved",
         reviewed_at: new Date().toISOString(),
       })
       .eq("id", depositId.trim())
+      .select()
+
+    console.log("[v0] Deposit update response:", { error: depositUpdateError?.message, data: depositUpdateData })
 
     if (depositUpdateError) {
-      console.error("[v0] Deposit update error:", depositUpdateError.message, "Code:", depositUpdateError.code)
+      console.error("[v0] Deposit update error:", depositUpdateError.message, "Code:", depositUpdateError.code, "Details:", depositUpdateError)
       return { success: false, error: `Deposit update failed: ${depositUpdateError.message}` }
     }
 
     console.log("[v0] Deposit status updated successfully")
 
     // Update user balance (critical update)
-    console.log("[v0] Updating user balance...")
-    const { error: balanceUpdateError } = await adminSupabase
+    console.log("[v0] Updating user balance...", "UserID:", userId, "NewBalance:", balanceAfter)
+    const { data: balanceUpdateData, error: balanceUpdateError } = await adminSupabase
       .from("users")
       .update({ balance: balanceAfter })
       .eq("id", userId)
+      .select()
+
+    console.log("[v0] Balance update response:", { error: balanceUpdateError?.message, data: balanceUpdateData })
 
     if (balanceUpdateError) {
-      console.error("[v0] Balance update error:", balanceUpdateError.message, "Code:", balanceUpdateError.code)
+      console.error("[v0] Balance update error:", balanceUpdateError.message, "Code:", balanceUpdateError.code, "Details:", balanceUpdateError)
       // Rollback deposit status if balance update fails
       console.log("[v0] Rolling back deposit status...")
-      await adminSupabase
+      const { error: rollbackError } = await adminSupabase
         .from("crypto_deposits")
         .update({ status: "pending" })
         .eq("id", depositId.trim())
+      console.log("[v0] Rollback result:", rollbackError?.message || "success")
       return { success: false, error: `Balance update failed: ${balanceUpdateError.message}` }
     }
 
@@ -176,8 +183,8 @@ export async function approveDeposit(depositId: string) {
 
     // Update transaction status (non-critical)
     if (deposit.transaction_id) {
-      console.log("[v0] Updating transaction status...")
-      const { error: txUpdateError } = await adminSupabase
+      console.log("[v0] Updating transaction status for ID:", deposit.transaction_id)
+      const { data: txUpdateData, error: txUpdateError } = await adminSupabase
         .from("transactions")
         .update({
           status: "completed",
@@ -185,10 +192,15 @@ export async function approveDeposit(depositId: string) {
           balance_after: balanceAfter,
         })
         .eq("id", deposit.transaction_id)
+        .select()
+
+      console.log("[v0] Transaction update response:", { error: txUpdateError?.message, success: !txUpdateError })
 
       if (txUpdateError) {
         console.warn("[v0] Transaction update warning:", txUpdateError.message)
       }
+    } else {
+      console.log("[v0] No transaction_id to update - skipping")
     }
 
     console.log("[v0] Deposit approved successfully for user:", userId, "Amount:", amount)
