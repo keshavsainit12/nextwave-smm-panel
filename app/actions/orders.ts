@@ -107,12 +107,14 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
     }
 
     if (userData.balance < price) {
+      console.log(`[v0] Insufficient balance: need $${price.toFixed(2)}, have $${userData.balance.toFixed(2)}`)
       return { error: `Insufficient balance. You need $${price.toFixed(2)} but have $${userData.balance.toFixed(2)}` }
     }
 
     const balanceBefore = userData.balance
     const balanceAfter = balanceBefore - price
 
+    console.log(`[v0] Creating order in database...`)
     const orderResponse = await supabase
       .from("orders")
       .insert({
@@ -131,13 +133,15 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
     const order = orderResponse.data
     const orderError = orderResponse.error
 
-    if (orderError) {
-      console.error("[v0] Order creation error:", orderError)
-      return { error: orderError.message }
+    if (orderError || !order) {
+      console.error("[v0] Order creation error:", orderError?.message)
+      return { error: "Failed to create order in database" }
     }
 
-    // Deduct balance and update user stats
-    await supabase
+    console.log("[v0] Order created with ID:", order.id, "- Now deducting balance...")
+
+    // CRITICAL: Deduct balance FIRST before any other operations
+    const { error: balanceUpdateError } = await supabase
       .from("users")
       .update({
         balance: balanceAfter,
@@ -146,21 +150,18 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
       })
       .eq("id", user.id)
 
-    // Record coupon usage if coupon was used
-    if (couponId) {
-      await supabase.from("coupon_usages").insert({
-        coupon_id: couponId,
-        user_id: user.id,
-        order_id: order.id,
-        discount_amount: (quantity / 1000) * finalServicePrice * (discountPercentage / 100),
-      })
-
-      // Increment coupon usage count
-      await supabase.rpc("increment_coupon_usage", { coupon_id: couponId })
+    if (balanceUpdateError) {
+      console.error("[v0] Balance update error:", balanceUpdateError.message)
+      // Rollback order if balance update fails
+      await supabase.from("orders").delete().eq("id", order.id)
+      return { error: "Failed to deduct balance. Order cancelled." }
     }
 
-    // Create transaction record
-    await supabase.from("transactions").insert({
+    console.log(`[v0] Balance deducted successfully: $${balanceBefore.toFixed(2)} → $${balanceAfter.toFixed(2)}`)
+
+    // Record transaction
+    console.log("[v0] Recording transaction...")
+    const { error: transactionError } = await supabase.from("transactions").insert({
       user_id: user.id,
       order_id: order.id,
       type: "order",
@@ -170,33 +171,61 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
       status: "completed",
     })
 
-    console.log(`[v0] Balance deducted: $${balanceBefore.toFixed(2)} → $${balanceAfter.toFixed(2)}`)
+    if (transactionError) {
+      console.warn("[v0] Transaction record failed (non-critical):", transactionError.message)
+    }
+
+    // Record coupon usage if coupon was used
+    if (couponId) {
+      console.log("[v0] Recording coupon usage...")
+      const { error: couponUsageError } = await supabase.from("coupon_usages").insert({
+        coupon_id: couponId,
+        user_id: user.id,
+        order_id: order.id,
+        discount_amount: (quantity / 1000) * finalServicePrice * (discountPercentage / 100),
+      })
+
+      if (couponUsageError) {
+        console.warn("[v0] Coupon usage record failed (non-critical):", couponUsageError.message)
+      }
+
+      // Increment coupon usage count
+      const { error: couponIncrementError } = await supabase.rpc("increment_coupon_usage", { coupon_id: couponId })
+      if (couponIncrementError) {
+        console.warn("[v0] Coupon increment failed (non-critical):", couponIncrementError.message)
+      }
+    }
 
     // Send to API provider
     if (service.provider && service.provider.is_active && service.external_service_id) {
       try {
+        console.log("[v0] Sending order to external API provider...")
         const apiClient = new SMMApiClient(service.provider.api_url, service.provider.api_key)
-
         const apiResponse = await apiClient.createOrder(Number.parseInt(service.external_service_id), link, quantity)
 
-        console.log("[v0] API order created:", apiResponse.order)
+        console.log("[v0] API order created with ID:", apiResponse.order)
 
-        await supabase
+        const { error: apiUpdateError } = await supabase
           .from("orders")
           .update({
             external_order_id: String(apiResponse.order),
             status: "processing",
           })
           .eq("id", order.id)
+
+        if (apiUpdateError) {
+          console.warn("[v0] Failed to update order with external ID (non-critical):", apiUpdateError.message)
+        }
       } catch (error) {
-        console.error("[v0] Failed to send order to API:", error)
-        // Order stays in pending status if API fails
+        console.error("[v0] Failed to send order to API (non-critical):", error)
+        // Order stays in pending status if API fails - user still got charged and order is recorded
       }
     }
 
     revalidatePath("/dashboard")
     revalidatePath("/dashboard/orders")
 
+    console.log("[v0] Order placement completed successfully!")
     return { success: true, orderId: order.id }
   } catch (error) {
     console.error("[v0] Place order error:", error)
