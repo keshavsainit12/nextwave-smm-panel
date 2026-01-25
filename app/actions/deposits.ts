@@ -81,15 +81,18 @@ export async function approveDeposit(depositId: string) {
     }
 
     // Get deposit details
+    console.log("[v0] Fetching deposit with ID:", depositId)
     const { data: deposit, error: fetchError } = await adminSupabase
       .from("crypto_deposits")
       .select("id, transaction_id, user_id, amount, status")
       .eq("id", depositId.trim())
       .single()
 
+    console.log("[v0] Deposit fetch result:", { depositId, fetchError: fetchError?.message, depositExists: !!deposit, depositStatus: deposit?.status })
+
     if (fetchError) {
       console.error("[v0] Fetch error:", fetchError.message, "Code:", fetchError.code)
-      return { success: false, error: "Deposit not found" }
+      return { success: false, error: `Deposit query failed: ${fetchError.message}` }
     }
 
     if (!deposit) {
@@ -106,6 +109,8 @@ export async function approveDeposit(depositId: string) {
     const userId = deposit.user_id
     const amount = Number(deposit.amount)
 
+    console.log("[v0] Deposit details - User:", userId, "Amount:", amount, "TransactionID:", deposit.transaction_id)
+
     // Validate amount
     if (isNaN(amount) || amount <= 0) {
       console.error("[v0] Invalid amount:", amount)
@@ -113,11 +118,14 @@ export async function approveDeposit(depositId: string) {
     }
 
     // Get current user balance
+    console.log("[v0] Fetching user balance for:", userId)
     const { data: userData, error: userError } = await adminSupabase
       .from("users")
       .select("balance")
       .eq("id", userId)
       .single()
+
+    console.log("[v0] User fetch result:", { userError: userError?.message, userExists: !!userData, balance: userData?.balance })
 
     if (userError || !userData) {
       console.error("[v0] User not found:", userError?.message)
@@ -127,7 +135,10 @@ export async function approveDeposit(depositId: string) {
     const balanceBefore = Number(userData.balance) || 0
     const balanceAfter = balanceBefore + amount
 
+    console.log("[v0] Balance calculation - Before:", balanceBefore, "Adding:", amount, "After:", balanceAfter)
+
     // Update deposit status FIRST
+    console.log("[v0] Updating deposit status to approved...")
     const { error: depositUpdateError } = await adminSupabase
       .from("crypto_deposits")
       .update({
@@ -138,10 +149,13 @@ export async function approveDeposit(depositId: string) {
 
     if (depositUpdateError) {
       console.error("[v0] Deposit update error:", depositUpdateError.message, "Code:", depositUpdateError.code)
-      return { success: false, error: "Failed to update deposit" }
+      return { success: false, error: `Deposit update failed: ${depositUpdateError.message}` }
     }
 
+    console.log("[v0] Deposit status updated successfully")
+
     // Update user balance (critical update)
+    console.log("[v0] Updating user balance...")
     const { error: balanceUpdateError } = await adminSupabase
       .from("users")
       .update({ balance: balanceAfter })
@@ -150,25 +164,31 @@ export async function approveDeposit(depositId: string) {
     if (balanceUpdateError) {
       console.error("[v0] Balance update error:", balanceUpdateError.message, "Code:", balanceUpdateError.code)
       // Rollback deposit status if balance update fails
+      console.log("[v0] Rolling back deposit status...")
       await adminSupabase
         .from("crypto_deposits")
         .update({ status: "pending" })
         .eq("id", depositId.trim())
-      return { success: false, error: "Failed to update user balance" }
+      return { success: false, error: `Balance update failed: ${balanceUpdateError.message}` }
     }
 
-    // Update transaction status (non-critical)
-    const { error: txUpdateError } = await adminSupabase
-      .from("transactions")
-      .update({
-        status: "completed",
-        balance_before: balanceBefore,
-        balance_after: balanceAfter,
-      })
-      .eq("id", deposit.transaction_id)
+    console.log("[v0] Balance updated successfully")
 
-    if (txUpdateError) {
-      console.warn("[v0] Transaction update warning:", txUpdateError.message)
+    // Update transaction status (non-critical)
+    if (deposit.transaction_id) {
+      console.log("[v0] Updating transaction status...")
+      const { error: txUpdateError } = await adminSupabase
+        .from("transactions")
+        .update({
+          status: "completed",
+          balance_before: balanceBefore,
+          balance_after: balanceAfter,
+        })
+        .eq("id", deposit.transaction_id)
+
+      if (txUpdateError) {
+        console.warn("[v0] Transaction update warning:", txUpdateError.message)
+      }
     }
 
     console.log("[v0] Deposit approved successfully for user:", userId, "Amount:", amount)
