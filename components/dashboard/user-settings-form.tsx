@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -15,13 +16,13 @@ interface UserData {
 }
 
 export default function UserSettingsForm({ userData }: { userData: UserData }) {
+  const router = useRouter()
   const [formData, setFormData] = useState({
     full_name: userData.full_name || '',
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   })
-
   const [changedFields, setChangedFields] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
@@ -105,6 +106,14 @@ export default function UserSettingsForm({ userData }: { userData: UserData }) {
       if (result.success) {
         setMessage({ type: 'success', text: result.message || 'Password changed successfully!' })
         setFormData(prev => ({ ...prev, currentPassword: '', newPassword: '', confirmPassword: '' }))
+        
+        // If redirect to login is needed, redirect after showing success message
+        if (result.redirectToLogin) {
+          console.log("[v0] Redirecting to login after password change")
+          setTimeout(() => {
+            router.push('/auth/login')
+          }, 2000)
+        }
       } else {
         setMessage({ type: 'error', text: result.error || 'Failed to change password' })
       }

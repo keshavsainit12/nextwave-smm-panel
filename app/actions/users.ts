@@ -189,7 +189,7 @@ export async function updateUserPassword(
 
     console.log("[v0] Updating password for email:", userData.email)
 
-    // Update password using admin API (no need to verify current password - user is authenticated)
+    // Update password using admin API
     const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
       password: newPassword,
     })
@@ -200,8 +200,18 @@ export async function updateUserPassword(
     }
 
     console.log("[v0] Password updated successfully for user:", userId)
-    revalidatePath("/dashboard/settings")
-    return { success: true, message: "Password updated successfully" }
+
+    // Sign out all sessions for this user - their old JWT is now invalid
+    // Use admin API to invalidate all sessions
+    await supabase.auth.admin.signOutUser(userId, { scope: "all" })
+
+    console.log("[v0] Signed out all sessions for user:", userId)
+
+    return { 
+      success: true, 
+      message: "Password updated successfully. Please log in again with your new password.",
+      redirectToLogin: true
+    }
   } catch (error: any) {
     console.error("[v0] Password update error:", error?.message)
     return { success: false, error: error?.message || "Failed to update password" }
