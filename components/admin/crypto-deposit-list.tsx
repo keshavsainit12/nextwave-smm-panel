@@ -22,9 +22,13 @@ export function CryptoDepositList({ deposits }: { deposits: any[] }) {
       try {
         console.log("[v0] Approving deposit:", id)
         const result = await approveDeposit(id)
+        
         if (result.success) {
+          console.log("[v0] Deposit approved successfully")
           toast.success("Deposit approved! User balance updated.")
-          setTimeout(() => router.refresh(), 500)
+          // Wait a moment then refresh to ensure server cache is cleared
+          await new Promise(resolve => setTimeout(resolve, 800))
+          router.refresh()
         } else {
           console.error("[v0] Approval failed:", result.error)
           toast.error(result.error || "Failed to approve deposit")
@@ -45,9 +49,13 @@ export function CryptoDepositList({ deposits }: { deposits: any[] }) {
       try {
         console.log("[v0] Rejecting deposit:", id, "Reason:", reason)
         const result = await rejectDeposit(id, reason)
+        
         if (result.success) {
+          console.log("[v0] Deposit rejected successfully")
           toast.success("Deposit rejected successfully")
-          setTimeout(() => router.refresh(), 500)
+          // Wait a moment then refresh to ensure server cache is cleared
+          await new Promise(resolve => setTimeout(resolve, 800))
+          router.refresh()
         } else {
           console.error("[v0] Rejection failed:", result.error)
           toast.error(result.error || "Failed to reject deposit")

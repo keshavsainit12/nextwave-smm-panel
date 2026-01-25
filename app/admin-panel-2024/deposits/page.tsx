@@ -3,6 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { CryptoDepositList } from "@/components/admin/crypto-deposit-list"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertTriangle } from "lucide-react"
+import { revalidatePath } from "next/cache"
+
+export const revalidate = 0 // Always fetch fresh data (no caching)
 
 export default async function AdminDepositsPage() {
   const supabase = createAdminClient()
