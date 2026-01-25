@@ -161,7 +161,7 @@ export async function approveDeposit(depositId: string) {
     console.log("[v0] Balance updated successfully")
 
     // Step 4: Update deposit status
-    console.log("[v0] STEP 4: Updating deposit status to approved for ID:', cleanId)
+    console.log("[v0] STEP 4: Updating deposit status to approved for ID:", cleanId)
     const { error: depositError } = await adminSupabase
       .from("crypto_deposits")
       .update({
