@@ -62,7 +62,7 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
     if (couponCode) {
       const { data: coupon, error: couponError } = await supabase
         .from("coupons")
-        .select("id, discount_percentage, active, expires_at, max_uses, used_count, per_user_limit")
+        .select("id, discount_type, discount_value, is_active, expires_at, max_uses, used_count, min_order_amount")
         .ilike("code", couponCode.trim())
         .single()
 
@@ -70,7 +70,7 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
         return { error: "Invalid coupon code" }
       }
 
-      if (!coupon.active) {
+      if (!coupon.is_active) {
         return { error: "This coupon is not active" }
       }
 
@@ -82,24 +82,23 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
         return { error: "This coupon has reached its usage limit" }
       }
 
-      // Check per-user limit
-      if (coupon.per_user_limit && coupon.per_user_limit > 0) {
-        const { data: userUsages } = await supabase
-          .from("coupon_usages")
-          .select("id")
-          .eq("coupon_id", coupon.id)
-          .eq("user_id", user.id)
-
-        if (userUsages && userUsages.length >= coupon.per_user_limit) {
-          return { error: `You have already used this coupon ${coupon.per_user_limit} time(s)` }
-        }
+      // Check minimum order amount
+      if (coupon.min_order_amount && price < coupon.min_order_amount) {
+        return { error: `Minimum order amount for this coupon is $${coupon.min_order_amount}` }
       }
 
       couponId = coupon.id
-      discountPercentage = coupon.discount_percentage || 0
-      price = price * (1 - discountPercentage / 100)
+      
+      // Calculate discount based on type
+      if (coupon.discount_type === "percentage") {
+        discountPercentage = Number(coupon.discount_value) || 0
+        price = price * (1 - discountPercentage / 100)
+      } else {
+        // Fixed discount
+        price = Math.max(0, price - Number(coupon.discount_value))
+      }
 
-      console.log(`[v0] Coupon applied: ${discountPercentage}% discount, new price: $${price.toFixed(2)}`)
+      console.log(`[v0] Coupon applied: ${coupon.discount_type} discount of ${coupon.discount_value}, new price: $${price.toFixed(2)}`)
     }
 
     if (isBulkBuy && quantity < 10000) {
@@ -125,8 +124,6 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
         price,
         status: "pending",
         can_refill: service.has_refill || service.refill,
-        coupon_id: couponId,
-        discount_percentage: discountPercentage,
       })
       .select()
       .single()
@@ -178,7 +175,7 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
     // Record coupon usage if coupon was used
     if (couponId) {
       console.log("[v0] Recording coupon usage...")
-      const { error: couponUsageError } = await supabase.from("coupon_usages").insert({
+      const { error: couponUsageError } = await supabase.from("coupon_usage").insert({
         coupon_id: couponId,
         user_id: user.id,
         order_id: order.id,
