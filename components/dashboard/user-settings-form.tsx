@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { AlertCircle, CheckCircle } from 'lucide-react'
 import { updateUserProfile, updateUserPassword } from '@/app/actions/users'
-import { createClient } from '@/lib/supabase/client'
 
 interface UserData {
   id: string
@@ -29,13 +28,9 @@ export default function UserSettingsForm({ userData }: { userData: UserData }) {
   const [userId, setUserId] = useState<string | null>(null)
 
   useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        setUserId(data.user.id)
-      }
-    })
-  }, [])
+    // Use userId from props directly to avoid session issues
+    setUserId(userData.id)
+  }, [userData.id])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
