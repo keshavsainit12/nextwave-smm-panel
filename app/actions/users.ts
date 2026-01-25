@@ -161,60 +161,10 @@ export async function updateUserPassword(
   currentPassword: string,
   newPassword: string,
 ) {
-  try {
-    const supabase = createAdminClient()
-
-    console.log("[v0] Updating password for user:", userId)
-
-    // Validate input
-    if (!newPassword || newPassword.length < 8) {
-      return { success: false, error: "Password must be at least 8 characters long" }
-    }
-
-    if (newPassword === currentPassword) {
-      return { success: false, error: "New password must be different from current password" }
-    }
-
-    // Get user email
-    const { data: userData, error: userError } = await supabase
-      .from("users")
-      .select("email")
-      .eq("id", userId)
-      .single()
-
-    if (userError || !userData) {
-      console.error("[v0] User not found:", userError?.message)
-      return { success: false, error: "User not found" }
-    }
-
-    console.log("[v0] Updating password for email:", userData.email)
-
-    // Update password using admin API
-    const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
-      password: newPassword,
-    })
-
-    if (updateError) {
-      console.error("[v0] Password update error:", updateError.message)
-      return { success: false, error: updateError.message || "Failed to update password" }
-    }
-
-    console.log("[v0] Password updated successfully for user:", userId)
-
-    // Sign out all sessions for this user - their old JWT is now invalid
-    // Use admin API to invalidate all sessions
-    await supabase.auth.admin.signOutUser(userId, { scope: "all" })
-
-    console.log("[v0] Signed out all sessions for user:", userId)
-
-    return { 
-      success: true, 
-      message: "Password updated successfully. Please log in again with your new password.",
-      redirectToLogin: true
-    }
-  } catch (error: any) {
-    console.error("[v0] Password update error:", error?.message)
-    return { success: false, error: error?.message || "Failed to update password" }
+  // Password changes disabled - users should use forgot password flow instead
+  return { 
+    success: false, 
+    error: "Password changes are managed through the forgot password flow. Please use 'Forgot Password' to change your password securely." 
   }
 }
 

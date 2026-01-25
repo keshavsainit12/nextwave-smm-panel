@@ -19,9 +19,6 @@ export default function UserSettingsForm({ userData }: { userData: UserData }) {
   const router = useRouter()
   const [formData, setFormData] = useState({
     full_name: userData.full_name || '',
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
   })
   const [changedFields, setChangedFields] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(false)
@@ -70,55 +67,6 @@ export default function UserSettingsForm({ userData }: { userData: UserData }) {
     } catch (error) {
       setMessage({ type: 'error', text: error instanceof Error ? error.message : 'An error occurred' })
       console.error("[v0] Profile save error:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleChangePassword = async () => {
-    if (!userId) return
-
-    if (!formData.currentPassword || !formData.newPassword || !formData.confirmPassword) {
-      setMessage({ type: 'error', text: 'All password fields are required' })
-      return
-    }
-
-    if (formData.newPassword !== formData.confirmPassword) {
-      setMessage({ type: 'error', text: 'New passwords do not match' })
-      return
-    }
-
-    if (formData.newPassword.length < 8) {
-      setMessage({ type: 'error', text: 'Password must be at least 8 characters' })
-      return
-    }
-
-    setLoading(true)
-    setMessage(null)
-
-    try {
-      const result = await updateUserPassword(
-        userId,
-        formData.currentPassword,
-        formData.newPassword,
-      )
-
-      if (result.success) {
-        setMessage({ type: 'success', text: result.message || 'Password changed successfully!' })
-        setFormData(prev => ({ ...prev, currentPassword: '', newPassword: '', confirmPassword: '' }))
-        
-        // If redirect to login is needed, redirect after showing success message
-        if (result.redirectToLogin) {
-          console.log("[v0] Redirecting to login after password change")
-          setTimeout(() => {
-            router.push('/auth/login')
-          }, 2000)
-        }
-      } else {
-        setMessage({ type: 'error', text: result.error || 'Failed to change password' })
-      }
-    } catch (error) {
-      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'An error occurred' })
     } finally {
       setLoading(false)
     }
@@ -195,55 +143,23 @@ export default function UserSettingsForm({ userData }: { userData: UserData }) {
           </CardContent>
         </Card>
 
-        {/* Password Settings */}
+        {/* Security Settings */}
         <Card>
           <CardHeader>
-            <CardTitle>Change Password</CardTitle>
-            <CardDescription>Update your account password</CardDescription>
+            <CardTitle>Security</CardTitle>
+            <CardDescription>Manage your account security</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="currentPassword" className="text-sm font-medium">Current Password</Label>
-              <Input
-                id="currentPassword"
-                name="currentPassword"
-                type="password"
-                value={formData.currentPassword}
-                onChange={handleInputChange}
-                placeholder="Enter your current password"
-              />
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-900">
+                To change your password, please use the <strong>Forgot Password</strong> option on the login page. This ensures your account security with a verification link sent to your email.
+              </p>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="newPassword" className="text-sm font-medium">New Password</Label>
-              <Input
-                id="newPassword"
-                name="newPassword"
-                type="password"
-                value={formData.newPassword}
-                onChange={handleInputChange}
-                placeholder="Enter your new password"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-sm font-medium">Confirm New Password</Label>
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                value={formData.confirmPassword}
-                onChange={handleInputChange}
-                placeholder="Confirm your new password"
-              />
-            </div>
-
-            <Button
-              onClick={handleChangePassword}
-              disabled={loading}
+            <Button 
+              onClick={() => router.push('/auth/forgot-password')}
               className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
             >
-              {loading ? 'Updating...' : 'Change Password'}
+              Forgot Password
             </Button>
           </CardContent>
         </Card>
