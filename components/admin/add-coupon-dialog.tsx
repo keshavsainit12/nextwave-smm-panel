@@ -24,7 +24,7 @@ export function AddCouponDialog() {
     code: "",
     discount_percentage: 10,
     max_uses: "",
-    active: true,
+    is_active: true,
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -52,9 +52,10 @@ export function AddCouponDialog() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           code: formData.code.toUpperCase().trim(),
-          discount_percentage: formData.discount_percentage,
+          discount_type: 'percentage',
+          discount_value: formData.discount_percentage,
           max_uses: formData.max_uses ? parseInt(formData.max_uses) : null,
-          active: formData.active,
+          is_active: formData.is_active,
         }),
       })
 
@@ -69,7 +70,7 @@ export function AddCouponDialog() {
       console.log("[v0] Coupon created successfully:", data)
 
       toast.success("Coupon created successfully!")
-      setFormData({ code: "", discount_percentage: 10, max_uses: "", active: true })
+      setFormData({ code: "", discount_percentage: 10, max_uses: "", is_active: true })
       setOpen(false)
 
       // Refresh page to show new coupon
@@ -147,8 +148,8 @@ export function AddCouponDialog() {
               <Label htmlFor="is_active" className="text-sm font-medium">Active</Label>
               <Switch
                 id="is_active"
-                checked={formData.active}
-                onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
+                checked={formData.is_active}
+                onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
                 disabled={loading}
               />
             </div>

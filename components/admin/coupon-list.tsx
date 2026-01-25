@@ -30,14 +30,14 @@ export function CouponList({ coupons }: { coupons: any[] }) {
             <TableRow key={coupon.id}>
               <TableCell className="font-mono font-medium text-sm">{coupon.code}</TableCell>
               <TableCell className="text-sm">
-                {coupon.discount_percentage || coupon.discount_value}%
+                {coupon.discount_value}%
               </TableCell>
               <TableCell className="text-sm">
                 {coupon.used_count || 0} / {coupon.max_uses || "∞"}
               </TableCell>
               <TableCell>
-                <Badge variant={coupon.active ? "default" : "secondary"} className="text-xs">
-                  {coupon.active ? "Active" : "Inactive"}
+                <Badge variant={coupon.is_active ? "default" : "secondary"} className="text-xs">
+                  {coupon.is_active ? "Active" : "Inactive"}
                 </Badge>
               </TableCell>
               <TableCell className="text-right">
