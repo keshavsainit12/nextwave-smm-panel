@@ -17,7 +17,7 @@ import { Switch } from "@/components/ui/switch"
 import { Plus } from "lucide-react"
 import { toast } from "sonner"
 
-export function AddCouponDialog() {
+export function AddCouponDialog({ onCouponCreated }: { onCouponCreated?: () => void } = {}) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -72,6 +72,7 @@ export function AddCouponDialog() {
       toast.success("Coupon created successfully!")
       setFormData({ code: "", discount_percentage: 10, max_uses: "", is_active: true })
       setOpen(false)
+      onCouponCreated?.()
 
       // Refresh page to show new coupon
       setTimeout(() => {

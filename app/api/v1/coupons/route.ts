@@ -1,6 +1,32 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import { NextRequest, NextResponse } from "next/server"
 
+export async function GET() {
+  try {
+    const supabase = createAdminClient()
+
+    const { data: coupons, error } = await supabase
+      .from("coupons")
+      .select("*")
+      .order("created_at", { ascending: false })
+
+    if (error) {
+      console.error("[v0] Supabase error fetching coupons:", error.message)
+      return NextResponse.json({ 
+        error: error.message || "Failed to fetch coupons" 
+      }, { status: 500 })
+    }
+
+    return NextResponse.json({
+      success: true,
+      coupons: coupons || [],
+    })
+  } catch (error: any) {
+    console.error("[v0] API error:", error)
+    return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 })
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
