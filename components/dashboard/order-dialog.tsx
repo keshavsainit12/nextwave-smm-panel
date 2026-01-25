@@ -26,7 +26,9 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
   const { toast } = useToast()
 
   const servicePrice = Number(service.price || service.base_price || 0)
-  const totalPrice = ((quantity / 1000) * servicePrice).toFixed(2)
+  const priceMultiplier = service.price_multiplier || 3.0
+  const finalServicePrice = servicePrice * priceMultiplier
+  const totalPrice = ((quantity / 1000) * finalServicePrice).toFixed(2)
   const discountedTotal = (Number(totalPrice) * (1 - couponDiscount / 100)).toFixed(2)
 
   useEffect(() => {
@@ -286,8 +288,12 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
           {/* Price Breakdown Card */}
           <div className="rounded-xl border border-blue-200/50 bg-gradient-to-br from-blue-50 to-blue-50/50 p-4 space-y-3">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-600">Price per 1000:</span>
+              <span className="text-slate-600">Base Price per 1000:</span>
               <span className="font-semibold text-slate-900">${servicePrice.toFixed(2)}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-slate-600">Final Price per 1000:</span>
+              <span className="font-semibold text-blue-600">${finalServicePrice.toFixed(2)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-slate-600">Quantity:</span>
