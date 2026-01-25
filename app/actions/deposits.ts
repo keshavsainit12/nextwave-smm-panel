@@ -132,7 +132,6 @@ export async function approveDeposit(depositId: string) {
       .from("crypto_deposits")
       .update({
         status: "approved",
-        reviewed_by: "admin",
         reviewed_at: new Date().toISOString(),
       })
       .eq("id", depositId.trim())
