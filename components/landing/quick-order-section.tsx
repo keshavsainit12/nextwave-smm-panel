@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
+import { CouponPasteCard } from "@/components/dashboard/coupon-paste-card"
 
 interface Service {
   id: string
@@ -25,6 +26,7 @@ export function QuickOrderSection() {
   const [url, setUrl] = useState("")
   const [services, setServices] = useState<Record<string, CategoryData>>({})
   const [loading, setLoading] = useState(true)
+  const [couponDiscount, setCouponDiscount] = useState(0)
 
   // Fetch services from API
   useEffect(() => {
@@ -74,7 +76,8 @@ export function QuickOrderSection() {
 
   const currentPlatformData = services[selectedPlatform]
   const currentService = currentPlatformData?.services.find((s) => s.id === selectedService)
-  const price = currentService?.price || 0
+  const basePrice = currentService?.price || 0
+  const finalPrice = couponDiscount > 0 ? basePrice * (1 - couponDiscount / 100) : basePrice
 
   const handlePlaceOrder = () => {
     if (!url.trim()) {
@@ -86,7 +89,7 @@ export function QuickOrderSection() {
       return
     }
     router.push(
-      `/auth/signup?platform=${selectedPlatform}&service=${selectedService}&url=${encodeURIComponent(url)}&price=${price}`
+      `/auth/signup?platform=${selectedPlatform}&service=${selectedService}&url=${encodeURIComponent(url)}&price=${finalPrice}`
     )
   }
 
@@ -107,6 +110,24 @@ export function QuickOrderSection() {
   return (
     <section className="py-12 md:py-16 bg-gradient-to-b from-white to-slate-50">
       <div className="container px-4">
+        {/* Coupon Card */}
+        <div className="max-w-2xl mb-8">
+          <CouponPasteCard onCouponApplied={(couponCode) => {
+            fetch("/api/v1/validate-coupon", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ couponCode }),
+            })
+              .then(res => res.json())
+              .then(data => {
+                if (data.valid && data.discount) {
+                  setCouponDiscount(data.discount)
+                }
+              })
+              .catch(err => console.error(err))
+          }} />
+        </div>
+
         {/* Header */}
         <div className="mb-8">
           <h2 className="text-2xl md:text-3xl font-bold mb-2">Quick Order</h2>
@@ -170,7 +191,7 @@ export function QuickOrderSection() {
               <div className="flex items-center gap-3 pt-2">
                 <div className="flex items-center gap-2 flex-1">
                   <span className="text-sm font-semibold text-slate-600">Price:</span>
-                  <span className="text-2xl font-bold text-blue-600">${price.toFixed(2)}</span>
+                  <span className="text-2xl font-bold text-blue-600">${finalPrice.toFixed(2)}</span>
                 </div>
                 <Button onClick={handlePlaceOrder} className="h-10 px-6 font-semibold">
                   Place Order

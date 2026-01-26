@@ -61,6 +61,7 @@ export function MobileHighTrustDashboard({
   const [quantity, setQuantity] = useState(1000)
   const [isBulkBuy, setIsBulkBuy] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [appliedCouponDiscount, setAppliedCouponDiscount] = useState(0)
   const router = useRouter()
   const { toast } = useToast()
 
@@ -68,8 +69,12 @@ export function MobileHighTrustDashboard({
     if (!selectedService) return 0
     const servicePrice = Number(selectedService.price || selectedService.base_price || 0)
     const multiplier = isBulkBuy ? 2.5 : 3.0
-    return (quantity / 1000) * servicePrice * multiplier
-  }, [selectedService, quantity, isBulkBuy])
+    const priceBeforeDiscount = (quantity / 1000) * servicePrice * multiplier
+    if (appliedCouponDiscount > 0) {
+      return priceBeforeDiscount * (1 - appliedCouponDiscount / 100)
+    }
+    return priceBeforeDiscount
+  }, [selectedService, quantity, isBulkBuy, appliedCouponDiscount])
 
   const savings = useMemo(() => {
     if (!selectedService || !isBulkBuy) return 0
@@ -96,7 +101,21 @@ export function MobileHighTrustDashboard({
     Spotify: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/spotify-7ygXrRUZpZh0pQSmRoDdDCRstAA6Oa.png",
   }
 
-  const getIconUrl = (nameOrObject: string | any): string | undefined => {
+  const handleCouponApplied = (couponCode: string) => {
+    // Fetch the coupon to get the discount
+    fetch("/api/v1/validate-coupon", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ couponCode }),
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.valid && data.discount) {
+          setAppliedCouponDiscount(data.discount)
+        }
+      })
+      .catch(err => console.error(err))
+  }
     let platformName = typeof nameOrObject === 'string' ? nameOrObject : nameOrObject?.name || ''
     
     // Extract platform name from category name (e.g., "TikTok - Recommended" -> "TikTok")
