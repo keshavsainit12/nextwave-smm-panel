@@ -47,7 +47,7 @@ export async function cancelOrder(orderId: string, reason: string) {
     // Get order details for refund with error handling
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .select("id, user_id, total_price, status")
+      .select("id, user_id, price, status")
       .eq("id", orderId)
       .single()
 
@@ -71,7 +71,7 @@ export async function cancelOrder(orderId: string, reason: string) {
       return { error: "Order not found - order data is empty" }
     }
 
-    console.log("[v0] Order found successfully:", { orderId, userId: order.user_id, amount: order.total_price, status: order.status })
+    console.log("[v0] Order found successfully:", { orderId, userId: order.user_id, amount: order.price, status: order.status })
 
     // Check if order is already cancelled
     if (order.status === "cancelled" || order.status === "canceled") {
@@ -91,7 +91,7 @@ export async function cancelOrder(orderId: string, reason: string) {
     }
 
     // Calculate new balance
-    const newBalance = (userData.balance || 0) + order.total_price
+    const newBalance = (userData.balance || 0) + order.price
 
     // Update user balance
     const { error: updateBalanceError } = await supabase
@@ -131,7 +131,7 @@ export async function cancelOrder(orderId: string, reason: string) {
       entity_id: orderId,
       details: {
         reason,
-        refund_amount: order.total_price,
+        refund_amount: order.price,
       },
       ip_address: "admin",
     }).catch((err) => console.log("[v0] Activity log error (non-critical):", err))

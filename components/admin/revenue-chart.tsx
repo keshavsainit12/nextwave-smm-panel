@@ -20,7 +20,7 @@ export function RevenueChart() {
 
         const { data: orders } = await supabase
           .from("orders")
-          .select("created_at, total_price, base_price")
+          .select("created_at, price, base_price")
           .eq("status", "completed")
           .gte("created_at", thirtyDaysAgo.toISOString())
           .order("created_at", { ascending: true })
@@ -39,7 +39,7 @@ export function RevenueChart() {
               groupedData[date] = { revenue: 0, profit: 0, count: 0 }
             }
 
-            const revenue = Number(order.total_price || 0)
+            const revenue = Number(order.price || 0)
             const cost = Number(order.base_price || 0)
             const profit = revenue - cost
 
