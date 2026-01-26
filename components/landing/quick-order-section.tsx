@@ -77,7 +77,8 @@ export function QuickOrderSection() {
   const currentPlatformData = services[selectedPlatform]
   const currentService = currentPlatformData?.services.find((s) => s.id === selectedService)
   const basePrice = currentService?.price || 0
-  const finalPrice = couponDiscount > 0 ? (basePrice * (1 - couponDiscount / 100)) : basePrice
+  const discountAmount = couponDiscount > 0 ? (basePrice * couponDiscount / 100) : 0
+  const finalPrice = basePrice - discountAmount
 
   const handlePlaceOrder = () => {
     if (!url.trim()) {
@@ -126,13 +127,13 @@ export function QuickOrderSection() {
                 return res.json()
               })
               .then(data => {
-                if (data && data.valid === true && typeof data.discount === 'number') {
+                if (data && data.valid === true && typeof data.discount === 'number' && data.discount > 0) {
                   setCouponDiscount(data.discount)
                 } else {
                   setCouponDiscount(0)
                 }
               })
-              .catch((err) => {
+              .catch(() => {
                 setCouponDiscount(0)
               })
           }} />
@@ -197,16 +198,33 @@ export function QuickOrderSection() {
                 />
               </div>
 
-              {/* Price Display & Button Row */}
-              <div className="flex items-center gap-3 pt-2">
-                <div className="flex items-center gap-2 flex-1">
-                  <span className="text-sm font-semibold text-slate-600">Price:</span>
-                  <span className="text-2xl font-bold text-blue-600">${finalPrice.toFixed(2)}</span>
+              {/* Price Display with Discount Info */}
+              <div className="bg-blue-50 rounded-lg p-4 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-slate-600">Base Price:</span>
+                  <span className="text-sm font-semibold text-slate-700">${basePrice.toFixed(2)}</span>
                 </div>
-                <Button onClick={handlePlaceOrder} className="h-10 px-6 font-semibold">
-                  Place Order
-                </Button>
+                {couponDiscount > 0 && (
+                  <div className="flex justify-between items-center text-green-700">
+                    <span className="text-sm">Discount ({couponDiscount}%):</span>
+                    <span className="text-sm font-semibold">-${discountAmount.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="border-t border-blue-200 pt-2 flex justify-between items-center">
+                  <span className="text-sm font-bold text-slate-700">Final Price:</span>
+                  <span key={`price-${finalPrice}`} className={`text-2xl font-bold ${couponDiscount > 0 ? 'text-green-600' : 'text-blue-600'}`}>
+                    ${finalPrice.toFixed(2)}
+                  </span>
+                </div>
               </div>
+
+              {/* Button Row */}
+              <button 
+                onClick={handlePlaceOrder} 
+                className="w-full h-11 px-6 font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
+              >
+                Place Order
+              </button>
             </div>
 
             {/* Payment Methods Footer */}
