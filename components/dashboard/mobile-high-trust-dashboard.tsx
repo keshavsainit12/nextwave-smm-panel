@@ -116,6 +116,8 @@ export function MobileHighTrustDashboard({
       })
       .catch(err => console.error(err))
   }
+
+  const getIconUrl = (nameOrObject: string | any): string | undefined => {
     let platformName = typeof nameOrObject === 'string' ? nameOrObject : nameOrObject?.name || ''
     
     // Extract platform name from category name (e.g., "TikTok - Recommended" -> "TikTok")
