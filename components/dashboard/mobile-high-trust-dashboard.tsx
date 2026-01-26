@@ -379,7 +379,11 @@ export function MobileHighTrustDashboard({
 
           {/* Coupon Paste Card */}
           <div className="px-4 py-4">
-            <CouponPasteCard />
+            <CouponPasteCard onCouponApplied={(couponCode, discount) => {
+              if (typeof discount === 'number' && discount > 0) {
+                setAppliedCouponDiscount(discount)
+              }
+            }} />
           </div>
 
           {/* Section Header */}
