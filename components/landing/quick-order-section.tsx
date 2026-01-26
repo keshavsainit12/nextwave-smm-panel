@@ -113,29 +113,10 @@ export function QuickOrderSection() {
       <div className="container px-4">
         {/* Coupon Card */}
         <div className="max-w-2xl mb-8">
-          <CouponPasteCard onCouponApplied={(couponCode) => {
-            const trimmedCode = couponCode.trim().toUpperCase()
-            if (!trimmedCode) return
-            
-            fetch("/api/v1/validate-coupon", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ couponCode: trimmedCode }),
-            })
-              .then(res => {
-                if (!res.ok) throw new Error("Failed to validate coupon")
-                return res.json()
-              })
-              .then(data => {
-                if (data && data.valid === true && typeof data.discount === 'number' && data.discount > 0) {
-                  setCouponDiscount(data.discount)
-                } else {
-                  setCouponDiscount(0)
-                }
-              })
-              .catch(() => {
-                setCouponDiscount(0)
-              })
+          <CouponPasteCard onCouponApplied={(couponCode, discount) => {
+            if (typeof discount === 'number' && discount > 0) {
+              setCouponDiscount(discount)
+            }
           }} />
         </div>
 
