@@ -15,58 +15,82 @@ export default async function DashboardPage() {
     redirect("/auth/login")
   }
 
-  const [{ data: userProfile }, { data: orders }, { data: services }, { data: categories }] = await Promise.all([
-    supabase.from("users").select("balance, total_orders, total_spent, full_name").eq("id", user.id).single(),
-    supabase
-      .from("orders")
-      .select("*, services(name, icon, platform)")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(10),
-    // Fetch services with optional category relationship (left join instead of inner)
-    supabase
-      .from("services")
-      .select("id, name, icon, category_id, platform, min_quantity, max_quantity, base_price, has_refill, is_active, description, service_categories(id, name, icon)")
-      .eq("is_active", true),
-    supabase.from("service_categories").select("*").order("name"),
-  ])
+  try {
+    const [{ data: userProfile, error: profileError }, { data: orders, error: ordersError }, { data: services, error: servicesError }, { data: categories, error: categoriesError }] = await Promise.all([
+      supabase.from("users").select("balance, total_orders, total_spent, full_name").eq("id", user.id).single(),
+      supabase
+        .from("orders")
+        .select("id, user_id, service_id, quantity, price, status, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(10)
+        .catch(() => ({ data: [], error: null })),
+      supabase
+        .from("services")
+        .select("id, name, icon, platform, min_quantity, max_quantity, base_price, has_refill, is_active, description")
+        .eq("is_active", true)
+        .catch(() => ({ data: [], error: null })),
+      supabase
+        .from("service_categories")
+        .select("*")
+        .order("name")
+        .catch(() => ({ data: [], error: null })),
+    ])
 
-  // Transform services to use category icon if service icon is missing
-  const transformedServices = services?.map((service: any) => {
-    const serviceIcon = service.icon || service.service_categories?.icon || null
-    return {
-      ...service,
-      icon: serviceIcon,
+    if (profileError && profileError.code !== "PGRST116") {
+      console.error("[v0] Profile fetch error:", profileError)
+      return (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <p className="text-red-600 mb-4">Error loading profile</p>
+            <p className="text-gray-600">{profileError?.message}</p>
+          </div>
+        </div>
+      )
     }
-  }) || []
 
-  const firstName = userProfile?.full_name?.split(' ')[0] || ''
+    const transformedServices = services?.map((service: any) => ({
+      ...service,
+    })) || []
 
-  return (
-    <div className="min-h-screen">
-      <div className="md:hidden">
-        <MobileHighTrustDashboard
-          services={transformedServices}
-          categories={categories || []}
-          userBalance={userProfile?.balance || 0}
-          userName={firstName}
-          totalOrders={userProfile?.total_orders || 0}
-          totalSpent={userProfile?.total_spent || 0}
-          recentOrders={orders || []}
-        />
+    const firstName = userProfile?.full_name?.split(' ')[0] || 'User'
+
+    return (
+      <div className="min-h-screen">
+        <div className="md:hidden">
+          <MobileHighTrustDashboard
+            services={transformedServices}
+            categories={categories || []}
+            userBalance={userProfile?.balance || 0}
+            userName={firstName}
+            totalOrders={userProfile?.total_orders || 0}
+            totalSpent={userProfile?.total_spent || 0}
+            recentOrders={orders || []}
+          />
+        </div>
+
+        <div className="hidden md:block">
+          <DesktopDashboard
+            services={transformedServices}
+            categories={categories || []}
+            userBalance={userProfile?.balance || 0}
+            userName={firstName}
+            totalOrders={userProfile?.total_orders || 0}
+            totalSpent={userProfile?.total_spent || 0}
+            recentOrders={orders || []}
+          />
+        </div>
       </div>
-
-      <div className="hidden md:block">
-        <DesktopDashboard
-          services={transformedServices}
-          categories={categories || []}
-          userBalance={userProfile?.balance || 0}
-          userName={firstName}
-          totalOrders={userProfile?.total_orders || 0}
-          totalSpent={userProfile?.total_spent || 0}
-          recentOrders={orders || []}
-        />
+    )
+  } catch (error) {
+    console.error("[v0] Dashboard error:", error)
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Error loading dashboard</p>
+          <p className="text-gray-600">{error instanceof Error ? error.message : "Unknown error"}</p>
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
 }
