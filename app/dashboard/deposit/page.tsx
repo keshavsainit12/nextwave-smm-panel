@@ -29,33 +29,68 @@ export default async function DepositPage() {
     )
   }
 
-  const { data: userData } = await supabase
+  const { data: userData, error: userDataError } = await supabase
     .from("users")
     .select("balance, full_name")
     .eq("id", user.id)
     .single()
 
-  const { data: cryptoCurrencies } = await supabase
+  if (userDataError) {
+    console.error("[v0] User data fetch error:", userDataError)
+  }
+
+  const { data: cryptoCurrencies, error: cryptoCurrenciesError } = await supabase
     .from("crypto_currencies")
     .select("*")
     .eq("is_active", true)
     .order("display_order", { ascending: true })
 
+  if (cryptoCurrenciesError) {
+    console.error("[v0] Crypto currencies fetch error:", cryptoCurrenciesError)
+  }
+
   // Fetch crypto deposits
-  const { data: cryptoDeposits } = await supabase
+  const { data: cryptoDeposits, error: cryptoDepositsError } = await supabase
     .from("crypto_deposits")
-    .select("*, crypto_currency_id(symbol, name)")
+    .select("id, user_id, crypto_currency_id, amount, crypto_amount, transaction_hash, screenshot_url, status, admin_notes, created_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
 
+  if (cryptoDepositsError) {
+    console.error("[v0] Crypto deposits fetch error:", cryptoDepositsError)
+  }
+
+  // Fetch related crypto currency data
+  const cryptoCurrencyIds = cryptoDeposits?.map((d: any) => d.crypto_currency_id).filter(Boolean) || []
+  const { data: cryptoCurrencyMap, error: currencyError } = cryptoCurrencyIds.length > 0
+    ? await supabase
+        .from("crypto_currencies")
+        .select("id, symbol, name")
+        .in("id", cryptoCurrencyIds)
+    : { data: [], error: null }
+
+  if (currencyError) {
+    console.error("[v0] Crypto currency map fetch error:", currencyError)
+  }
+
+  // Create a map for easy lookup
+  const cryptoCurrencyByIdMap = (cryptoCurrencyMap || []).reduce((map: any, curr: any) => {
+    map[curr.id] = curr
+    return map
+  }, {})
+
   // Fetch instant payment transactions
-  const { data: instantPayments } = await supabase
+  const { data: instantPayments, error: instantPaymentsError } = await supabase
     .from("transactions")
     .select("*")
     .eq("user_id", user.id)
     .eq("type", "deposit")
     .eq("payment_method", "instant_xaf")
     .order("created_at", { ascending: false })
+
+  if (instantPaymentsError) {
+    console.error("[v0] Instant payments fetch error:", instantPaymentsError)
+  }
 
   // Combine and sort all deposits
   const allDeposits = [
@@ -66,6 +101,7 @@ export default async function DepositPage() {
       created_at: d.created_at,
       status: d.status,
       amount: d.amount,
+      crypto_currencies: cryptoCurrencyByIdMap[d.crypto_currency_id],
     })),
     ...(instantPayments || []).map((t: any) => ({
       ...t,
@@ -182,12 +218,12 @@ export default async function DepositPage() {
                             <div className="font-medium">
                               {deposit.deposit_type === "instant"
                                 ? "XAF"
-                                : deposit.crypto_currency_id?.symbol}
+                                : deposit.crypto_currencies?.symbol}
                             </div>
                             <div className="text-xs text-muted-foreground">
                               {deposit.deposit_type === "instant"
                                 ? "Instant Payment"
-                                : deposit.crypto_currency_id?.name}
+                                : deposit.crypto_currencies?.name}
                             </div>
                           </TableCell>
                           <TableCell className="font-mono font-semibold text-green-600">
