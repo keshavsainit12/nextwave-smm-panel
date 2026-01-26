@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { placeOrder } from "@/app/actions/orders"
@@ -53,6 +53,7 @@ export function DesktopDashboard({
   const [quantity, setQuantity] = useState(1000)
   const [isBulkBuy, setIsBulkBuy] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [appliedCouponDiscount, setAppliedCouponDiscount] = useState(0)
   const router = useRouter()
   const { toast } = useToast()
 
@@ -97,8 +98,18 @@ export function DesktopDashboard({
     if (!selectedService) return 0
     const servicePrice = Number(selectedService.price || selectedService.base_price || 0)
     const multiplier = isBulkBuy ? 2.5 : 3.0
-    return (quantity / 1000) * servicePrice * multiplier
-  }, [selectedService, quantity, isBulkBuy])
+    const priceBeforeDiscount = (quantity / 1000) * servicePrice * multiplier
+    if (appliedCouponDiscount > 0) {
+      return priceBeforeDiscount * (1 - appliedCouponDiscount / 100)
+    }
+    return priceBeforeDiscount
+  }, [selectedService, quantity, isBulkBuy, appliedCouponDiscount])
+
+  const handleCouponApplied = useCallback((couponCode: string, discount: number) => {
+    if (typeof discount === 'number' && discount > 0) {
+      setAppliedCouponDiscount(discount)
+    }
+  }, [])
 
   const categoriesWithServices = useMemo(() => {
     return categories.filter((category) => services.some((s) => s.category_id === category.id))
@@ -186,7 +197,7 @@ export function DesktopDashboard({
     setLoading(true)
 
     try {
-      const result = await placeOrder(selectedService.id, link, quantity, isBulkBuy)
+      const result = await placeOrder(selectedService.id, link, quantity, undefined, isBulkBuy)
 
       if (result.error) {
         toast({
@@ -303,7 +314,7 @@ export function DesktopDashboard({
 
       {/* Coupon Paste Card */}
       <div className="max-w-2xl">
-        <CouponPasteCard />
+        <CouponPasteCard onCouponApplied={handleCouponApplied} />
       </div>
 
       {/* Order Section */}

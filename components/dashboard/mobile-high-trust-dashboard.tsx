@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { placeOrder } from "@/app/actions/orders"
@@ -61,6 +61,7 @@ export function MobileHighTrustDashboard({
   const [quantity, setQuantity] = useState(1000)
   const [isBulkBuy, setIsBulkBuy] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [appliedCouponDiscount, setAppliedCouponDiscount] = useState(0)
   const router = useRouter()
   const { toast } = useToast()
 
@@ -68,8 +69,10 @@ export function MobileHighTrustDashboard({
     if (!selectedService) return 0
     const servicePrice = Number(selectedService.price || selectedService.base_price || 0)
     const multiplier = isBulkBuy ? 2.5 : 3.0
-    return (quantity / 1000) * servicePrice * multiplier
-  }, [selectedService, quantity, isBulkBuy])
+    const priceBeforeDiscount = (quantity / 1000) * servicePrice * multiplier
+    const finalPrice = appliedCouponDiscount > 0 ? priceBeforeDiscount * (1 - appliedCouponDiscount / 100) : priceBeforeDiscount
+    return finalPrice
+  }, [selectedService, quantity, isBulkBuy, appliedCouponDiscount])
 
   const savings = useMemo(() => {
     if (!selectedService || !isBulkBuy) return 0
@@ -95,6 +98,12 @@ export function MobileHighTrustDashboard({
     LinkedIn: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/linkedin-x8OqmW2CILJ7lo8H5FhKD888W7Z6eN.png",
     Spotify: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/spotify-7ygXrRUZpZh0pQSmRoDdDCRstAA6Oa.png",
   }
+
+  const handleCouponApplied = useCallback((couponCode: string, discount: number) => {
+    if (typeof discount === 'number' && discount > 0) {
+      setAppliedCouponDiscount(discount)
+    }
+  }, [])
 
   const getIconUrl = (nameOrObject: string | any): string | undefined => {
     let platformName = typeof nameOrObject === 'string' ? nameOrObject : nameOrObject?.name || ''
@@ -196,7 +205,7 @@ export function MobileHighTrustDashboard({
     setLoading(true)
 
     try {
-      const result = await placeOrder(selectedService.id, link, quantity, isBulkBuy)
+      const result = await placeOrder(selectedService.id, link, quantity, undefined, isBulkBuy)
 
       if (result.error) {
         toast({
@@ -358,7 +367,7 @@ export function MobileHighTrustDashboard({
 
           {/* Coupon Paste Card */}
           <div className="px-4 py-4">
-            <CouponPasteCard />
+            <CouponPasteCard onCouponApplied={handleCouponApplied} />
           </div>
 
           {/* Section Header */}

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { CouponPasteCard } from '@/components/dashboard/coupon-paste-card'
 
 export default function LandingPage() {
   const router = useRouter()
@@ -19,6 +20,7 @@ export default function LandingPage() {
   const [contactFormData, setContactFormData] = useState({ name: '', email: '', subject: '', message: '' })
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
   const [showServiceDropdown, setShowServiceDropdown] = useState(false)
+  const [couponDiscount, setCouponDiscount] = useState(0)
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -66,7 +68,8 @@ export default function LandingPage() {
   }
 
   const selectedServiceData = services.find((s) => s.id === selectedService)
-  const totalPrice = selectedServiceData ? ((quantity / 1000) * Number(selectedServiceData.price)).toFixed(2) : '0.00'
+  const basePrice = selectedServiceData ? ((quantity / 1000) * Number(selectedServiceData.price)) : 0
+  const finalPrice = couponDiscount > 0 ? (basePrice * (1 - couponDiscount / 100)).toFixed(2) : basePrice.toFixed(2)
 
   return (
     <div className="bg-white text-slate-900">
@@ -147,6 +150,15 @@ export default function LandingPage() {
 
           {/* Quick Order Section */}
           <section className="mb-12 md:mb-20">
+            {/* Coupon Card */}
+            <div className="md:max-w-5xl md:mx-auto mb-6">
+              <CouponPasteCard onCouponApplied={(couponCode, discount) => {
+                if (typeof discount === 'number' && discount > 0) {
+                  setCouponDiscount(discount)
+                }
+              }} />
+            </div>
+
             <div className="bg-white/40 backdrop-blur-[40px] rounded-[2.5rem] p-8 md:p-12 lg:p-16 overflow-hidden border border-white/20 shadow-lg md:max-w-5xl md:mx-auto">
               {/* Header */}
               <div className="flex items-center gap-3 mb-8">
@@ -267,7 +279,12 @@ export default function LandingPage() {
                 <div className="bg-white/50 rounded-3xl p-6 flex justify-between items-end border border-white/50 shadow-inner mt-6">
                   <div>
                     <p className="text-[10px] uppercase font-bold text-slate-400 mb-1 tracking-wider">Estimate</p>
-                    <p className="text-3xl font-extrabold text-slate-900">${totalPrice}</p>
+                    {couponDiscount > 0 && (
+                      <p className="text-xs text-green-600 font-semibold mb-1">
+                        {couponDiscount}% Discount Applied
+                      </p>
+                    )}
+                    <p className="text-3xl font-extrabold text-slate-900">${finalPrice}</p>
                   </div>
                   <button onClick={handlePlaceOrder} className="bg-gradient-to-r from-blue-600 to-blue-700 text-white w-14 h-14 rounded-2xl flex items-center justify-center active:scale-90 transition-all shadow-lg hover:shadow-xl">
                     →

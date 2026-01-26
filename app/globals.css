@@ -1,8 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
-
 /* Font Configuration */
 @theme {
   --font-poppins: var(--font-poppins, system-ui);
