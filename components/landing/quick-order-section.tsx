@@ -77,7 +77,7 @@ export function QuickOrderSection() {
   const currentPlatformData = services[selectedPlatform]
   const currentService = currentPlatformData?.services.find((s) => s.id === selectedService)
   const basePrice = currentService?.price || 0
-  const finalPrice = couponDiscount > 0 ? basePrice * (1 - couponDiscount / 100) : basePrice
+  const finalPrice = couponDiscount > 0 ? (basePrice * (1 - couponDiscount / 100)) : basePrice
 
   const handlePlaceOrder = () => {
     if (!url.trim()) {
@@ -113,18 +113,28 @@ export function QuickOrderSection() {
         {/* Coupon Card */}
         <div className="max-w-2xl mb-8">
           <CouponPasteCard onCouponApplied={(couponCode) => {
+            const trimmedCode = couponCode.trim().toUpperCase()
+            if (!trimmedCode) return
+            
             fetch("/api/v1/validate-coupon", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ couponCode }),
+              body: JSON.stringify({ couponCode: trimmedCode }),
             })
-              .then(res => res.json())
+              .then(res => {
+                if (!res.ok) throw new Error("Failed to validate coupon")
+                return res.json()
+              })
               .then(data => {
-                if (data.valid && data.discount) {
+                if (data && data.valid === true && typeof data.discount === 'number') {
                   setCouponDiscount(data.discount)
+                } else {
+                  setCouponDiscount(0)
                 }
               })
-              .catch(err => console.error(err))
+              .catch((err) => {
+                setCouponDiscount(0)
+              })
           }} />
         </div>
 
