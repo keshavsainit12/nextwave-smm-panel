@@ -293,7 +293,7 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
           </div>
 
           {/* Price Breakdown Card */}
-          <div className="rounded-xl border border-blue-200/50 bg-gradient-to-br from-blue-50 to-blue-50/50 p-4 space-y-3">
+          <div key={`price-${couponDiscount}-${quantity}`} className="rounded-xl border border-blue-200/50 bg-gradient-to-br from-blue-50 to-blue-50/50 p-4 space-y-3">
             <div className="flex items-center justify-between text-sm">
               <span className="text-slate-600">Base Price per 1000:</span>
               <span className="font-semibold text-slate-900">${servicePrice.toFixed(2)}</span>
@@ -309,20 +309,20 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
             <div className="border-t border-blue-200 pt-3 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-slate-700">Subtotal:</span>
-                <span className="text-slate-900">${totalPrice}</span>
+                <span key={`subtotal-${totalPrice}`} className="text-slate-900">${totalPrice}</span>
               </div>
-              {couponDiscount > 0 && (
-                <div className="flex items-center justify-between text-green-700">
-                  <span className="text-sm">Discount ({couponDiscount}%):</span>
-                  <span className="font-semibold">-${(Number(totalPrice) * couponDiscount / 100).toFixed(2)}</span>
-                </div>
-              )}
+              <div className="flex items-center justify-between" key={`discount-display-${couponDiscount}`}>
+                <span className="text-sm text-slate-600">Discount:</span>
+                <span className={`font-semibold ${couponDiscount > 0 ? 'text-green-700' : 'text-slate-600'}`}>
+                  {couponDiscount > 0 ? `-$${(Number(totalPrice) * couponDiscount / 100).toFixed(2)}` : '$0.00'}
+                </span>
+              </div>
               <div className="flex items-center justify-between pt-2 border-t border-blue-200">
                 <span className="font-semibold text-slate-700 flex items-center gap-2">
                   <Wallet className="h-4 w-4 text-blue-600" />
                   Total:
                 </span>
-                <span className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">${discountedTotal}</span>
+                <span key={`total-${discountedTotal}`} className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">${discountedTotal}</span>
               </div>
             </div>
           </div>
