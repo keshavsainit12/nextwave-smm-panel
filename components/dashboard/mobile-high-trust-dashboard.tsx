@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { placeOrder } from "@/app/actions/orders"
@@ -101,21 +101,11 @@ export function MobileHighTrustDashboard({
     Spotify: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/spotify-7ygXrRUZpZh0pQSmRoDdDCRstAA6Oa.png",
   }
 
-  const handleCouponApplied = (couponCode: string) => {
-    // Fetch the coupon to get the discount
-    fetch("/api/v1/validate-coupon", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ couponCode }),
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.valid && data.discount) {
-          setAppliedCouponDiscount(data.discount)
-        }
-      })
-      .catch(err => console.error(err))
-  }
+  const handleCouponApplied = useCallback((couponCode: string, discount: number) => {
+    if (typeof discount === 'number' && discount > 0) {
+      setAppliedCouponDiscount(discount)
+    }
+  }, [])
 
   const getIconUrl = (nameOrObject: string | any): string | undefined => {
     let platformName = typeof nameOrObject === 'string' ? nameOrObject : nameOrObject?.name || ''
@@ -379,11 +369,7 @@ export function MobileHighTrustDashboard({
 
           {/* Coupon Paste Card */}
           <div className="px-4 py-4">
-            <CouponPasteCard onCouponApplied={(couponCode, discount) => {
-              if (typeof discount === 'number' && discount > 0) {
-                setAppliedCouponDiscount(discount)
-              }
-            }} />
+            <CouponPasteCard onCouponApplied={handleCouponApplied} />
           </div>
 
           {/* Section Header */}
