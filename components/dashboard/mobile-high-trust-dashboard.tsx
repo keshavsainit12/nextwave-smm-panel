@@ -70,10 +70,9 @@ export function MobileHighTrustDashboard({
     const servicePrice = Number(selectedService.price || selectedService.base_price || 0)
     const multiplier = isBulkBuy ? 2.5 : 3.0
     const priceBeforeDiscount = (quantity / 1000) * servicePrice * multiplier
-    if (appliedCouponDiscount > 0) {
-      return priceBeforeDiscount * (1 - appliedCouponDiscount / 100)
-    }
-    return priceBeforeDiscount
+    const finalPrice = appliedCouponDiscount > 0 ? priceBeforeDiscount * (1 - appliedCouponDiscount / 100) : priceBeforeDiscount
+    console.log("[v0] Dashboard totalPrice calc:", { servicePrice, multiplier, quantity, priceBeforeDiscount, appliedCouponDiscount, finalPrice })
+    return finalPrice
   }, [selectedService, quantity, isBulkBuy, appliedCouponDiscount])
 
   const savings = useMemo(() => {
@@ -102,7 +101,9 @@ export function MobileHighTrustDashboard({
   }
 
   const handleCouponApplied = useCallback((couponCode: string, discount: number) => {
+    console.log("[v0] handleCouponApplied called:", { couponCode, discount })
     if (typeof discount === 'number' && discount > 0) {
+      console.log("[v0] Setting appliedCouponDiscount to:", discount)
       setAppliedCouponDiscount(discount)
     }
   }, [])
