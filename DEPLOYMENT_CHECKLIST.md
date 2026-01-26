@@ -41,46 +41,46 @@
 Go to Project Settings > Environment Variables
 
 #### Database Variables
-```
+\`\`\`
 NEXT_PUBLIC_SUPABASE_URL = [your_supabase_url]
 NEXT_PUBLIC_SUPABASE_ANON_KEY = [your_anon_key]
 SUPABASE_SERVICE_ROLE_KEY = [your_service_key]
-```
+\`\`\`
 
 #### Payment Gateway
-```
+\`\`\`
 ACCOUNTPE_API_KEY = [your_email:your_password]
 ACCOUNTPE_MERCHANT_ID = nextwavedigitalsolutions1
-```
+\`\`\`
 
 #### SMM Provider
-```
+\`\`\`
 DEFAULT_SMM_API_URL = https://[your-provider-api].com
 DEFAULT_SMM_API_KEY = [your_api_key]
-```
+\`\`\`
 
 #### Email Configuration
-```
+\`\`\`
 SMTP_HOST = smtp.gmail.com
 SMTP_PORT = 587
 SMTP_USER = [your_email@gmail.com]
 SMTP_PASSWORD = [your_app_password]
 FROM_EMAIL = noreply@nextwavesmm.com
-```
+\`\`\`
 
 #### Security
-```
+\`\`\`
 NEXT_PUBLIC_RECAPTCHA_SITE_KEY = [your_site_key]
 RECAPTCHA_SECRET_KEY = [your_secret_key]
 RECAPTCHA_ENABLED = true
-```
+\`\`\`
 
 #### URLs
-```
+\`\`\`
 NEXT_PUBLIC_APP_URL = https://nextwavesmm.com
 NEXT_PUBLIC_API_URL = https://nextwavesmm.com/api
 NEXT_PUBLIC_DOMAIN = nextwavesmm.com
-```
+\`\`\`
 
 ### Step 4: Deploy Project
 - [ ] Push code to main/production branch
@@ -108,7 +108,7 @@ NEXT_PUBLIC_DOMAIN = nextwavesmm.com
 ### API Endpoints
 Test these endpoints:
 
-```bash
+\`\`\`bash
 # Get Services
 curl https://nextwavesmm.com/api/v1/services
 
@@ -118,7 +118,7 @@ curl https://nextwavesmm.com/api/v1/balance \
 
 # Admin Health Check
 curl https://nextwavesmm.com/api/admin/login
-```
+\`\`\`
 
 ### Admin Panel
 - [ ] Admin login works: `https://nextwavesmm.com/admin-panel-2024`

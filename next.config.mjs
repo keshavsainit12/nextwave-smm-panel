@@ -16,10 +16,10 @@ const nextConfig = {
   // Redirect domain configuration
   redirects: async () => {
     return [
-      // Redirect www to non-www
+      // Redirect www to non-www (fixed redirect destination)
       {
         source: "/:path*",
-        destination: "/:path*",
+        destination: "https://nextwavesmm.com/:path*",
         permanent: true,
         has: [
           {

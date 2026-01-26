@@ -1,6 +1,6 @@
 # ✅ NextWave SMM - Complete Setup Report
 
-```
+\`\`\`
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                    🎉 SETUP COMPLETE - READY FOR LAUNCH 🎉                  ║
 ║                                                                              ║
@@ -8,7 +8,7 @@
 ║                     Status: ✅ PRODUCTION READY                            ║
 ║                     Last Updated: 2026-01-26                               ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
-```
+\`\`\`
 
 ---
 
@@ -30,7 +30,7 @@
 
 ## 🏗️ Architecture Overview
 
-```
+\`\`\`
 ┌─────────────────────────────────────────────────────────────────────┐
 │                     NextWave SMM Platform                           │
 └─────────────────────────────────────────────────────────────────────┘
@@ -54,7 +54,7 @@
                           │ Security      │
                           │ Notifications │
                           └───────────────┘
-```
+\`\`\`
 
 ---
 
@@ -78,7 +78,7 @@
 ## 🎯 Features Implemented
 
 ### User Features
-```
+\`\`\`
 ✅ User Dashboard
    ├─ Order History (Mobile & Desktop)
    ├─ Real-time Balance Display
@@ -106,10 +106,10 @@
    ├─ Crypto Support (Ready)
    ├─ Transaction History
    └─ Refund Processing
-```
+\`\`\`
 
 ### Admin Features
-```
+\`\`\`
 ✅ Admin Dashboard
    ├─ Revenue Analytics
    ├─ User Management
@@ -129,14 +129,14 @@
    ├─ Payment Gateway Setup
    ├─ Security Settings
    └─ Pricing Management
-```
+\`\`\`
 
 ---
 
 ## 🔧 API Endpoints Available
 
 ### Service Endpoints (27 total)
-```
+\`\`\`
 Public APIs (No Auth Required):
 ├─ GET  /api/v1/services         - List all services
 ├─ GET  /api/v1/balance          - Get user balance
@@ -158,14 +158,14 @@ Admin APIs:
 
 Webhook APIs:
 └─ POST /api/webhooks/instant-payment - Payment confirmation
-```
+\`\`\`
 
 ---
 
 ## 📦 Installation & Deployment
 
 ### Quick Setup
-```bash
+\`\`\`bash
 # 1. Clone repository
 git clone https://github.com/keshavsainit12/nextwave-smm-panel.git
 cd nextwave-smm-panel
@@ -182,22 +182,22 @@ npm run dev
 
 # 5. Visit
 # http://localhost:3000
-```
+\`\`\`
 
 ### Production Deployment
-```bash
+\`\`\`bash
 # Automatic deployment via Vercel:
 # 1. Push to main branch
 # 2. Vercel auto-deploys
 # 3. Wait 2-5 minutes
 # 4. Visit https://nextwavesmm.com
-```
+\`\`\`
 
 ---
 
 ## 🔐 Security Features
 
-```
+\`\`\`
 ✅ Authentication & Authorization
    ├─ JWT Token-based auth
    ├─ RLS (Row Level Security) in database
@@ -221,13 +221,13 @@ npm run dev
    ├─ Automatic backups
    ├─ DDoS protection
    └─ 99.95% uptime SLA
-```
+\`\`\`
 
 ---
 
 ## 📊 Performance Metrics
 
-```
+\`\`\`
 Target Metrics              Status
 ─────────────────────────────────────
 Page Load Time             < 3s        ✅
@@ -238,13 +238,13 @@ First Contentful Paint     < 2s        ✅
 Core Web Vitals            All Green   ✅
 SEO Score                  90+         ✅
 Mobile Friendly            100%        ✅
-```
+\`\`\`
 
 ---
 
 ## 📝 Configuration Checklist
 
-```
+\`\`\`
 Database Setup:
   ✅ Supabase Project Created
   ✅ Tables Created (10+ tables)
@@ -286,13 +286,13 @@ Domain:
   ✅ SSL Certificate Setup Ready
   ✅ CDN Configured
   ✅ Redirection Setup Complete
-```
+\`\`\`
 
 ---
 
 ## 📚 Documentation Structure
 
-```
+\`\`\`
 Documentation Files:
 ├─ QUICK_START.md              ← Start here! Quick 5-step setup
 ├─ API_CONFIG_SETUP.md         ← Detailed API configuration
@@ -308,13 +308,13 @@ Code Documentation:
 
 API Documentation:
 └─ See API_CONFIG_SETUP.md > API Endpoints section
-```
+\`\`\`
 
 ---
 
 ## 🚀 Deployment Status
 
-```
+\`\`\`
 ┌─────────────────────────────────────────────────┐
 │ ENVIRONMENT: Production Ready                   │
 │ DOMAIN: nextwavesmm.com                        │
@@ -323,7 +323,7 @@ API Documentation:
 │ DOCUMENTED: ✅ Complete guides provided        │
 │ SUPPORT: ✅ Admin panel & guides ready         │
 └─────────────────────────────────────────────────┘
-```
+\`\`\`
 
 ---
 
@@ -409,7 +409,7 @@ Your NextWave SMM platform is now:
 
 **🎊 Congratulations! Your NextWave SMM Platform is Ready! 🎊**
 
-```
+\`\`\`
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                                                                              ║
 ║                         LAUNCH WITH CONFIDENCE! 🚀                          ║
@@ -419,7 +419,7 @@ Your NextWave SMM platform is now:
 ║                              Happy Selling! 💰                              ║
 ║                                                                              ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
-```
+\`\`\`
 
 **Date:** 2026-01-26
 **System:** NextWave SMM Panel
