@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -25,11 +25,23 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
   const router = useRouter()
   const { toast } = useToast()
 
-  const servicePrice = Number(service.price || service.base_price || 0)
-  const priceMultiplier = service.price_multiplier || 3.0
-  const finalServicePrice = servicePrice * priceMultiplier
-  const totalPrice = ((quantity / 1000) * finalServicePrice).toFixed(2)
-  const discountedTotal = (Number(totalPrice) * (1 - couponDiscount / 100)).toFixed(2)
+  // Memoize price calculations to ensure they update reactively
+  const servicePrice = useMemo(() => Number(service.price || service.base_price || 0), [service])
+  const priceMultiplier = useMemo(() => service.price_multiplier || 3.0, [service])
+  const finalServicePrice = useMemo(() => servicePrice * priceMultiplier, [servicePrice, priceMultiplier])
+  
+  const totalPrice = useMemo(() => {
+    const price = ((quantity / 1000) * finalServicePrice)
+    return price.toFixed(2)
+  }, [quantity, finalServicePrice])
+  
+  const discountedTotal = useMemo(() => {
+    const total = Number(totalPrice)
+    if (couponDiscount > 0) {
+      return (total * (1 - couponDiscount / 100)).toFixed(2)
+    }
+    return total.toFixed(2)
+  }, [totalPrice, couponDiscount])
 
   useEffect(() => {
     if (open) {
@@ -82,6 +94,7 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
 
       if (data.valid) {
         setCouponDiscount(data.discount || 0)
+        setCouponCode(couponCode.toUpperCase())
         toast({
           title: "Coupon Applied",
           description: `${data.discount}% discount applied to your order`,
@@ -98,7 +111,6 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
         setCouponError(err instanceof Error ? err.message : "Failed to validate coupon")
       }
       setCouponDiscount(0)
-      console.error("[v0] Coupon validation error:", err)
     } finally {
       setValidateCouponLoading(false)
     }
@@ -124,20 +136,16 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
         throw new Error(`Minimum quantity is ${service.min_quantity || 100}`)
       }
 
-      console.log("[v0] Submitting order - Link:", link, "Quantity:", quantity, "Price:", discountedTotal)
       const result = await placeOrder(service.id, link, quantity, couponCode || undefined)
 
       if (result.error) {
-        console.error("[v0] Order placement returned error:", result.error)
         throw new Error(result.error)
       }
 
       if (!result.success) {
-        console.error("[v0] Order placement failed - no success flag")
         throw new Error("Order placement failed - please try again")
       }
 
-      console.log("[v0] Order placed successfully with ID:", result.orderId)
       toast({
         title: "Order Placed Successfully!",
         description: `Your order #${result.orderId} has been placed and will be processed shortly.`,
@@ -151,7 +159,6 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
       }, 500)
     } catch (err: any) {
       const errorMessage = err instanceof Error ? err.message : "An error occurred while placing your order"
-      console.error("[v0] Order error caught:", errorMessage)
       setError(errorMessage)
       toast({
         title: "Order Failed",
