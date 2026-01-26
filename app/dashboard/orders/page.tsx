@@ -31,13 +31,17 @@ async function OrdersContent({ page = 1 }: { page: number }) {
     .range(offset, offset + pageSize - 1)
 
   // Get total count for pagination
-  const { count: totalOrders } = await supabase
+  const { count: totalOrders, error: countError } = await supabase
     .from("orders")
     .select("id", { count: "exact", head: true })
     .eq("user_id", user.id)
 
   if (ordersError) {
     console.error("[v0] Orders fetch error:", ordersError)
+  }
+  
+  if (countError) {
+    console.error("[v0] Orders count fetch error:", countError)
   }
 
   // Transform orders to use category icon if service icon is missing

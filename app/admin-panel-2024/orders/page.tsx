@@ -6,11 +6,15 @@ import { ExportCsvButton } from "@/components/admin/export-csv-button"
 
 export default async function AdminOrdersPage() {
   const supabase = createAdminClient()
-  const { data: orders } = await supabase
+  const { data: orders, error } = await supabase
     .from("orders")
     .select("*, users(email, full_name), services(name, icon, platform, service_categories(name, icon))")
     .order("created_at", { ascending: false })
     .limit(100)
+
+  if (error) {
+    console.error("[v0] Admin orders fetch error:", error)
+  }
 
   // Transform orders to use category icon if service icon is missing
   const transformedOrders = orders?.map((order: any) => ({

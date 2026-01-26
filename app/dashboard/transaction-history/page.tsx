@@ -28,7 +28,7 @@ export default async function TransactionHistoryPage() {
   // Fetch crypto deposits
   const { data: cryptoDeposits, error: cryptoError } = await supabase
     .from("crypto_deposits")
-    .select("*, crypto_currency_id(symbol, name)")
+    .select("*, crypto_currencies(symbol, name)")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
 
@@ -231,8 +231,8 @@ export default async function TransactionHistoryPage() {
                       <TableCell className="text-sm">
                         {transaction.transaction_type === "crypto_deposit" && (
                           <div className="text-xs">
-                            <div className="font-semibold">{transaction.crypto_currency_id?.symbol}</div>
-                            <div className="text-muted-foreground">{transaction.crypto_currency_id?.name}</div>
+                            <div className="font-semibold">{transaction.crypto_currencies?.symbol}</div>
+                            <div className="text-muted-foreground">{transaction.crypto_currencies?.name}</div>
                           </div>
                         )}
                         {transaction.transaction_type === "instant_payment" && (
