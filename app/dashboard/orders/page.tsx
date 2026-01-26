@@ -25,7 +25,7 @@ async function OrdersContent({ page = 1 }: { page: number }) {
   // Fetch paginated orders
   const { data: orders, error: ordersError } = await supabase
     .from("orders")
-    .select("*, services(id, name, icon, platform, has_refill, category_id, service_categories(id, name, icon))")
+    .select("id, user_id, service_id, external_order_id, link, quantity, price, start_count, remains, status, can_refill, refill_count, created_at, services(id, name, icon, platform, has_refill, category_id, service_categories(id, name, icon))")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .range(offset, offset + pageSize - 1)
@@ -41,13 +41,17 @@ async function OrdersContent({ page = 1 }: { page: number }) {
   }
 
   // Transform orders to use category icon if service icon is missing
-  const transformedOrders = orders?.map((order: any) => ({
-    ...order,
-    services: {
-      ...order.services,
-      icon: order.services?.icon || order.services?.service_categories?.icon,
-    },
-  })) || []
+  const transformedOrders = orders?.map((order: any) => {
+    const price = parseFloat(String(order.price)) || 0
+    return {
+      ...order,
+      price: isNaN(price) ? 0 : Math.max(0, price),
+      services: {
+        ...order.services,
+        icon: order.services?.icon || order.services?.service_categories?.icon,
+      },
+    }
+  }) || []
 
   const totalPages = Math.ceil((totalOrders || 0) / pageSize)
 
@@ -120,7 +124,7 @@ async function OrdersContent({ page = 1 }: { page: number }) {
                       </Badge>
                     </td>
                     <td className="px-4 py-3 font-semibold text-gray-900 dark:text-white">
-                      ₹{(order.price || 0).toFixed(2)}
+                      ₹{typeof order.price === 'number' ? order.price.toFixed(2) : parseFloat(order.price || '0').toFixed(2)}
                     </td>
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
                       {order.created_at ? format(new Date(order.created_at), "MMM dd, yyyy") : "N/A"}
