@@ -81,7 +81,7 @@ Utility functions for:
 
 Add these to your Vercel project settings:
 
-```bash
+\`\`\`bash
 # Database
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
@@ -110,7 +110,7 @@ RECAPTCHA_ENABLED=true
 # URLs
 NEXT_PUBLIC_APP_URL=https://nextwavesmm.com
 NEXT_PUBLIC_API_URL=https://nextwavesmm.com/api
-```
+\`\`\`
 
 ---
 

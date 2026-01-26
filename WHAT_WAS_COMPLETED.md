@@ -161,49 +161,49 @@ Complete domain integration:
 ## 🎯 Configuration Sections Added
 
 ### Payment Gateway (AccountPe)
-```typescript
+\`\`\`typescript
 ✅ API URL configured
 ✅ Merchant ID setup
 ✅ Webhook URL configured
 ✅ Credentials parsing function
 ✅ Support for JWT authentication
-```
+\`\`\`
 
 ### SMM API Providers
-```typescript
+\`\`\`typescript
 ✅ Multiple provider support
 ✅ API URL & key configuration
 ✅ Service sync capability
 ✅ Pricing management
 ✅ Order quantity limits
 ✅ Refund support
-```
+\`\`\`
 
 ### Email System
-```typescript
+\`\`\`typescript
 ✅ SMTP configuration
 ✅ Port setup
 ✅ Authentication ready
 ✅ Email templates linked
 ✅ From address configured
-```
+\`\`\`
 
 ### Security
-```typescript
+\`\`\`typescript
 ✅ reCAPTCHA v2/v3 support
 ✅ Site key & secret configured
 ✅ Enable/disable toggle
 ✅ Form protection ready
-```
+\`\`\`
 
 ### Database
-```typescript
+\`\`\`typescript
 ✅ Supabase URL configuration
 ✅ Anon key setup
 ✅ Service role key setup
 ✅ RLS ready
 ✅ Connection tested
-```
+\`\`\`
 
 ---
 
@@ -255,7 +255,7 @@ Complete domain integration:
 ## ✨ Specific Changes Made
 
 ### File: `/app/dashboard/orders/page.tsx`
-```
+\`\`\`
 Changes:
 + Added date-fns import for formatting
 + Added Badge component for status
@@ -265,10 +265,10 @@ Changes:
 + Improved mobile/desktop separation
 + Better error handling
 - Removed dummy loading skeleton
-```
+\`\`\`
 
 ### File: `/lib/config.ts`
-```
+\`\`\`
 Changes:
 + Added DOMAIN configuration
 + Added APP_URL configuration
@@ -282,10 +282,10 @@ Changes:
 + Added validateApiConfig() function
 + Added getApiEndpoint() function
 - Removed old basic config
-```
+\`\`\`
 
 ### File: `/next.config.mjs`
-```
+\`\`\`
 Changes:
 + Added image domains whitelist
 + Added CORS headers
@@ -293,10 +293,10 @@ Changes:
 + Added domain redirect setup
 + Added security headers
 - Removed minimal config
-```
+\`\`\`
 
 ### File: `/lib/api-validator.ts` (NEW)
-```
+\`\`\`
 Created:
 + validateApiConfiguration() function
 + logValidationResults() function
@@ -305,7 +305,7 @@ Created:
 + generateConfigReport() function
 + ValidationResult interface
 + Comprehensive error checking
-```
+\`\`\`
 
 ---
 
@@ -451,7 +451,7 @@ Created:
 
 ---
 
-```
+\`\`\`
 ╔════════════════════════════════════════════════════════════════════╗
 ║                                                                    ║
 ║               ✅ ALL TASKS COMPLETED SUCCESSFULLY ✅              ║
@@ -462,7 +462,7 @@ Created:
 ║                  Ready for Immediate Deployment! 🚀              ║
 ║                                                                    ║
 ╚════════════════════════════════════════════════════════════════════╝
-```
+\`\`\`
 
 **Date:** January 26, 2026
 **System:** NextWave SMM Panel

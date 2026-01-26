@@ -31,16 +31,16 @@
 ### Code Changes Summary:
 
 **API Page** (`/app/dashboard/api/page.tsx`):
-```typescript
+\`\`\`typescript
 // Before
 const apiBaseUrl = `${APP_URL}/api/v1`
 
 // After
 const apiBaseUrl = `https://${DOMAIN}/api/v1`
-```
+\`\`\`
 
 **Order Page** (`/app/dashboard/orders/page.tsx`):
-```typescript
+\`\`\`typescript
 // Before - Missing columns in select
 .select("*, services(...)")
 
@@ -52,7 +52,7 @@ price: order.price || 0
 
 // After - Safe type conversion
 price: parseFloat(String(order.price)) || 0
-```
+\`\`\`
 
 ### Testing Checklist:
 - ✅ API page shows `https://nextwavesmm.com/api/v1`

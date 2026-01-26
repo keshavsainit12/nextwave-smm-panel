@@ -23,7 +23,7 @@
 ### 1️⃣ Set Environment Variables
 Copy these to Vercel Settings > Environment Variables:
 
-```bash
+\`\`\`bash
 # Database (Required)
 NEXT_PUBLIC_SUPABASE_URL=your_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_key
@@ -47,7 +47,7 @@ FROM_EMAIL=noreply@nextwavesmm.com
 # Security (Optional)
 NEXT_PUBLIC_RECAPTCHA_SITE_KEY=your_key
 RECAPTCHA_SECRET_KEY=your_key
-```
+\`\`\`
 
 ### 2️⃣ Setup Domain
 1. In Vercel: Settings > Domains
@@ -56,10 +56,10 @@ RECAPTCHA_SECRET_KEY=your_key
 4. Wait 24-48 hours for DNS propagation
 
 ### 3️⃣ Deploy
-```bash
+\`\`\`bash
 git push origin main
 # Wait for Vercel to auto-deploy
-```
+\`\`\`
 
 ### 4️⃣ Add SMM Provider
 1. Go to: `https://nextwavesmm.com/admin-panel-2024`
@@ -70,13 +70,13 @@ git push origin main
 6. Click "Sync Services"
 
 ### 5️⃣ Test Everything
-```bash
+\`\`\`bash
 # Test API
 curl https://nextwavesmm.com/api/v1/services
 
 # Test Order Page
 # Visit: https://nextwavesmm.com/dashboard/orders
-```
+\`\`\`
 
 ---
 
@@ -105,24 +105,24 @@ curl https://nextwavesmm.com/api/v1/services
 ## API Endpoints
 
 ### Public
-```
+\`\`\`
 GET  /api/v1/services        - Get all services
 GET  /api/v1/balance         - Get user balance
 POST /api/v1/order           - Create order
 POST /api/v1/contact         - Contact form
-```
+\`\`\`
 
 ### Admin
-```
+\`\`\`
 POST /api/admin/login           - Admin login
 POST /api/admin/sync-services   - Sync services from provider
 POST /api/admin/change-username - Change admin username
-```
+\`\`\`
 
 ### Webhook
-```
+\`\`\`
 POST /api/webhooks/instant-payment - Payment confirmation
-```
+\`\`\`
 
 ---
 
@@ -193,7 +193,7 @@ To reset admin credentials:
 
 ## Configuration Structure
 
-```
+\`\`\`
 lib/config.ts exports:
 ├── Domain Configuration
 │   ├── DOMAIN = "nextwavesmm.com"
@@ -206,7 +206,7 @@ lib/config.ts exports:
 ├── reCAPTCHA
 ├── Database (Supabase)
 └── Validation Functions
-```
+\`\`\`
 
 ---
 
