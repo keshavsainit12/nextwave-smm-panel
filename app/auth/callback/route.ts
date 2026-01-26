@@ -99,21 +99,14 @@ export async function GET(request: NextRequest) {
 
     if (!existingUser) {
       console.log("[v0] Creating new user profile for OAuth user")
-      // Create user profile for OAuth user
-      const { data: tierData } = await supabaseAdmin
-        .from("user_tiers")
-        .select("id")
-        .eq("name", "Regular")
-        .single()
-
+      
       const referralCode = "REF" + Math.random().toString(36).substring(2, 10).toUpperCase()
 
       const { error: insertError } = await supabaseAdmin.from("users").insert({
         id: user.id,
         email: user.email!,
         full_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email!.split("@")[0],
-        company: COMPANY_NAME,
-        tier_id: tierData?.id || null,
+        tier: 1,
         referral_code: referralCode,
         role: "user",
         balance: 0,
@@ -123,6 +116,7 @@ export async function GET(request: NextRequest) {
 
       if (insertError) {
         console.error("[v0] Failed to create user profile:", insertError)
+        console.error("[v0] Insert error details:", insertError.message)
         return NextResponse.redirect(new URL("/auth/login?error=Failed to create profile", request.url))
       }
 
