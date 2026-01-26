@@ -93,11 +93,13 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
       const data = await response.json()
 
       if (data.valid) {
-        setCouponDiscount(data.discount || 0)
+        const discountValue = data.discount || 0
+        setCouponDiscount(discountValue)
         setCouponCode(couponCode.toUpperCase())
+        setCouponError(null)
         toast({
           title: "Coupon Applied",
-          description: `${data.discount}% discount applied to your order`,
+          description: `${discountValue}% discount applied to your order`,
           duration: 3000,
         })
       } else {
@@ -264,7 +266,6 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
                   value={couponCode}
                   onChange={(e) => {
                     setCouponCode(e.target.value.toUpperCase())
-                    if (couponDiscount > 0) setCouponDiscount(0)
                   }}
                   disabled={loading || validateCouponLoading}
                   className="h-11 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500/20 uppercase font-semibold"
