@@ -16,6 +16,8 @@ export function CouponPasteCard({ onCouponApplied }: CouponPasteCardProps) {
   const [validatedCoupon, setValidatedCoupon] = useState<any>(null)
   const [copied, setCopied] = useState(false)
 
+  console.log("[v0] CouponPasteCard rendered with onCouponApplied:", typeof onCouponApplied)
+
   const handleValidateCoupon = async () => {
     if (!couponCode.trim()) {
       toast.error("Please enter a coupon code")
@@ -38,9 +40,12 @@ export function CouponPasteCard({ onCouponApplied }: CouponPasteCardProps) {
 
       if (data.valid) {
         setValidatedCoupon(data)
-        console.log("[v0] CouponPasteCard - coupon valid, calling callback:", { couponCode: couponCode.toUpperCase(), discount: data.discount })
+        console.log("[v0] CouponPasteCard - coupon valid:", { couponCode: couponCode.toUpperCase(), discount: data.discount, callbackExists: !!onCouponApplied })
+        if (onCouponApplied) {
+          console.log("[v0] Calling onCouponApplied callback...")
+          onCouponApplied(couponCode.toUpperCase(), data.discount)
+        }
         toast.success(`${data.discount}% discount available!`)
-        onCouponApplied?.(couponCode.toUpperCase(), data.discount)
       } else {
         toast.error(data.error || "Invalid coupon code")
       }
