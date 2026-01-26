@@ -38,6 +38,7 @@ export function CouponPasteCard({ onCouponApplied }: CouponPasteCardProps) {
 
       if (data.valid) {
         setValidatedCoupon(data)
+        console.log("[v0] CouponPasteCard - coupon valid, calling callback:", { couponCode: couponCode.toUpperCase(), discount: data.discount })
         toast.success(`${data.discount}% discount available!`)
         onCouponApplied?.(couponCode.toUpperCase(), data.discount)
       } else {

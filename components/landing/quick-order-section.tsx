@@ -80,6 +80,8 @@ export function QuickOrderSection() {
   const discountAmount = couponDiscount > 0 ? (basePrice * couponDiscount / 100) : 0
   const finalPrice = basePrice - discountAmount
 
+  console.log("[v0] QuickOrderSection state:", { couponDiscount, basePrice, discountAmount, finalPrice })
+
   const handlePlaceOrder = () => {
     if (!url.trim()) {
       alert("Please enter a valid URL or username")
@@ -114,7 +116,9 @@ export function QuickOrderSection() {
         {/* Coupon Card */}
         <div className="max-w-2xl mb-8">
           <CouponPasteCard onCouponApplied={(couponCode, discount) => {
+            console.log("[v0] QuickOrderSection received coupon:", { couponCode, discount })
             if (typeof discount === 'number' && discount > 0) {
+              console.log("[v0] Setting coupon discount to:", discount)
               setCouponDiscount(discount)
             }
           }} />
