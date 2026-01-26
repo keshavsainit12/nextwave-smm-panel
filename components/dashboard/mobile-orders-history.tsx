@@ -26,7 +26,7 @@ interface Order {
   order_id: string
   status: string
   quantity: number
-  total_price: number
+  price: number
   start_count?: number
   created_at: string
   services: {
@@ -268,7 +268,7 @@ export function MobileOrdersHistory({ orders }: { orders: Order[] }) {
                     </div>
                     <div className="bg-slate-50 rounded-lg p-3">
                       <p className="text-xs text-slate-600 font-medium mb-1">Total Price</p>
-                      <p className="text-sm font-bold text-slate-900">${(order.total_price || 0).toFixed(2)}</p>
+                      <p className="text-sm font-bold text-slate-900">${(order.price || 0).toFixed(2)}</p>
                     </div>
                   </div>
 
