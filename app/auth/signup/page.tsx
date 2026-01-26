@@ -121,15 +121,26 @@ function SignupContent() {
     const supabase = createClient()
 
     try {
-      const callbackUrl = `${window.location.origin}/auth/callback?source=signup`
+      console.log("[v0] Environment check:")
+      console.log("[v0] SUPABASE_URL exists:", !!process.env.NEXT_PUBLIC_SUPABASE_URL)
+      console.log("[v0] ANON_KEY exists:", !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+
+      const callbackUrl = `${window.location.origin}/auth/callback`
       console.log("[v0] Starting Google sign-up with callback URL:", callbackUrl)
+      console.log("[v0] Window origin:", window.location.origin)
       
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: callbackUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
         },
       })
+      
+      console.log("[v0] OAuth response:", { error: error?.message, hasData: !!data })
       if (error) throw error
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : "Google sign-up failed"
