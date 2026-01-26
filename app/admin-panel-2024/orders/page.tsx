@@ -8,7 +8,7 @@ export default async function AdminOrdersPage() {
   const supabase = createAdminClient()
   const { data: orders, error } = await supabase
     .from("orders")
-    .select("*, users(email, full_name), services(name, icon, platform, service_categories(name, icon))")
+    .select("*, users(email, full_name), services(name, icon, platform)")
     .order("created_at", { ascending: false })
     .limit(100)
 
@@ -16,12 +16,12 @@ export default async function AdminOrdersPage() {
     console.error("[v0] Admin orders fetch error:", error)
   }
 
-  // Transform orders to use category icon if service icon is missing
+  // Transform orders - service icon fallback no longer needed
   const transformedOrders = orders?.map((order: any) => ({
     ...order,
     services: {
       ...order.services,
-      icon: order.services?.icon || order.services?.service_categories?.icon,
+      icon: order.services?.icon,
     },
   })) || []
 

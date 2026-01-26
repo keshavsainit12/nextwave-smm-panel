@@ -28,13 +28,31 @@ export default async function TransactionHistoryPage() {
   // Fetch crypto deposits
   const { data: cryptoDeposits, error: cryptoError } = await supabase
     .from("crypto_deposits")
-    .select("*, crypto_currencies(symbol, name)")
+    .select("id, user_id, crypto_currency_id, amount, crypto_amount, transaction_hash, screenshot_url, status, admin_notes, created_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
+
+  // Fetch related crypto currencies
+  const cryptoCurrencyIds = cryptoDeposits?.map((d: any) => d.crypto_currency_id).filter(Boolean) || []
+  const { data: cryptoCurrencyMap, error: currencyError } = cryptoCurrencyIds.length > 0
+    ? await supabase
+        .from("crypto_currencies")
+        .select("id, symbol, name")
+        .in("id", cryptoCurrencyIds)
+    : { data: [], error: null }
 
   if (cryptoError) {
     console.error("[v0] Crypto deposits fetch error:", cryptoError)
   }
+  if (currencyError) {
+    console.error("[v0] Crypto currencies fetch error:", currencyError)
+  }
+
+  // Map crypto currencies by ID
+  const cryptoCurrencyByIdMap = (cryptoCurrencyMap || []).reduce((map: any, curr: any) => {
+    map[curr.id] = curr
+    return map
+  }, {})
 
   // Fetch instant payment transactions (deposits)
   const { data: instantPayments, error: instantError } = await supabase
@@ -82,6 +100,7 @@ export default async function TransactionHistoryPage() {
       created_at: d.created_at,
       status: d.status,
       amount: Number(d.amount),
+      crypto_currencies: cryptoCurrencyByIdMap[d.crypto_currency_id],
     })),
     ...(instantPayments || []).map((t) => ({
       ...t,

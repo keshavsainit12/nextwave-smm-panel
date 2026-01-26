@@ -25,7 +25,7 @@ async function OrdersContent({ page = 1 }: { page: number }) {
   // Fetch paginated orders
   const { data: orders, error: ordersError } = await supabase
     .from("orders")
-    .select("id, user_id, service_id, external_order_id, link, quantity, price, start_count, remains, status, can_refill, refill_count, created_at, services(id, name, icon, platform, has_refill, category_id, service_categories(id, name, icon))")
+    .select("id, user_id, service_id, external_order_id, link, quantity, price, start_count, remains, status, can_refill, refill_count, created_at, services(id, name, icon, platform, has_refill, category_id)")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .range(offset, offset + pageSize - 1)
@@ -52,7 +52,8 @@ async function OrdersContent({ page = 1 }: { page: number }) {
       price: isNaN(price) ? 0 : Math.max(0, price),
       services: {
         ...order.services,
-        icon: order.services?.icon || order.services?.service_categories?.icon,
+        // Use service icon if available, otherwise will use default
+        icon: order.services?.icon,
       },
     }
   }) || []
