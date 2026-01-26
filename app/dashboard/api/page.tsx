@@ -6,7 +6,7 @@ import { generateApiKey, regenerateApiKey, revokeApiKey } from "@/app/actions/ap
 import { CopyButton } from "@/components/dashboard/copy-button"
 import { AlertCircle, RefreshCw, Trash2, Download } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { APP_URL } from "@/lib/config"
+import { DOMAIN, APP_URL } from "@/lib/config"
 
 export default async function ApiAccessPage() {
   const supabase = await createClient()
@@ -16,7 +16,8 @@ export default async function ApiAccessPage() {
 
   const { data: userData } = await supabase.from("users").select("api_key, role, price_multiplier").eq("id", user!.id).single()
 
-  const apiBaseUrl = `${APP_URL}/api/v1`
+  // Use the actual domain for API URL
+  const apiBaseUrl = `https://${DOMAIN}/api/v1`
 
   return (
     <div className="space-y-6">
@@ -116,9 +117,12 @@ export default async function ApiAccessPage() {
 
           <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
             <h4 className="font-semibold text-sm mb-2 text-purple-900 dark:text-purple-100">2. Authentication Header</h4>
-            <pre className="bg-white dark:bg-slate-900 p-3 rounded text-xs font-mono border overflow-x-auto">
+            <div className="flex items-center gap-2">
+              <pre className="flex-1 bg-white dark:bg-slate-900 p-3 rounded text-xs font-mono border overflow-x-auto">
 {`Authorization: Bearer YOUR_API_KEY`}
-            </pre>
+              </pre>
+              <CopyButton text="Authorization: Bearer YOUR_API_KEY" />
+            </div>
           </div>
 
           <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4">

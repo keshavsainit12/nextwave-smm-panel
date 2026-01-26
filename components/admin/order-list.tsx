@@ -165,7 +165,7 @@ export function OrderList({ orders }: { orders: any[] }) {
               <div>
                 <div className="text-xs text-muted-foreground font-semibold">Total Price</div>
                 <div className="font-mono font-semibold text-green-600">
-                  ${(selectedOrder?.total_price || 0).toFixed(2)}
+                  ${(selectedOrder?.price || selectedOrder?.total_price || 0).toFixed(2)}
                 </div>
               </div>
               <div>
