@@ -197,7 +197,7 @@ export function DesktopDashboard({
     setLoading(true)
 
     try {
-      const result = await placeOrder(selectedService.id, link, quantity, isBulkBuy)
+      const result = await placeOrder(selectedService.id, link, quantity, undefined, isBulkBuy)
 
       if (result.error) {
         toast({

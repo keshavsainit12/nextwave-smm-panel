@@ -71,7 +71,6 @@ export function MobileHighTrustDashboard({
     const multiplier = isBulkBuy ? 2.5 : 3.0
     const priceBeforeDiscount = (quantity / 1000) * servicePrice * multiplier
     const finalPrice = appliedCouponDiscount > 0 ? priceBeforeDiscount * (1 - appliedCouponDiscount / 100) : priceBeforeDiscount
-    console.log("[v0] Dashboard totalPrice calc:", { servicePrice, multiplier, quantity, priceBeforeDiscount, appliedCouponDiscount, finalPrice })
     return finalPrice
   }, [selectedService, quantity, isBulkBuy, appliedCouponDiscount])
 
@@ -101,9 +100,7 @@ export function MobileHighTrustDashboard({
   }
 
   const handleCouponApplied = useCallback((couponCode: string, discount: number) => {
-    console.log("[v0] handleCouponApplied called:", { couponCode, discount })
     if (typeof discount === 'number' && discount > 0) {
-      console.log("[v0] Setting appliedCouponDiscount to:", discount)
       setAppliedCouponDiscount(discount)
     }
   }, [])
@@ -208,7 +205,7 @@ export function MobileHighTrustDashboard({
     setLoading(true)
 
     try {
-      const result = await placeOrder(selectedService.id, link, quantity, isBulkBuy)
+      const result = await placeOrder(selectedService.id, link, quantity, undefined, isBulkBuy)
 
       if (result.error) {
         toast({
