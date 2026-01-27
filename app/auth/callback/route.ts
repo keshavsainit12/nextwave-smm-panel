@@ -2,7 +2,6 @@ import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { COMPANY_NAME } from "@/lib/constants/company"
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,23 +9,27 @@ export async function GET(request: NextRequest) {
     const code = requestUrl.searchParams.get("code")
     const error = requestUrl.searchParams.get("error")
     const errorDescription = requestUrl.searchParams.get("error_description")
-    const source = requestUrl.searchParams.get("source") // Track if from signup
+    const next = requestUrl.searchParams.get("next") || "/dashboard"
 
-    console.log("[v0] OAuth callback received:", { code: !!code, error, errorDescription, source })
+    console.log("[v0] OAuth callback received:", { 
+      code: code ? code.substring(0, 10) + "..." : null, 
+      error, 
+      errorDescription,
+      next,
+      fullUrl: request.url 
+    })
 
     // Handle OAuth errors
     if (error) {
       console.error("[v0] OAuth error:", { error, errorDescription })
-      const redirectUrl = source === "signup" ? "/auth/signup" : "/auth/login"
       return NextResponse.redirect(
-        new URL(`${redirectUrl}?error=${encodeURIComponent(errorDescription || error)}`, request.url)
+        new URL(`/auth/login?error=${encodeURIComponent(errorDescription || error)}`, requestUrl.origin)
       )
     }
 
     if (!code) {
       console.error("[v0] No code provided in OAuth callback")
-      const redirectUrl = source === "signup" ? "/auth/signup" : "/auth/login"
-      return NextResponse.redirect(new URL(`${redirectUrl}?error=No authorization code`, request.url))
+      return NextResponse.redirect(new URL("/auth/login?error=No authorization code", requestUrl.origin))
     }
 
     const cookieStore = await cookies()
@@ -50,9 +53,8 @@ export async function GET(request: NextRequest) {
 
     if (exchangeError) {
       console.error("[v0] Exchange error:", exchangeError)
-      const redirectUrl = source === "signup" ? "/auth/signup" : "/auth/login"
       return NextResponse.redirect(
-        new URL(`${redirectUrl}?error=${encodeURIComponent(exchangeError.message)}`, request.url)
+        new URL(`/auth/login?error=${encodeURIComponent(exchangeError.message)}`, requestUrl.origin)
       )
     }
 
