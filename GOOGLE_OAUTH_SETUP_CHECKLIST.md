@@ -12,13 +12,13 @@
 
 Make sure these are set in your Vercel project:
 
-```
+\`\`\`
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 NEXT_PUBLIC_RECAPTCHA_SITE_KEY=your_recaptcha_key
 RECAPTCHA_SECRET_KEY=your_recaptcha_secret
-```
+\`\`\`
 
 ---
 
@@ -70,16 +70,16 @@ Your callback URL should be:
 ### If dashboard shows errors:
 
 1. **Check user profile exists:**
-   ```sql
+   \`\`\`sql
    SELECT * FROM users WHERE id = 'user-id-here';
-   ```
+   \`\`\`
 
 2. **Check tables exist:**
-   ```sql
+   \`\`\`sql
    SELECT * FROM orders LIMIT 1;
    SELECT * FROM services LIMIT 1;
    SELECT * FROM service_categories LIMIT 1;
-   ```
+   \`\`\`
 
 3. **Check Row Level Security (RLS):**
    - Tables should have RLS policies for users
@@ -130,10 +130,10 @@ Your callback URL should be:
 ## 📞 Debug Command
 
 In browser console, run:
-```javascript
+\`\`\`javascript
 // Check if environment is loaded
 fetch('/api/v1/balance').then(r => r.json()).then(console.log)
-```
+\`\`\`
 
 ---
 

@@ -23,18 +23,15 @@ export default async function DashboardPage() {
         .select("id, user_id, service_id, quantity, price, status, created_at")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
-        .limit(10)
-        .catch(() => ({ data: [], error: null })),
+        .limit(10),
       supabase
         .from("services")
         .select("id, name, icon, platform, min_quantity, max_quantity, base_price, has_refill, is_active, description")
-        .eq("is_active", true)
-        .catch(() => ({ data: [], error: null })),
+        .eq("is_active", true),
       supabase
         .from("service_categories")
         .select("*")
-        .order("name")
-        .catch(() => ({ data: [], error: null })),
+        .order("name"),
     ])
 
     if (profileError && profileError.code !== "PGRST116") {
@@ -48,6 +45,11 @@ export default async function DashboardPage() {
         </div>
       )
     }
+
+    // Log any other errors but don't block the page
+    if (ordersError) console.error("[v0] Orders fetch error:", ordersError)
+    if (servicesError) console.error("[v0] Services fetch error:", servicesError)
+    if (categoriesError) console.error("[v0] Categories fetch error:", categoriesError)
 
     const transformedServices = services?.map((service: any) => ({
       ...service,
