@@ -21,7 +21,17 @@ import {
   ShoppingCart,
   ArrowRight,
   Loader2,
+  Crown,
 } from "lucide-react"
+
+// Tier configuration based on price_multiplier
+const getTierInfo = (priceMultiplier: number | undefined | null) => {
+  const multiplier = priceMultiplier ?? 3.0
+  if (multiplier <= 1.5) return { name: "VIP Elite", color: "from-amber-500 to-yellow-400", textColor: "text-amber-600", bgColor: "bg-amber-100", icon: Crown, isVip: true }
+  if (multiplier <= 2) return { name: "Reseller", color: "from-purple-500 to-indigo-500", textColor: "text-purple-600", bgColor: "bg-purple-100", icon: Star, isVip: true }
+  if (multiplier <= 2.5) return { name: "Bulk Buyer", color: "from-blue-500 to-cyan-500", textColor: "text-blue-600", bgColor: "bg-blue-100", icon: Star, isVip: false }
+  return { name: "Basic User", color: "from-slate-400 to-slate-500", textColor: "text-slate-600", bgColor: "bg-slate-100", icon: null, isVip: false }
+}
 import {
   Select,
   SelectContent,
@@ -38,6 +48,7 @@ export function DesktopDashboard({
   totalOrders,
   totalSpent,
   recentOrders,
+  priceMultiplier,
 }: {
   services: any[]
   categories: any[]
@@ -46,7 +57,9 @@ export function DesktopDashboard({
   totalOrders: number
   totalSpent: number
   recentOrders: any[]
+  priceMultiplier?: number
 }) {
+  const tierInfo = getTierInfo(priceMultiplier)
   const [selectedCategory, setSelectedCategory] = useState<any>(null)
   const [selectedService, setSelectedService] = useState<any>(null)
   const [link, setLink] = useState("")

@@ -25,6 +25,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <DashboardSidebar
             userName={userProfile?.full_name || user?.email || "User"}
             userBalance={userProfile?.balance || 0}
+            priceMultiplier={userProfile?.price_multiplier}
           />
         </div>
 

@@ -17,7 +17,7 @@ export default async function DashboardPage() {
 
   try {
     const [{ data: userProfile, error: profileError }, { data: orders, error: ordersError }, { data: services, error: servicesError }, { data: categories, error: categoriesError }] = await Promise.all([
-      supabase.from("users").select("balance, total_orders, total_spent, full_name").eq("id", user.id).single(),
+      supabase.from("users").select("balance, total_orders, total_spent, full_name, price_multiplier").eq("id", user.id).single(),
       supabase
         .from("orders")
         .select("id, user_id, service_id, quantity, price, status, created_at")
@@ -68,6 +68,7 @@ export default async function DashboardPage() {
             totalOrders={userProfile?.total_orders || 0}
             totalSpent={userProfile?.total_spent || 0}
             recentOrders={orders || []}
+            priceMultiplier={userProfile?.price_multiplier}
           />
         </div>
 
@@ -80,6 +81,7 @@ export default async function DashboardPage() {
             totalOrders={userProfile?.total_orders || 0}
             totalSpent={userProfile?.total_spent || 0}
             recentOrders={orders || []}
+            priceMultiplier={userProfile?.price_multiplier}
           />
         </div>
       </div>
