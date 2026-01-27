@@ -21,7 +21,17 @@ import {
   ShoppingCart,
   ArrowRight,
   Loader2,
+  Crown,
 } from "lucide-react"
+
+// Tier configuration based on price_multiplier
+const getTierInfo = (priceMultiplier: number | undefined | null) => {
+  const multiplier = priceMultiplier ?? 3.0
+  if (multiplier <= 1.5) return { name: "VIP Elite", color: "from-amber-500 to-yellow-400", textColor: "text-amber-600", bgColor: "bg-amber-100", icon: Crown, isVip: true }
+  if (multiplier <= 2) return { name: "Reseller", color: "from-purple-500 to-indigo-500", textColor: "text-purple-600", bgColor: "bg-purple-100", icon: Star, isVip: true }
+  if (multiplier <= 2.5) return { name: "Bulk Buyer", color: "from-blue-500 to-cyan-500", textColor: "text-blue-600", bgColor: "bg-blue-100", icon: Star, isVip: false }
+  return { name: "Basic User", color: "from-slate-400 to-slate-500", textColor: "text-slate-600", bgColor: "bg-slate-100", icon: null, isVip: false }
+}
 import {
   Select,
   SelectContent,
@@ -38,6 +48,7 @@ export function DesktopDashboard({
   totalOrders,
   totalSpent,
   recentOrders,
+  priceMultiplier,
 }: {
   services: any[]
   categories: any[]
@@ -46,7 +57,9 @@ export function DesktopDashboard({
   totalOrders: number
   totalSpent: number
   recentOrders: any[]
+  priceMultiplier?: number
 }) {
+  const tierInfo = getTierInfo(priceMultiplier)
   const [selectedCategory, setSelectedCategory] = useState<any>(null)
   const [selectedService, setSelectedService] = useState<any>(null)
   const [link, setLink] = useState("")
@@ -315,6 +328,72 @@ export function DesktopDashboard({
       {/* Coupon Paste Card */}
       <div className="max-w-2xl">
         <CouponPasteCard onCouponApplied={handleCouponApplied} />
+      </div>
+
+      {/* VIP Membership Progress Card */}
+      <div className={`rounded-2xl p-6 border ${tierInfo.isVip ? 'bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200/50' : 'bg-white border-slate-200'} shadow-sm`}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${tierInfo.color} flex items-center justify-center shadow-lg`}>
+              {tierInfo.icon ? <tierInfo.icon className="w-6 h-6 text-white" /> : <Star className="w-6 h-6 text-white" />}
+            </div>
+            <div>
+              <p className={`text-lg font-bold ${tierInfo.isVip ? 'text-amber-800' : 'text-slate-900'}`}>{tierInfo.name}</p>
+              <p className="text-sm text-slate-500">Your current membership tier</p>
+            </div>
+          </div>
+          {!tierInfo.isVip && (
+            <div className="bg-gradient-to-r from-amber-500 to-yellow-400 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2">
+              <Crown className="w-4 h-4" />
+              Upgrade to VIP
+            </div>
+          )}
+        </div>
+        
+        {!tierInfo.isVip ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Progress Section */}
+            <div className="space-y-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600 font-medium">Progress to VIP Elite</span>
+                <span className="text-slate-900 font-bold">{Math.min(Math.round((totalSpent / 500) * 100), 100)}%</span>
+              </div>
+              <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-amber-500 to-yellow-400 rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min((totalSpent / 500) * 100, 100)}%` }}
+                />
+              </div>
+              <p className="text-sm text-slate-500">
+                Spend <span className="font-bold text-amber-600">${Math.max(0, 500 - totalSpent).toFixed(0)}</span> more to unlock VIP benefits
+              </p>
+            </div>
+            
+            {/* VIP Benefits Preview */}
+            <div className="flex gap-3">
+              <div className="flex-1 bg-amber-50 rounded-xl p-3 text-center border border-amber-100">
+                <p className="text-amber-600 font-bold text-lg">50%</p>
+                <p className="text-slate-600 text-xs">Discount</p>
+              </div>
+              <div className="flex-1 bg-amber-50 rounded-xl p-3 text-center border border-amber-100">
+                <p className="text-amber-600 font-bold text-lg">Priority</p>
+                <p className="text-slate-600 text-xs">Processing</p>
+              </div>
+              <div className="flex-1 bg-amber-50 rounded-xl p-3 text-center border border-amber-100">
+                <p className="text-amber-600 font-bold text-lg">24/7</p>
+                <p className="text-slate-600 text-xs">VIP Support</p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3 p-4 bg-amber-100 rounded-xl">
+            <Check className="w-6 h-6 text-amber-600" />
+            <div>
+              <p className="text-amber-800 font-bold">You're a VIP member!</p>
+              <p className="text-amber-700 text-sm">Enjoy exclusive discounts and priority support on all orders.</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Order Section */}

@@ -30,7 +30,17 @@ import {
   Home,
   ListOrdered,
   UserCircle,
+  Crown,
 } from "lucide-react"
+
+// Tier configuration based on price_multiplier
+const getTierInfo = (priceMultiplier: number | undefined | null) => {
+  const multiplier = priceMultiplier ?? 3.0
+  if (multiplier <= 1.5) return { name: "VIP Elite", color: "from-amber-500 to-yellow-400", textColor: "text-amber-600", bgColor: "bg-amber-100", icon: Crown, isVip: true }
+  if (multiplier <= 2) return { name: "Reseller", color: "from-purple-500 to-indigo-500", textColor: "text-purple-600", bgColor: "bg-purple-100", icon: Star, isVip: true }
+  if (multiplier <= 2.5) return { name: "Bulk Buyer", color: "from-blue-500 to-cyan-500", textColor: "text-blue-600", bgColor: "bg-blue-100", icon: Star, isVip: false }
+  return { name: "Basic User", color: "from-slate-400 to-slate-500", textColor: "text-slate-600", bgColor: "bg-slate-100", icon: null, isVip: false }
+}
 
 // Declare getIconEmoji function or import it from the correct module
 const getIconEmoji = (categoryOrService: any) => {
@@ -46,6 +56,7 @@ export function MobileHighTrustDashboard({
   totalOrders,
   totalSpent,
   recentOrders,
+  priceMultiplier,
 }: {
   services: any[]
   categories: any[]
@@ -54,7 +65,9 @@ export function MobileHighTrustDashboard({
   totalOrders: number
   totalSpent: number
   recentOrders: any[]
+  priceMultiplier?: number
 }) {
+  const tierInfo = getTierInfo(priceMultiplier)
   const [selectedCategory, setSelectedCategory] = useState<any>(null)
   const [selectedService, setSelectedService] = useState<any>(null)
   const [link, setLink] = useState("")
@@ -270,7 +283,10 @@ export function MobileHighTrustDashboard({
               </div>
             </div>
             <div>
-              <p className="text-slate-500 text-xs font-medium">Premium Member</p>
+              <div className="flex items-center gap-1.5">
+                <p className={`text-xs font-semibold uppercase tracking-wider ${tierInfo.textColor}`}>{tierInfo.name}</p>
+                {tierInfo.icon && <tierInfo.icon className={`w-3 h-3 ${tierInfo.textColor}`} />}
+              </div>
               <h2 className="text-slate-900 text-base font-bold leading-tight tracking-tight">Welcome, {userName}</h2>
             </div>
           </div>
@@ -362,6 +378,68 @@ export function MobileHighTrustDashboard({
                   12%
                 </p>
               </div>
+            </div>
+          </div>
+
+          {/* VIP Membership Progress Card */}
+          <div className="px-4 py-3">
+            <div className={`rounded-xl p-4 border ${tierInfo.isVip ? 'bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200/50' : 'bg-white border-slate-200'} shadow-sm`}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${tierInfo.color} flex items-center justify-center`}>
+                    {tierInfo.icon ? <tierInfo.icon className="w-4 h-4 text-white" /> : <Star className="w-4 h-4 text-white" />}
+                  </div>
+                  <div>
+                    <p className={`text-sm font-bold ${tierInfo.isVip ? 'text-amber-800' : 'text-slate-900'}`}>{tierInfo.name}</p>
+                    <p className="text-xs text-slate-500">Your current tier</p>
+                  </div>
+                </div>
+                {!tierInfo.isVip && (
+                  <div className="bg-amber-100 text-amber-700 px-2 py-1 rounded-full text-xs font-semibold">
+                    Upgrade
+                  </div>
+                )}
+              </div>
+              
+              {!tierInfo.isVip ? (
+                <>
+                  {/* Progress to VIP */}
+                  <div className="space-y-2 mb-3">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-600">Progress to VIP</span>
+                      <span className="text-slate-900 font-semibold">{Math.min(Math.round((totalSpent / 500) * 100), 100)}%</span>
+                    </div>
+                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-amber-500 to-yellow-400 rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min((totalSpent / 500) * 100, 100)}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-slate-500">Spend ${Math.max(0, 500 - totalSpent).toFixed(0)} more to unlock VIP</p>
+                  </div>
+                  
+                  {/* VIP Benefits Preview */}
+                  <div className="flex gap-2 text-xs">
+                    <div className="flex-1 bg-slate-50 rounded-lg p-2 text-center">
+                      <p className="text-amber-600 font-bold">50% Off</p>
+                      <p className="text-slate-500">All Services</p>
+                    </div>
+                    <div className="flex-1 bg-slate-50 rounded-lg p-2 text-center">
+                      <p className="text-amber-600 font-bold">Priority</p>
+                      <p className="text-slate-500">Processing</p>
+                    </div>
+                    <div className="flex-1 bg-slate-50 rounded-lg p-2 text-center">
+                      <p className="text-amber-600 font-bold">24/7</p>
+                      <p className="text-slate-500">VIP Support</p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center gap-2 text-sm text-amber-700">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>You're enjoying VIP benefits!</span>
+                </div>
+              )}
             </div>
           </div>
 

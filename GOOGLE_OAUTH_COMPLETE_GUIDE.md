@@ -29,11 +29,11 @@
 
 **Add these to your Vercel project settings (Settings → Environment Variables):**
 
-```
+\`\`\`
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-```
+\`\`\`
 
 **How to find these:**
 1. Go to Supabase Dashboard → Your Project
@@ -87,11 +87,11 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
    - `[v0] OAuth response:` will show error if present
 
 **Common logs:**
-```
+\`\`\`
 [v0] SUPABASE_URL exists: true
 [v0] ANON_KEY exists: true
 [v0] Starting Google sign-in with callback URL: https://yourdomain.com/auth/callback
-```
+\`\`\`
 
 ### Check 2: Verify Environment Variables in Production
 1. Deploy to Vercel
@@ -160,10 +160,10 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ### Enable Detailed Logging (Optional)
 Edit login/signup pages to add more logs:
-```typescript
+\`\`\`typescript
 console.log("[v0] Window location:", window.location)
 console.log("[v0] Full error object:", JSON.stringify(err, null, 2))
-```
+\`\`\`
 
 ### Check Database Directly
 1. Supabase Dashboard → SQL Editor

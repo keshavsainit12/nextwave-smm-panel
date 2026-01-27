@@ -17,24 +17,21 @@ export default async function DashboardPage() {
 
   try {
     const [{ data: userProfile, error: profileError }, { data: orders, error: ordersError }, { data: services, error: servicesError }, { data: categories, error: categoriesError }] = await Promise.all([
-      supabase.from("users").select("balance, total_orders, total_spent, full_name").eq("id", user.id).single(),
+      supabase.from("users").select("balance, total_orders, total_spent, full_name, price_multiplier").eq("id", user.id).single(),
       supabase
         .from("orders")
         .select("id, user_id, service_id, quantity, price, status, created_at")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
-        .limit(10)
-        .catch(() => ({ data: [], error: null })),
+        .limit(10),
       supabase
         .from("services")
-        .select("id, name, icon, platform, min_quantity, max_quantity, base_price, has_refill, is_active, description")
-        .eq("is_active", true)
-        .catch(() => ({ data: [], error: null })),
+        .select("id, name, icon, platform, category_id, min_quantity, max_quantity, base_price, has_refill, is_active, description")
+        .eq("is_active", true),
       supabase
         .from("service_categories")
         .select("*")
-        .order("name")
-        .catch(() => ({ data: [], error: null })),
+        .order("name"),
     ])
 
     if (profileError && profileError.code !== "PGRST116") {
@@ -48,6 +45,11 @@ export default async function DashboardPage() {
         </div>
       )
     }
+
+    // Log any other errors but don't block the page
+    if (ordersError) console.error("[v0] Orders fetch error:", ordersError)
+    if (servicesError) console.error("[v0] Services fetch error:", servicesError)
+    if (categoriesError) console.error("[v0] Categories fetch error:", categoriesError)
 
     const transformedServices = services?.map((service: any) => ({
       ...service,
@@ -66,6 +68,7 @@ export default async function DashboardPage() {
             totalOrders={userProfile?.total_orders || 0}
             totalSpent={userProfile?.total_spent || 0}
             recentOrders={orders || []}
+            priceMultiplier={userProfile?.price_multiplier}
           />
         </div>
 
@@ -78,6 +81,7 @@ export default async function DashboardPage() {
             totalOrders={userProfile?.total_orders || 0}
             totalSpent={userProfile?.total_spent || 0}
             recentOrders={orders || []}
+            priceMultiplier={userProfile?.price_multiplier}
           />
         </div>
       </div>
