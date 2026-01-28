@@ -45,29 +45,23 @@ export function AddCouponDialog({ onCouponCreated }: { onCouponCreated?: () => v
         return
       }
 
-      console.log("[v0] Creating coupon:", formData)
-
       const response = await fetch("/api/v1/coupons", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           code: formData.code.toUpperCase().trim(),
-          discount_type: 'percentage',
+          discount_type: "percentage",
           discount_value: formData.discount_percentage,
           max_uses: formData.max_uses ? parseInt(formData.max_uses) : null,
           is_active: formData.is_active,
         }),
       })
 
-      console.log("[v0] API Response status:", response.status)
       const data = await response.json()
-      console.log("[v0] API Response data:", data)
 
       if (!response.ok) {
         throw new Error(data.error || `Failed to create coupon (${response.status})`)
       }
-
-      console.log("[v0] Coupon created successfully:", data)
 
       toast.success("Coupon created successfully!")
       setFormData({ code: "", discount_percentage: 10, max_uses: "", is_active: true })
@@ -79,7 +73,7 @@ export function AddCouponDialog({ onCouponCreated }: { onCouponCreated?: () => v
         window.location.reload()
       }, 500)
     } catch (error: any) {
-      console.error("[v0] Coupon creation error:", error.message)
+      console.error("[v0] Coupon creation error:", error.message || error)
       toast.error(error.message || "Failed to create coupon")
     } finally {
       setLoading(false)
@@ -94,16 +88,25 @@ export function AddCouponDialog({ onCouponCreated }: { onCouponCreated?: () => v
           Add Coupon
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] max-h-screen overflow-y-auto">
+
+      {/*
+        IMPORTANT:
+        - Added explicit background/text/border classes so this dialog matches admin surfaces
+        - These classes make the dialog look correct even when global theme tokens are missing
+      */}
+      <DialogContent className="sm:max-w-[500px] max-h-screen overflow-y-auto bg-white text-slate-900 rounded-lg shadow-lg border border-gray-200 dark:bg-slate-900 dark:text-white dark:border-gray-800">
         <DialogHeader>
           <DialogTitle>Create Coupon</DialogTitle>
           <DialogDescription>Create a new discount code for users</DialogDescription>
         </DialogHeader>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid gap-4">
             {/* Coupon Code */}
             <div className="grid gap-2">
-              <Label htmlFor="code" className="text-sm font-medium">Coupon Code</Label>
+              <Label htmlFor="code" className="text-sm font-medium">
+                Coupon Code
+              </Label>
               <Input
                 id="code"
                 placeholder="SAVE10"
@@ -112,19 +115,21 @@ export function AddCouponDialog({ onCouponCreated }: { onCouponCreated?: () => v
                 required
                 disabled={loading}
               />
-              <p className="text-xs text-gray-500">Code will be converted to uppercase automatically</p>
+              <p className="text-xs text-muted-foreground">Code will be converted to uppercase automatically</p>
             </div>
 
             {/* Discount Percentage */}
             <div className="grid gap-2">
-              <Label htmlFor="discount_percentage" className="text-sm font-medium">Discount (%)</Label>
+              <Label htmlFor="discount_percentage" className="text-sm font-medium">
+                Discount (%)
+              </Label>
               <Input
                 id="discount_percentage"
                 type="number"
-                min="1"
-                max="100"
+                min={1}
+                max={100}
                 value={formData.discount_percentage}
-                onChange={(e) => setFormData({ ...formData, discount_percentage: parseFloat(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, discount_percentage: parseFloat(e.target.value || "0") })}
                 required
                 disabled={loading}
               />
@@ -132,26 +137,31 @@ export function AddCouponDialog({ onCouponCreated }: { onCouponCreated?: () => v
 
             {/* Max Uses */}
             <div className="grid gap-2">
-              <Label htmlFor="max_uses" className="text-sm font-medium">Max Uses (Optional)</Label>
+              <Label htmlFor="max_uses" className="text-sm font-medium">
+                Max Uses (leave empty for unlimited)
+              </Label>
               <Input
                 id="max_uses"
-                type="number"
-                min="1"
-                placeholder="Leave empty for unlimited"
+                placeholder="e.g. 100"
                 value={formData.max_uses}
                 onChange={(e) => setFormData({ ...formData, max_uses: e.target.value })}
                 disabled={loading}
               />
             </div>
 
-            {/* Active Status */}
-            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border">
-              <Label htmlFor="is_active" className="text-sm font-medium">Active</Label>
+            {/* Active toggle */}
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <Label htmlFor="is_active" className="text-sm font-medium">
+                  Active
+                </Label>
+                <p className="text-xs text-muted-foreground">Toggle whether the coupon is usable by customers</p>
+              </div>
               <Switch
                 id="is_active"
                 checked={formData.is_active}
-                onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-                disabled={loading}
+                onCheckedChange={(val) => setFormData({ ...formData, is_active: Boolean(val) })}
+                className="ml-auto"
               />
             </div>
           </div>
@@ -163,10 +173,12 @@ export function AddCouponDialog({ onCouponCreated }: { onCouponCreated?: () => v
               variant="outline"
               onClick={() => setOpen(false)}
               disabled={loading}
+              className="border-gray-300 text-slate-700 dark:text-gray-200"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+
+            <Button type="submit" disabled={loading} className="bg-[#1152d4] text-white hover:bg-[#0f43b8]">
               {loading ? "Creating..." : "Create Coupon"}
             </Button>
           </div>
