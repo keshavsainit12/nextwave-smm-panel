@@ -114,24 +114,6 @@ export function EditServiceDialog({ service, open, onClose }: any) {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Quick Set Price</Label>
-            <div className="flex gap-2">
-              {[2, 2.5, 3, 4].map((mult) => (
-                <Button
-                  key={mult}
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setFormData({ ...formData, price: providerPrice * mult })}
-                  disabled={!providerPrice}
-                >
-                  {mult}x
-                </Button>
-              ))}
-            </div>
-          </div>
-
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={onClose}>
               Cancel
