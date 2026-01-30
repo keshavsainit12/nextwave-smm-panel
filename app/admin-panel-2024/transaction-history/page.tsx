@@ -104,16 +104,16 @@ export default async function AdminTransactionHistoryPage() {
     console.error("[v0] Error fetching transaction history:", error)
 
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Transaction History</h1>
-          <p className="text-muted-foreground">Error loading transaction data</p>
+      <div className="space-y-3 sm:space-y-4 md:space-y-6">
+        <div className="bg-white dark:bg-slate-900 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 shadow-sm border border-gray-200 dark:border-gray-800">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Transaction History</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">Error loading transaction data</p>
         </div>
-        <Card>
-          <CardContent className="pt-6">
+        <Card className="bg-white dark:bg-slate-900 border-gray-200 dark:border-gray-800">
+          <CardContent className="p-3 sm:p-4 md:p-6">
             <div className="text-center py-8 text-red-600">
-              <p>Failed to load transaction history. Please refresh the page.</p>
-              <p className="text-sm text-muted-foreground mt-2">{error instanceof Error ? error.message : "Unknown error"}</p>
+              <p className="text-sm sm:text-base">Failed to load transaction history. Please refresh the page.</p>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-2">{error instanceof Error ? error.message : "Unknown error"}</p>
             </div>
           </CardContent>
         </Card>
@@ -122,77 +122,77 @@ export default async function AdminTransactionHistoryPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Transaction History</h1>
-        <p className="text-muted-foreground">Complete record of all orders and deposits (Crypto + Instant Payments)</p>
+    <div className="space-y-3 sm:space-y-4 md:space-y-6">
+      <div className="bg-white dark:bg-slate-900 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 shadow-sm border border-gray-200 dark:border-gray-800">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Transaction History</h1>
+        <p className="text-xs sm:text-sm text-muted-foreground mt-1">Complete record of all orders and deposits (Crypto + Instant Payments)</p>
       </div>
 
       {/* Summary Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-blue-600" />
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+        <Card className="bg-white dark:bg-slate-900 border-gray-200 dark:border-gray-800">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 sm:p-4">
+            <CardTitle className="text-xs sm:text-sm font-medium">Total Revenue</CardTitle>
+            <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${totalRevenue.toFixed(2)}</div>
+          <CardContent className="p-3 sm:p-4 pt-0">
+            <div className="text-lg sm:text-2xl font-bold">${totalRevenue.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">Orders + All Deposits</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Profit</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600" />
+        <Card className="bg-white dark:bg-slate-900 border-gray-200 dark:border-gray-800">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 sm:p-4">
+            <CardTitle className="text-xs sm:text-sm font-medium">Total Profit</CardTitle>
+            <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">${totalProfit.toFixed(2)}</div>
+          <CardContent className="p-3 sm:p-4 pt-0">
+            <div className="text-lg sm:text-2xl font-bold text-green-600">${totalProfit.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">After service costs</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Instant Payments</CardTitle>
-            <Zap className="h-4 w-4 text-yellow-600" />
+        <Card className="bg-white dark:bg-slate-900 border-gray-200 dark:border-gray-800">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 sm:p-4">
+            <CardTitle className="text-xs sm:text-sm font-medium">Instant Payments</CardTitle>
+            <Zap className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-600" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${totalInstantPaymentAmount.toFixed(2)}</div>
+          <CardContent className="p-3 sm:p-4 pt-0">
+            <div className="text-lg sm:text-2xl font-bold">${totalInstantPaymentAmount.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">{completedInstantPayments.length} completed</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Crypto Deposits</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-purple-600" />
+        <Card className="bg-white dark:bg-slate-900 border-gray-200 dark:border-gray-800">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 sm:p-4">
+            <CardTitle className="text-xs sm:text-sm font-medium">Crypto Deposits</CardTitle>
+            <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4 text-purple-600" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${totalCryptoDepositAmount.toFixed(2)}</div>
+          <CardContent className="p-3 sm:p-4 pt-0">
+            <div className="text-lg sm:text-2xl font-bold">${totalCryptoDepositAmount.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">{cryptoDeposits?.length || 0} approved</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Orders Table - ONLY COMPLETED */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Completed Order Transactions</CardTitle>
-          <CardDescription>All completed user service orders with revenue and profit breakdown</CardDescription>
+      <Card className="bg-white dark:bg-slate-900 border-gray-200 dark:border-gray-800">
+        <CardHeader className="p-3 sm:p-4 md:p-6">
+          <CardTitle className="text-lg sm:text-xl">Completed Order Transactions</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">All completed user service orders with revenue and profit breakdown</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-4 md:p-6">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Service</TableHead>
-                  <TableHead>User</TableHead>
-                  <TableHead>Revenue</TableHead>
-                  <TableHead>Cost</TableHead>
-                  <TableHead>Profit</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Date</TableHead>
+                  <TableHead className="min-w-[150px]">Service</TableHead>
+                  <TableHead className="min-w-[120px]">User</TableHead>
+                  <TableHead className="min-w-[80px]">Revenue</TableHead>
+                  <TableHead className="min-w-[80px]">Cost</TableHead>
+                  <TableHead className="min-w-[80px]">Profit</TableHead>
+                  <TableHead className="min-w-[80px]">Status</TableHead>
+                  <TableHead className="min-w-[100px]">Date</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -206,11 +206,11 @@ export default async function AdminTransactionHistoryPage() {
 
                     return (
                       <TableRow key={order.id}>
-                        <TableCell className="font-medium">{order.services?.name || "Unknown"}</TableCell>
-                        <TableCell className="text-sm">{order.users?.full_name || order.users?.email}</TableCell>
-                        <TableCell className="font-semibold text-green-600">${revenue.toFixed(2)}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">${cost.toFixed(2)}</TableCell>
-                        <TableCell className={`font-semibold ${profit >= 0 ? "text-green-600" : "text-red-600"}`}>
+                        <TableCell className="font-medium text-xs sm:text-sm">{order.services?.name || "Unknown"}</TableCell>
+                        <TableCell className="text-xs sm:text-sm">{order.users?.full_name || order.users?.email}</TableCell>
+                        <TableCell className="font-semibold text-green-600 text-xs sm:text-sm">${revenue.toFixed(2)}</TableCell>
+                        <TableCell className="text-xs sm:text-sm text-muted-foreground">${cost.toFixed(2)}</TableCell>
+                        <TableCell className={`font-semibold text-xs sm:text-sm ${profit >= 0 ? "text-green-600" : "text-red-600"}`}>
                           ${profit.toFixed(2)}
                         </TableCell>
                         <TableCell>
@@ -222,12 +222,12 @@ export default async function AdminTransactionHistoryPage() {
                                   ? "destructive"
                                   : "secondary"
                             }
-                            className="capitalize"
+                            className="capitalize text-xs"
                           >
                             {order.status}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
+                        <TableCell className="text-xs sm:text-sm text-muted-foreground">
                           {formatDistance(new Date(order.created_at), new Date(), { addSuffix: true })}
                         </TableCell>
                       </TableRow>
@@ -235,7 +235,7 @@ export default async function AdminTransactionHistoryPage() {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground text-xs sm:text-sm">
                       No orders found
                     </TableCell>
                   </TableRow>
@@ -247,38 +247,38 @@ export default async function AdminTransactionHistoryPage() {
       </Card>
 
       {/* Deposits Table - Combined Crypto + Instant Payments - ONLY APPROVED/COMPLETED */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Approved Deposit Transactions</CardTitle>
-          <CardDescription>All approved cryptocurrency and completed instant payment deposits</CardDescription>
+      <Card className="bg-white dark:bg-slate-900 border-gray-200 dark:border-gray-800">
+        <CardHeader className="p-3 sm:p-4 md:p-6">
+          <CardTitle className="text-lg sm:text-xl">Approved Deposit Transactions</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">All approved cryptocurrency and completed instant payment deposits</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-4 md:p-6">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Payment Method</TableHead>
-                  <TableHead>Amount (USD)</TableHead>
-                  <TableHead>Details</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Date</TableHead>
+                  <TableHead className="min-w-[120px]">User</TableHead>
+                  <TableHead className="min-w-[150px]">Payment Method</TableHead>
+                  <TableHead className="min-w-[100px]">Amount (USD)</TableHead>
+                  <TableHead className="min-w-[100px]">Details</TableHead>
+                  <TableHead className="min-w-[80px]">Status</TableHead>
+                  <TableHead className="min-w-[100px]">Date</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {cryptoDeposits && cryptoDeposits.length > 0 ? (
                   cryptoDeposits.map((deposit) => (
                     <TableRow key={`crypto-${deposit.id}`}>
-                      <TableCell className="font-medium">{deposit.users?.full_name || deposit.users?.email}</TableCell>
+                      <TableCell className="font-medium text-xs sm:text-sm">{deposit.users?.full_name || deposit.users?.email}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">
+                        <Badge variant="outline" className="text-xs">
                           Crypto - {deposit.crypto_currency_id?.symbol}
                         </Badge>
                       </TableCell>
-                      <TableCell className="font-semibold text-green-600">
+                      <TableCell className="font-semibold text-green-600 text-xs sm:text-sm">
                         ${Number(deposit.amount || 0).toFixed(2)}
                       </TableCell>
-                      <TableCell className="text-sm">{deposit.crypto_amount} {deposit.crypto_currency_id?.symbol}</TableCell>
+                      <TableCell className="text-xs sm:text-sm">{deposit.crypto_amount} {deposit.crypto_currency_id?.symbol}</TableCell>
                       <TableCell>
                         <Badge
                           variant={
@@ -288,12 +288,12 @@ export default async function AdminTransactionHistoryPage() {
                                 ? "destructive"
                                 : "secondary"
                           }
-                          className="capitalize"
+                          className="capitalize text-xs"
                         >
                           {deposit.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
+                      <TableCell className="text-xs sm:text-sm text-muted-foreground">
                         {formatDistance(new Date(deposit.created_at), new Date(), { addSuffix: true })}
                       </TableCell>
                     </TableRow>
@@ -302,16 +302,16 @@ export default async function AdminTransactionHistoryPage() {
                 {instantPayments && instantPayments.length > 0 ? (
                   instantPayments.map((payment) => (
                     <TableRow key={`instant-${payment.id}`}>
-                      <TableCell className="font-medium">{payment.users?.full_name || payment.users?.email}</TableCell>
+                      <TableCell className="font-medium text-xs sm:text-sm">{payment.users?.full_name || payment.users?.email}</TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="bg-yellow-50">
+                        <Badge variant="outline" className="bg-yellow-50 text-xs">
                           Instant Payment (XAF)
                         </Badge>
                       </TableCell>
-                      <TableCell className="font-semibold text-green-600">
+                      <TableCell className="font-semibold text-green-600 text-xs sm:text-sm">
                         ${Number(payment.amount || 0).toFixed(2)}
                       </TableCell>
-                      <TableCell className="text-sm">{payment.notes}</TableCell>
+                      <TableCell className="text-xs sm:text-sm">{payment.notes}</TableCell>
                       <TableCell>
                         <Badge
                           variant={
@@ -321,12 +321,12 @@ export default async function AdminTransactionHistoryPage() {
                                 ? "destructive"
                                 : "secondary"
                           }
-                          className="capitalize"
+                          className="capitalize text-xs"
                         >
                           {payment.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
+                      <TableCell className="text-xs sm:text-sm text-muted-foreground">
                         {formatDistance(new Date(payment.created_at), new Date(), { addSuffix: true })}
                       </TableCell>
                     </TableRow>
@@ -334,7 +334,7 @@ export default async function AdminTransactionHistoryPage() {
                 ) : null}
                 {(!cryptoDeposits || cryptoDeposits.length === 0) && (!instantPayments || instantPayments.length === 0) ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground text-xs sm:text-sm">
                       No deposits found
                     </TableCell>
                   </TableRow>

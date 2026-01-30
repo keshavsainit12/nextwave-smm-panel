@@ -25,6 +25,9 @@ const nextConfig = {
     ],
   },
   
+  // Skip font optimization during build
+  optimizeFonts: false,
+  
   // Redirect domain configuration
   redirects: async () => {
     return [

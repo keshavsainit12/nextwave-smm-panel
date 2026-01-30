@@ -77,40 +77,41 @@ export default function ManageIconsPage() {
   }
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
-      <div>
-        <h1 className="text-3xl font-bold">Manage Icons</h1>
-        <p className="text-gray-600 mt-2">Add animated GIF icons to your services and categories</p>
+    <div className="space-y-3 sm:space-y-4 md:space-y-6">
+      <div className="bg-white dark:bg-slate-900 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 shadow-sm border border-gray-200 dark:border-gray-800">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Manage Icons</h1>
+        <p className="text-xs sm:text-sm text-muted-foreground mt-1">Add animated GIF icons to your services and categories</p>
       </div>
 
       {/* Categories */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Categories</CardTitle>
-          <CardDescription>Animated icons for service categories</CardDescription>
+      <Card className="bg-white dark:bg-slate-900 border-gray-200 dark:border-gray-800">
+        <CardHeader className="p-3 sm:p-4 md:p-6">
+          <CardTitle className="text-lg sm:text-xl">Categories</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">Animated icons for service categories</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="p-3 sm:p-4 md:p-6 space-y-3">
           {categories.length === 0 ? (
-            <p className="text-muted-foreground text-center py-6">No categories found</p>
+            <p className="text-xs sm:text-sm text-muted-foreground text-center py-6">No categories found</p>
           ) : (
             categories.map((cat) => (
-              <div key={cat.id} className="flex items-center justify-between p-4 border rounded-lg bg-muted/50">
-                <div className="flex items-center gap-3 flex-1">
+              <div key={cat.id} className="flex items-center justify-between p-3 sm:p-4 border rounded-lg bg-muted/50">
+                <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                   {cat.icon && (
                     <img
                       src={cat.icon || "/placeholder.svg"}
                       alt={cat.name}
-                      className="h-10 w-10 rounded object-contain bg-white p-1"
+                      className="h-8 w-8 sm:h-10 sm:w-10 rounded object-contain bg-white p-1 flex-shrink-0"
                       onError={(e) => (e.currentTarget.style.display = 'none')}
                     />
                   )}
-                  <div className="flex-1">
-                    <p className="font-medium">{cat.name}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm sm:text-base truncate">{cat.name}</p>
                     <p className="text-xs text-muted-foreground">{cat.icon ? '✓ Icon exists' : '⚠ No icon'}</p>
                   </div>
                 </div>
                 <Button
                   size="sm"
+                  className="flex-shrink-0 text-xs sm:text-sm"
                   onClick={() => {
                     setEditingId(cat.id)
                     setEditingType('category')
@@ -126,39 +127,39 @@ export default function ManageIconsPage() {
       </Card>
 
       {/* Services */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Services</CardTitle>
-          <CardDescription>Animated icons for individual services</CardDescription>
+      <Card className="bg-white dark:bg-slate-900 border-gray-200 dark:border-gray-800">
+        <CardHeader className="p-3 sm:p-4 md:p-6">
+          <CardTitle className="text-lg sm:text-xl">Services</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">Animated icons for individual services</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3 max-h-[600px] overflow-y-auto">
+        <CardContent className="p-3 sm:p-4 md:p-6 space-y-3 max-h-[600px] overflow-y-auto">
           {services.length === 0 ? (
-            <p className="text-muted-foreground text-center py-6">No services found</p>
+            <p className="text-xs sm:text-sm text-muted-foreground text-center py-6">No services found</p>
           ) : (
             services.map((service) => (
-              <div key={service.id} className="flex items-center justify-between p-4 border rounded-lg bg-muted/50">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div key={service.id} className="flex items-center justify-between p-3 sm:p-4 border rounded-lg bg-muted/50">
+                <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                   {service.icon && (
                     <img
                       src={service.icon || "/placeholder.svg"}
                       alt={service.name}
-                      className="h-10 w-10 rounded object-contain bg-white p-1 flex-shrink-0"
+                      className="h-8 w-8 sm:h-10 sm:w-10 rounded object-contain bg-white p-1 flex-shrink-0"
                       onError={(e) => (e.currentTarget.style.display = 'none')}
                     />
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{service.name}</p>
+                    <p className="font-medium text-sm sm:text-base truncate">{service.name}</p>
                     <p className="text-xs text-muted-foreground">{service.icon ? '✓ Icon exists' : '⚠ No icon'}</p>
                   </div>
                 </div>
                 <Button
                   size="sm"
+                  className="flex-shrink-0 text-xs sm:text-sm"
                   onClick={() => {
                     setEditingId(service.id)
                     setEditingType('service')
                     setEditingUrl(service.icon || '')
                   }}
-                  className="flex-shrink-0"
                 >
                   Upload
                 </Button>
@@ -170,28 +171,28 @@ export default function ManageIconsPage() {
 
       {/* Edit Dialog */}
       {editingId && (
-        <Card className="border-blue-300 bg-blue-50">
-          <CardHeader>
-            <CardTitle>Upload Icon</CardTitle>
+        <Card className="bg-blue-50 dark:bg-blue-950/30 border-blue-300 dark:border-blue-800">
+          <CardHeader className="p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-lg sm:text-xl">Upload Icon</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="p-3 sm:p-4 md:p-6 space-y-4">
             <div>
-              <Label>GIF URL</Label>
+              <Label className="text-xs sm:text-sm">GIF URL</Label>
               <Input
                 placeholder="https://blob.vercel-storage.com/..."
                 value={editingUrl}
                 onChange={(e) => setEditingUrl(e.target.value)}
-                className="mt-1"
+                className="mt-1 text-xs sm:text-sm"
               />
             </div>
             {editingUrl && (
               <div className="space-y-2">
-                <Label>Preview</Label>
-                <div className="flex items-center justify-center h-20 bg-white rounded border">
+                <Label className="text-xs sm:text-sm">Preview</Label>
+                <div className="flex items-center justify-center h-16 sm:h-20 bg-white rounded border">
                   <img
                     src={editingUrl || "/placeholder.svg"}
                     alt="preview"
-                    className="h-16 w-16 object-contain"
+                    className="h-12 w-12 sm:h-16 sm:w-16 object-contain"
                     onError={() => toast.error('Invalid image URL')}
                   />
                 </div>
@@ -200,6 +201,7 @@ export default function ManageIconsPage() {
             <div className="flex gap-2">
               <Button
                 variant="outline"
+                className="text-xs sm:text-sm"
                 onClick={() => {
                   setEditingId(null)
                   setEditingType(null)
@@ -208,7 +210,7 @@ export default function ManageIconsPage() {
               >
                 Cancel
               </Button>
-              <Button onClick={handleSaveIcon} disabled={submitting}>
+              <Button onClick={handleSaveIcon} disabled={submitting} className="text-xs sm:text-sm">
                 {submitting ? 'Saving...' : 'Save Icon'}
               </Button>
             </div>
@@ -217,7 +219,7 @@ export default function ManageIconsPage() {
       )}
 
       <Link href="/admin-panel-2024">
-        <Button variant="outline">← Back to Admin</Button>
+        <Button variant="outline" className="text-xs sm:text-sm">← Back to Admin</Button>
       </Link>
     </div>
   )
