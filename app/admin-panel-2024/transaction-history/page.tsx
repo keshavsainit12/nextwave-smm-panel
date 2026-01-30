@@ -218,7 +218,7 @@ export default async function AdminTransactionHistoryPage() {
                             variant={
                               order.status === "completed"
                                 ? "default"
-                                : order.status === "cancelled"
+                                : order.status === "canceled"
                                   ? "destructive"
                                   : "secondary"
                             }

@@ -60,7 +60,7 @@ const statusConfig = {
     text: "text-slate-600",
     progress: 10,
   },
-  cancelled: {
+  canceled: {
     label: "Canceled",
     bg: "bg-red-100",
     text: "text-red-700",
@@ -174,7 +174,7 @@ export function MobileOrdersHistory({ orders }: { orders: Order[] }) {
 
           {/* Filter Buttons */}
           <div className="flex gap-2 overflow-x-auto pb-1">
-            {["all", "in_progress", "completed", "pending", "cancelled"].map((status) => (
+            {["all", "in_progress", "completed", "pending", "canceled"].map((status) => (
               <button
                 key={status}
                 onClick={() => setFilterStatus(status)}
