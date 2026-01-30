@@ -7,14 +7,56 @@ import Image from "next/image"
 import { useEffect, useState } from "react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { createClient } from "@/lib/supabase/client"
-import { Menu, Bell } from "lucide-react"
+import { Menu, Bell, Crown, Star } from "lucide-react"
 
 export function DashboardHeader({ user }: { user: any }) {
   const [notifications, setNotifications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [userTier, setUserTier] = useState<any>(null)
 
   useEffect(() => {
     const supabase = createClient()
+
+    // Fetch user tier info
+    const fetchUserTier = async () => {
+      const { data } = await supabase
+        .from("users")
+        .select("tier, price_multiplier, total_spent")
+        .eq("id", user.id)
+        .single()
+      
+      if (data) {
+        let tierName = "Normal User"
+        let tierColor = "bg-gray-500"
+        let tierIcon = null
+        
+        if (data.price_multiplier) {
+          if (data.price_multiplier <= 2) {
+            tierName = "Reseller"
+            tierColor = "bg-purple-500"
+            tierIcon = <Star className="h-3 w-3" />
+          } else if (data.price_multiplier <= 2.5) {
+            tierName = "Bulk Buyer"
+            tierColor = "bg-blue-500"
+            tierIcon = <Star className="h-3 w-3" />
+          } else if (data.price_multiplier < 3) {
+            tierName = "VIP"
+            tierColor = "bg-yellow-500"
+            tierIcon = <Crown className="h-3 w-3" />
+          }
+        }
+        
+        setUserTier({
+          name: tierName,
+          color: tierColor,
+          icon: tierIcon,
+          multiplier: data.price_multiplier || 3.0,
+          totalSpent: data.total_spent || 0
+        })
+      }
+    }
+
+    fetchUserTier()
 
     // Fetch initial notifications
     const fetchNotifications = async () => {
@@ -127,6 +169,17 @@ export function DashboardHeader({ user }: { user: any }) {
         </div>
 
         <div className="hidden md:flex items-center gap-2 sm:gap-3">
+          {/* VIP Badge */}
+          {userTier && userTier.name !== "Normal User" && (
+            <Badge className={`${userTier.color} text-white border-0 px-3 py-1 flex items-center gap-1 animate-pulse`}>
+              {userTier.icon}
+              <span className="font-bold">{userTier.name}</span>
+              <span className="text-xs opacity-90">
+                ({(userTier.multiplier).toFixed(1)}x)
+              </span>
+            </Badge>
+          )}
+          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative h-9 w-9">
