@@ -5,6 +5,7 @@ import AdminSettingsForm from "@/components/admin/admin-settings-form"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertTriangle } from "lucide-react"
+import { cookies } from "next/headers"
 
 export default async function AdminSettingsPage() {
   const supabase = await createClient()
@@ -19,11 +20,10 @@ export default async function AdminSettingsPage() {
     {} as Record<string, string>,
   )
 
-  // Get current admin user
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
+  // Get admin user info from cookies (admin panel uses custom auth)
+  const cookieStore = await cookies()
+  const adminUserId = cookieStore.get("admin_user_id")?.value
+  const adminEmail = cookieStore.get("admin_email")?.value
 
   return (
     <div className="space-y-6">
@@ -40,8 +40,8 @@ export default async function AdminSettingsPage() {
 
         {/* Account Settings Tab */}
         <TabsContent value="account" className="space-y-6">
-          {user ? (
-            <AdminSettingsForm userId={user.id} userEmail={user.email || ""} />
+          {adminUserId && adminEmail ? (
+            <AdminSettingsForm userId={adminUserId} userEmail={adminEmail} />
           ) : (
             <Card>
               <CardHeader>
@@ -53,9 +53,7 @@ export default async function AdminSettingsPage() {
                   <AlertTriangle className="h-4 w-4" />
                   <AlertTitle>Authentication Error</AlertTitle>
                   <AlertDescription>
-                    {authError 
-                      ? `Error: ${authError.message}` 
-                      : "Could not retrieve your account information. Please try logging out and logging back in."}
+                    Admin session expired or invalid. Please log out and log back in.
                   </AlertDescription>
                 </Alert>
               </CardContent>
