@@ -19,6 +19,7 @@ export default async function AdminOrdersPage() {
   // Transform orders - service icon fallback no longer needed
   const transformedOrders = orders?.map((order: any) => ({
     ...order,
+    order_id: order.id, // Add order_id for display in OrderList component
     services: {
       ...order.services,
       icon: order.services?.icon,

@@ -73,9 +73,9 @@ export async function cancelOrder(orderId: string, reason: string) {
 
     console.log("[v0] Order found successfully:", { orderId, userId: order.user_id, amount: order.price, status: order.status })
 
-    // Check if order is already cancelled
+    // Check if order is already canceled
     if (order.status === "cancelled" || order.status === "canceled") {
-      return { error: "Order is already cancelled" }
+      return { error: "Order is already canceled" }
     }
 
     // Get current user balance
@@ -110,8 +110,8 @@ export async function cancelOrder(orderId: string, reason: string) {
     const { error: updateError } = await supabase
       .from("orders")
       .update({
-        status: "cancelled",
-        admin_notes: reason || "Cancelled by admin",
+        status: "canceled",
+        admin_notes: reason || "Canceled by admin",
         updated_at: new Date().toISOString(),
       })
       .eq("id", orderId)
@@ -121,12 +121,12 @@ export async function cancelOrder(orderId: string, reason: string) {
       return { error: "Failed to update order status: " + updateError.message }
     }
 
-    console.log("[v0] Order cancelled successfully:", orderId)
+    console.log("[v0] Order canceled successfully:", orderId)
 
     // Log activity
     await supabase.from("activity_logs").insert({
       user_id: order.user_id,
-      action: "order_cancelled",
+      action: "order_canceled",
       entity_type: "order",
       entity_id: orderId,
       details: {
