@@ -8,6 +8,7 @@ export async function updateUser(
   data: {
     balance?: number
     tier?: number
+    price_multiplier?: number
     status?: string
     full_name?: string | null
   },
@@ -26,6 +27,7 @@ export async function updateUser(
 
     revalidatePath("/admin-panel-2024/users")
     revalidatePath("/admin-panel-2024")
+    revalidatePath("/dashboard")
 
     console.log("[v0] User updated successfully")
     return { success: true }

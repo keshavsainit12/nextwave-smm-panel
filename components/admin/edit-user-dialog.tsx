@@ -43,14 +43,39 @@ export function EditUserDialog({ user }: EditUserDialogProps) {
     setLoading(true)
 
     try {
+      // Determine price_multiplier based on tier
+      const selectedTier = Number(tier)
+      let priceMultiplier = 3.0 // Default for tier 1
+      
+      switch (selectedTier) {
+        case 1:
+          priceMultiplier = 3.0 // Normal User
+          break
+        case 2:
+          priceMultiplier = 2.5 // Bulk Buyer
+          break
+        case 3:
+          priceMultiplier = 2.0 // Reseller
+          break
+        case 4:
+          priceMultiplier = 2.8 // VIP
+          break
+        default:
+          priceMultiplier = 3.0
+      }
+
       await updateUser(user.id, {
         balance: Number(balance),
-        tier: Number(tier),
+        tier: selectedTier,
+        price_multiplier: priceMultiplier,
         status,
         full_name: fullName || null,
       })
-      toast.success(`User ${user.email} updated successfully!`)
+      toast.success(`User ${user.email} updated successfully! Tier set to ${selectedTier} with ${priceMultiplier}x multiplier`)
       setOpen(false)
+      
+      // Force a page refresh to update the UI
+      window.location.reload()
     } catch (error) {
       toast.error("Failed to update user")
     } finally {

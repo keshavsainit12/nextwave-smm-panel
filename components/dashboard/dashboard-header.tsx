@@ -57,6 +57,24 @@ export function DashboardHeader({ user }: { user: any }) {
     }
 
     fetchUserTier()
+    
+    // Set up real-time subscription to user changes
+    const userChannel = supabase
+      .channel("user-tier-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "users",
+          filter: `id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log("[v0] User tier updated, refreshing badge...")
+          fetchUserTier()
+        }
+      )
+      .subscribe()
 
     // Fetch initial notifications
     const fetchNotifications = async () => {
@@ -135,6 +153,7 @@ export function DashboardHeader({ user }: { user: any }) {
       .subscribe()
 
     return () => {
+      supabase.removeChannel(userChannel)
       supabase.removeChannel(ticketChannel)
     }
   }, [user.id])
