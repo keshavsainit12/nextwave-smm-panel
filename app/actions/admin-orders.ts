@@ -91,7 +91,8 @@ export async function cancelOrder(orderId: string, reason: string) {
     }
 
     // Calculate new balance
-    const newBalance = (userData.balance || 0) + order.price
+    const balanceBefore = userData.balance || 0
+    const newBalance = balanceBefore + order.price
 
     // Update user balance
     const { error: updateBalanceError } = await supabase
@@ -105,6 +106,27 @@ export async function cancelOrder(orderId: string, reason: string) {
     }
 
     console.log("[v0] Balance refunded successfully for user:", order.user_id, "new balance:", newBalance)
+
+    // Create refund transaction record
+    const { error: transactionError } = await supabase
+      .from("transactions")
+      .insert({
+        user_id: order.user_id,
+        order_id: orderId,
+        type: "refund",
+        amount: order.price,
+        balance_before: balanceBefore,
+        balance_after: newBalance,
+        status: "completed",
+        notes: `Refund for canceled order: ${reason || "Canceled by admin"}`,
+      })
+
+    if (transactionError) {
+      console.error("[v0] Transaction record error:", transactionError)
+      // Non-critical - balance was already updated, just log the error
+    } else {
+      console.log("[v0] Refund transaction record created successfully")
+    }
 
     // Update order status
     const { error: updateError } = await supabase
