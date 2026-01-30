@@ -1,10 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import * as bcrypt from "bcryptjs"
+import { createAdminClient } from "@/lib/supabase/admin"
 
-// Admin credentials
-const ADMIN_USERNAME = "admin202502"
-const ADMIN_PASSWORD_HASH = bcrypt.hashSync("admin@123", 10)
 const ADMIN_EMAIL = "admin@nextwavesmm.com" // Admin email for settings
 const ADMIN_USER_ID = "00000000-0000-0000-0000-000000000001" // Fixed admin user ID
 
@@ -12,8 +10,21 @@ export async function POST(request: NextRequest) {
   try {
     const { username, password } = await request.json()
 
-    // Verify credentials
-    if (username === ADMIN_USERNAME && bcrypt.compareSync(password, ADMIN_PASSWORD_HASH)) {
+    // Get admin credentials from database
+    const supabase = createAdminClient()
+    const { data: adminCreds, error } = await supabase
+      .from("admin_credentials")
+      .select("username, password_hash, email, user_id")
+      .eq("username", username)
+      .single()
+
+    if (error || !adminCreds) {
+      console.error("[v0] Admin credentials fetch error:", error)
+      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
+    }
+
+    // Verify password
+    if (bcrypt.compareSync(password, adminCreds.password_hash)) {
       // Set admin session cookie with user info
       const cookieStore = await cookies()
       
@@ -27,7 +38,7 @@ export async function POST(request: NextRequest) {
       })
       
       // Store admin user ID
-      cookieStore.set("admin_user_id", ADMIN_USER_ID, {
+      cookieStore.set("admin_user_id", adminCreds.user_id || ADMIN_USER_ID, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
@@ -36,7 +47,16 @@ export async function POST(request: NextRequest) {
       })
       
       // Store admin email
-      cookieStore.set("admin_email", ADMIN_EMAIL, {
+      cookieStore.set("admin_email", adminCreds.email || ADMIN_EMAIL, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+        path: "/",
+      })
+      
+      // Store admin username for display
+      cookieStore.set("admin_username", adminCreds.username, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
@@ -49,6 +69,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
   } catch (error) {
+    console.error("[v0] Login error:", error)
     return NextResponse.json({ error: "Login failed" }, { status: 500 })
   }
 }

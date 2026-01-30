@@ -5,8 +5,6 @@ import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 import * as bcrypt from "bcryptjs"
 
-// Note: For admin panel custom auth, password/username changes require updating the login route
-// This is a simplified implementation that validates inputs but actual updates need to be done in the login route
 export async function changeAdminPassword(params: {
   userId: string
   currentPassword: string
@@ -31,28 +29,47 @@ export async function changeAdminPassword(params: {
       return { success: false, error: "New password must be different from current password" }
     }
 
-    // Verify current password against admin credentials
-    // The admin password hash is stored in /app/api/admin/login/route.ts
-    const ADMIN_PASSWORD_HASH = bcrypt.hashSync("admin@123", 10)
+    const supabase = createAdminClient()
     
-    if (!bcrypt.compareSync(params.currentPassword, ADMIN_PASSWORD_HASH)) {
+    // Get current admin credentials from database
+    const { data: adminCreds, error: fetchError } = await supabase
+      .from("admin_credentials")
+      .select("password_hash, username")
+      .eq("user_id", params.userId)
+      .single()
+
+    if (fetchError || !adminCreds) {
+      console.error("[v0] Fetch admin credentials error:", fetchError)
+      return { success: false, error: "Failed to retrieve admin credentials" }
+    }
+
+    // Verify current password
+    if (!bcrypt.compareSync(params.currentPassword, adminCreds.password_hash)) {
       return { success: false, error: "Current password is incorrect" }
     }
 
-    // Note: In a production system, you would:
-    // 1. Store the password hash in a database or environment variable
-    // 2. Update it here using the admin client
-    // 3. For now, we'll return success with a message
-    
-    // Log the new password hash for manual update
+    // Hash new password
     const newPasswordHash = bcrypt.hashSync(params.newPassword, 10)
-    console.log("[v0] New admin password hash:", newPasswordHash)
-    console.log("[v0] Update this hash in /app/api/admin/login/route.ts")
+    
+    // Update password in database
+    const { error: updateError } = await supabase
+      .from("admin_credentials")
+      .update({ 
+        password_hash: newPasswordHash,
+        updated_at: new Date().toISOString()
+      })
+      .eq("user_id", params.userId)
 
+    if (updateError) {
+      console.error("[v0] Update password error:", updateError)
+      return { success: false, error: "Failed to update password" }
+    }
+
+    console.log("[v0] Admin password updated successfully for user:", params.userId)
     revalidatePath("/admin-panel-2024/settings")
     return { 
       success: true, 
-      message: "Password validated. Note: For security, admin password changes require updating the login route code. Contact your developer to update the ADMIN_PASSWORD_HASH in /app/api/admin/login/route.ts with the new hash logged in the server console." 
+      message: "Password changed successfully" 
     }
   } catch (error) {
     console.error("[v0] Change password error:", error)
@@ -72,15 +89,49 @@ export async function changeAdminUsername(params: {
       return { success: false, error: "Username must be at least 3 characters" }
     }
 
-    // For admin panel custom auth, username is hardcoded in login route
-    // Log the new username for manual update
-    console.log("[v0] New admin username:", params.newUsername)
-    console.log("[v0] Update ADMIN_USERNAME in /app/api/admin/login/route.ts")
+    const supabase = createAdminClient()
+    
+    // Check if username already exists (for future multi-admin support)
+    const { data: existing, error: checkError } = await supabase
+      .from("admin_credentials")
+      .select("id")
+      .eq("username", params.newUsername)
+      .neq("user_id", params.userId)
+      .single()
 
+    if (existing) {
+      return { success: false, error: "Username already taken" }
+    }
+
+    // Update username in database
+    const { error: updateError } = await supabase
+      .from("admin_credentials")
+      .update({ 
+        username: params.newUsername,
+        updated_at: new Date().toISOString()
+      })
+      .eq("user_id", params.userId)
+
+    if (updateError) {
+      console.error("[v0] Update username error:", updateError)
+      return { success: false, error: "Failed to update username" }
+    }
+
+    // Update username cookie so it's immediately reflected
+    const cookieStore = await cookies()
+    cookieStore.set("admin_username", params.newUsername, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 7,
+      path: "/",
+    })
+
+    console.log("[v0] Admin username updated successfully to:", params.newUsername)
     revalidatePath("/admin-panel-2024/settings")
     return { 
       success: true, 
-      message: "Username validated. Note: For security, admin username changes require updating the login route code. Contact your developer to update the ADMIN_USERNAME in /app/api/admin/login/route.ts to: " + params.newUsername 
+      message: "Username changed successfully. Please use your new username on next login." 
     }
   } catch (error) {
     console.error("[v0] Change username error:", error)

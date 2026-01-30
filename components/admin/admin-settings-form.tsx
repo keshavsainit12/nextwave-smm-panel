@@ -14,13 +14,14 @@ import { toast } from "sonner"
 interface AdminSettingsFormProps {
   userId: string
   userEmail: string
+  initialUsername?: string
 }
 
-export default function AdminSettingsForm({ userId, userEmail }: AdminSettingsFormProps) {
+export default function AdminSettingsForm({ userId, userEmail, initialUsername }: AdminSettingsFormProps) {
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-  const [currentUsername, setCurrentUsername] = useState("admin202502")
+  const [currentUsername, setCurrentUsername] = useState(initialUsername || "admin202502")
   const [newUsername, setNewUsername] = useState("")
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false)
   const [loadingPassword, setLoadingPassword] = useState(false)

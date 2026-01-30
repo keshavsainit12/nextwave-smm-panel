@@ -24,6 +24,7 @@ export default async function AdminSettingsPage() {
   const cookieStore = await cookies()
   const adminUserId = cookieStore.get("admin_user_id")?.value
   const adminEmail = cookieStore.get("admin_email")?.value
+  const adminUsername = cookieStore.get("admin_username")?.value || "admin202502"
 
   return (
     <div className="space-y-6">
@@ -41,7 +42,7 @@ export default async function AdminSettingsPage() {
         {/* Account Settings Tab */}
         <TabsContent value="account" className="space-y-6">
           {adminUserId && adminEmail ? (
-            <AdminSettingsForm userId={adminUserId} userEmail={adminEmail} />
+            <AdminSettingsForm userId={adminUserId} userEmail={adminEmail} initialUsername={adminUsername} />
           ) : (
             <Card>
               <CardHeader>
