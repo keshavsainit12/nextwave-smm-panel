@@ -27,7 +27,7 @@ export default async function AdminTransactionHistoryPage() {
     // Fetch all orders - ONLY COMPLETED ONES
     const { data: ordersData, error: ordersError } = await supabase
       .from("orders")
-      .select("*, services(name, category, provider_price), users(email, full_name, balance)")
+      .select("*, services(name, category_id, provider_price), users(email, full_name, balance)")
       .eq("status", "completed")
       .order("created_at", { ascending: false })
       .limit(100)
@@ -42,7 +42,7 @@ export default async function AdminTransactionHistoryPage() {
     // Fetch all crypto deposits - ONLY APPROVED ONES
     const { data: cryptoDepositsData, error: cryptoError } = await supabase
       .from("crypto_deposits")
-      .select("*, crypto_currency_id(symbol, name), users(email, full_name)")
+      .select("*, crypto_currencies(symbol, name), users(email, full_name)")
       .eq("status", "approved")
       .order("created_at", { ascending: false })
       .limit(100)
@@ -272,13 +272,13 @@ export default async function AdminTransactionHistoryPage() {
                       <TableCell className="font-medium">{deposit.users?.full_name || deposit.users?.email}</TableCell>
                       <TableCell>
                         <Badge variant="outline">
-                          Crypto - {deposit.crypto_currency_id?.symbol}
+                          Crypto - {deposit.crypto_currencies?.symbol}
                         </Badge>
                       </TableCell>
                       <TableCell className="font-semibold text-green-600">
                         ${Number(deposit.amount || 0).toFixed(2)}
                       </TableCell>
-                      <TableCell className="text-sm">{deposit.crypto_amount} {deposit.crypto_currency_id?.symbol}</TableCell>
+                      <TableCell className="text-sm">{deposit.crypto_amount} {deposit.crypto_currencies?.symbol}</TableCell>
                       <TableCell>
                         <Badge
                           variant={
