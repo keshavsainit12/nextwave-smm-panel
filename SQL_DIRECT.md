@@ -12,8 +12,36 @@
 -- 1. users table (main system)
 -- 2. admin_credentials table (admin panel login)
 -- Both are linked with foreign key!
+-- ✅ Works even if no tables exist yet!
 
--- Step 1: Create admin user in users table
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Step 1: Create users table (if doesn't exist)
+-- This creates the main users table
+CREATE TABLE IF NOT EXISTS users (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  email TEXT NOT NULL UNIQUE,
+  full_name TEXT,
+  role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin', 'reseller')),
+  balance DECIMAL DEFAULT 0 CHECK (balance >= 0),
+  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'banned', 'suspended')),
+  api_key TEXT UNIQUE,
+  referral_code TEXT UNIQUE,
+  referred_by UUID REFERENCES users(id),
+  total_orders INTEGER DEFAULT 0,
+  total_spent DECIMAL DEFAULT 0,
+  tier INTEGER DEFAULT 1,
+  price_multiplier DECIMAL DEFAULT 3.0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create indexes for performance
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+
+-- Step 2: Create admin user in users table
 -- This makes admin a real user in the system
 INSERT INTO users (
   id,
@@ -22,6 +50,8 @@ INSERT INTO users (
   role,
   balance,
   status,
+  tier,
+  price_multiplier,
   created_at,
   updated_at
 ) VALUES (
@@ -31,14 +61,18 @@ INSERT INTO users (
   'admin',
   10000.00,
   'active',
+  4,
+  2.8,
   NOW(),
   NOW()
 ) ON CONFLICT (email) DO UPDATE SET
   role = 'admin',
   full_name = 'Admin User',
+  tier = 4,
+  price_multiplier = 2.8,
   updated_at = NOW();
 
--- Step 2: Create admin_credentials table (if doesn't exist)
+-- Step 3: Create admin_credentials table (if doesn't exist)
 -- This table stores admin panel login credentials
 CREATE TABLE IF NOT EXISTS admin_credentials (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -54,7 +88,7 @@ CREATE TABLE IF NOT EXISTS admin_credentials (
 CREATE INDEX IF NOT EXISTS idx_admin_credentials_username ON admin_credentials(username);
 CREATE INDEX IF NOT EXISTS idx_admin_credentials_user_id ON admin_credentials(user_id);
 
--- Step 3: Insert/Update admin credentials (linked to user)
+-- Step 4: Insert/Update admin credentials (linked to user)
 -- Password: admin@123 (bcrypt hashed)
 INSERT INTO admin_credentials (
   username,

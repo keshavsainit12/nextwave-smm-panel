@@ -17,7 +17,33 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ========================================
--- STEP 1: Create admin user in users table
+-- STEP 1: Create users table (if doesn't exist)
+-- ========================================
+-- Note: Simplified version without auth.users FK for admin setup
+CREATE TABLE IF NOT EXISTS users (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  email TEXT NOT NULL UNIQUE,
+  full_name TEXT,
+  role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin', 'reseller')),
+  balance DECIMAL DEFAULT 0 CHECK (balance >= 0),
+  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'banned', 'suspended')),
+  api_key TEXT UNIQUE,
+  referral_code TEXT UNIQUE,
+  referred_by UUID REFERENCES users(id),
+  total_orders INTEGER DEFAULT 0,
+  total_spent DECIMAL DEFAULT 0,
+  tier INTEGER DEFAULT 1,
+  price_multiplier DECIMAL DEFAULT 3.0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create indexes for performance
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+
+-- ========================================
+-- STEP 2: Create admin user in users table
 -- ========================================
 INSERT INTO users (
   id,
@@ -26,6 +52,8 @@ INSERT INTO users (
   role,
   balance,
   status,
+  tier,
+  price_multiplier,
   created_at,
   updated_at
 ) VALUES (
@@ -35,15 +63,19 @@ INSERT INTO users (
   'admin',
   10000.00,
   'active',
+  4,
+  2.8,
   NOW(),
   NOW()
 ) ON CONFLICT (email) DO UPDATE SET
   role = 'admin',
   full_name = 'Admin User',
+  tier = 4,
+  price_multiplier = 2.8,
   updated_at = NOW();
 
 -- ========================================
--- STEP 2: Create admin_credentials table (linked to users)
+-- STEP 3: Create admin_credentials table (linked to users)
 -- ========================================
 CREATE TABLE IF NOT EXISTS admin_credentials (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -60,7 +92,7 @@ CREATE INDEX IF NOT EXISTS idx_admin_credentials_username ON admin_credentials(u
 CREATE INDEX IF NOT EXISTS idx_admin_credentials_user_id ON admin_credentials(user_id);
 
 -- ========================================
--- STEP 3: Insert/Update admin credentials (linked to user)
+-- STEP 4: Insert/Update admin credentials (linked to user)
 -- ========================================
 -- Password: admin@123
 -- Bcrypt hash: $2b$10$xAZfhfccemWZ.3qSG2Zpz.KJg15724ESXNnREOIwBNhkVXd9OGiVK
