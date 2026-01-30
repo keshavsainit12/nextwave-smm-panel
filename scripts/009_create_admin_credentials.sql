@@ -12,12 +12,15 @@ CREATE TABLE IF NOT EXISTS admin_credentials (
 );
 
 -- Insert default admin credentials
+-- ⚠️ IMPORTANT: Default login credentials
 -- Username: admin202502
--- Password: admin@123 (hashed with bcrypt)
+-- Password: admin@123
+-- 
+-- After first login, please change these credentials from Settings > Account
 INSERT INTO admin_credentials (username, password_hash, email, user_id)
 VALUES (
   'admin202502',
-  '$2a$10$8vJ8K9X4eYzQx3Y0Z1X5Xu6H8L7P4Q5R6S7T8U9V0W1X2Y3Z4A5B6',
+  '$2b$10$xAZfhfccemWZ.3qSG2Zpz.KJg15724ESXNnREOIwBNhkVXd9OGiVK',
   'admin@nextwavesmm.com',
   '00000000-0000-0000-0000-000000000001'
 )
