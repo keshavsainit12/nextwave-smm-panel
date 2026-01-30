@@ -33,26 +33,26 @@ export default function AutoUpdateIconsPage() {
   }
 
   return (
-    <div className="space-y-6 p-4 md:p-6 max-w-2xl mx-auto">
-      <div>
-        <h1 className="text-3xl font-bold">Auto-Update All Icons</h1>
-        <p className="text-gray-600 mt-2">Automatically match and update all service icons from your uploaded GIFs</p>
+    <div className="space-y-3 sm:space-y-4 md:space-y-6 max-w-2xl mx-auto">
+      <div className="bg-white dark:bg-slate-900 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 shadow-sm border border-gray-200 dark:border-gray-800">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Auto-Update All Icons</h1>
+        <p className="text-xs sm:text-sm text-muted-foreground mt-1">Automatically match and update all service icons from your uploaded GIFs</p>
       </div>
 
-      <Card className="border-blue-200 bg-blue-50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-blue-600" />
+      <Card className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
+        <CardHeader className="p-3 sm:p-4 md:p-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
             Ready to Update
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-xs sm:text-sm">
             Click the button below to automatically map and update all 8 icons to your services
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="p-3 sm:p-4 md:p-6 space-y-4">
           <div className="space-y-2">
-            <h3 className="font-semibold text-sm">Icons to be updated:</h3>
-            <ul className="text-sm space-y-1 text-gray-700">
+            <h3 className="font-semibold text-xs sm:text-sm">Icons to be updated:</h3>
+            <ul className="text-xs sm:text-sm space-y-1">
               <li>✓ TikTok</li>
               <li>✓ Discord</li>
               <li>✓ YouTube</li>
@@ -67,17 +67,17 @@ export default function AutoUpdateIconsPage() {
           <Button
             onClick={handleAutoUpdate}
             disabled={loading}
-            className="w-full gap-2 bg-blue-600 hover:bg-blue-700"
+            className="w-full gap-2 bg-blue-600 hover:bg-blue-700 text-xs sm:text-sm"
             size="lg"
           >
             {loading ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
                 Updating Icons...
               </>
             ) : (
               <>
-                <Check className="h-4 w-4" />
+                <Check className="h-3 w-3 sm:h-4 sm:w-4" />
                 Auto-Update All Icons Now
               </>
             )}
@@ -86,18 +86,18 @@ export default function AutoUpdateIconsPage() {
       </Card>
 
       {results && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Update Results</CardTitle>
+        <Card className="bg-white dark:bg-slate-900 border-gray-200 dark:border-gray-800">
+          <CardHeader className="p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-base sm:text-lg">Update Results</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="p-3 sm:p-4 md:p-6 space-y-4">
             {results.updated.length > 0 && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <p className="font-semibold text-green-900 mb-2">Successfully Updated ({results.updated.length})</p>
-                <ul className="text-sm text-green-800 space-y-1">
+              <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900 rounded-lg p-3 sm:p-4">
+                <p className="font-semibold text-green-900 dark:text-green-100 mb-2 text-xs sm:text-sm">Successfully Updated ({results.updated.length})</p>
+                <ul className="text-xs sm:text-sm space-y-1">
                   {results.updated.map((name: string) => (
                     <li key={name} className="flex items-center gap-2">
-                      <Check className="h-4 w-4" />
+                      <Check className="h-3 w-3 sm:h-4 sm:w-4" />
                       {name}
                     </li>
                   ))}
@@ -106,12 +106,12 @@ export default function AutoUpdateIconsPage() {
             )}
 
             {results.failed.length > 0 && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="font-semibold text-red-900 mb-2">Failed ({results.failed.length})</p>
-                <ul className="text-sm text-red-800 space-y-1">
+              <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg p-3 sm:p-4">
+                <p className="font-semibold text-red-900 dark:text-red-100 mb-2 text-xs sm:text-sm">Failed ({results.failed.length})</p>
+                <ul className="text-xs sm:text-sm space-y-1">
                   {results.failed.map((item: any) => (
                     <li key={item.name} className="flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4" />
+                      <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4" />
                       {item.name}: {item.error}
                     </li>
                   ))}
@@ -122,11 +122,11 @@ export default function AutoUpdateIconsPage() {
         </Card>
       )}
 
-      <Card className="bg-green-50 border-green-200">
-        <CardHeader>
-          <CardTitle className="text-lg">What Happens Next?</CardTitle>
+      <Card className="bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800">
+        <CardHeader className="p-3 sm:p-4 md:p-6">
+          <CardTitle className="text-base sm:text-lg">What Happens Next?</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3 text-sm">
+        <CardContent className="p-3 sm:p-4 md:p-6 space-y-3 text-xs sm:text-sm">
           <p>✓ All 8 animated GIF icons will be automatically added to your services</p>
           <p>✓ Icons will display on the dashboard, service cards, category tabs, and order pages</p>
           <p>✓ Users will see animated icons next to every service they can order</p>
@@ -135,7 +135,7 @@ export default function AutoUpdateIconsPage() {
       </Card>
 
       <Link href="/admin-panel-2024">
-        <Button variant="outline" className="w-full bg-transparent">← Back to Admin</Button>
+        <Button variant="outline" className="w-full text-xs sm:text-sm">← Back to Admin</Button>
       </Link>
     </div>
   )

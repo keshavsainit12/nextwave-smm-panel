@@ -138,30 +138,30 @@ export default function IconManagerPage() {
   }
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
-      <div>
-        <h1 className="text-3xl font-bold">Icon Manager</h1>
-        <p className="text-gray-600 mt-2">Update icons for each platform. When you update an icon, it automatically applies to all services and categories under that platform.</p>
+    <div className="space-y-3 sm:space-y-4 md:space-y-6">
+      <div className="bg-white dark:bg-slate-900 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 shadow-sm border border-gray-200 dark:border-gray-800">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Icon Manager</h1>
+        <p className="text-xs sm:text-sm text-muted-foreground mt-1">Update icons for each platform. When you update an icon, it automatically applies to all services and categories under that platform.</p>
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid gap-3 sm:gap-4">
         {MAIN_CATEGORIES.map(categoryName => (
-          <Card key={categoryName} className="overflow-hidden">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
+          <Card key={categoryName} className="overflow-hidden bg-white dark:bg-slate-900 border-gray-200 dark:border-gray-800">
+            <CardHeader className="pb-3 p-3 sm:p-4 md:p-6">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-2 sm:gap-3">
                   {icons[categoryName] && (
                     <img
                       src={icons[categoryName] || "/placeholder.svg"}
                       alt={categoryName}
-                      className="h-12 w-12 rounded-lg object-contain bg-muted p-1"
+                      className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg object-contain bg-muted p-1"
                       onError={(e) => {
                         e.currentTarget.style.display = 'none'
                       }}
                     />
                   )}
                   <div>
-                    <CardTitle>{categoryName}</CardTitle>
+                    <CardTitle className="text-base sm:text-lg">{categoryName}</CardTitle>
                     {icons[categoryName] ? (
                       <p className="text-xs text-green-600 font-medium mt-1">✓ Icon uploaded</p>
                     ) : (
@@ -176,16 +176,16 @@ export default function IconManagerPage() {
                     variant="destructive"
                     onClick={() => handleDelete(categoryName)}
                     disabled={updating === categoryName}
-                    className="gap-2"
+                    className="gap-2 text-xs sm:text-sm"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                     Delete
                   </Button>
                 )}
               </div>
             </CardHeader>
 
-            <CardContent className="space-y-4">
+            <CardContent className="p-3 sm:p-4 md:p-6 space-y-4">
               {/* URL Input */}
               <div className="space-y-2">
                 <Label htmlFor={`url-${categoryName}`}>GIF URL from Vercel Blob</Label>
@@ -240,11 +240,11 @@ export default function IconManagerPage() {
       </div>
 
       {/* Info Box */}
-      <Card className="bg-blue-50 border-blue-200">
-        <CardHeader>
-          <CardTitle className="text-lg">How It Works</CardTitle>
+      <Card className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
+        <CardHeader className="p-3 sm:p-4 md:p-6">
+          <CardTitle className="text-base sm:text-lg">How It Works</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3 text-sm">
+        <CardContent className="p-3 sm:p-4 md:p-6 space-y-3 text-xs sm:text-sm">
           <div>
             <p className="font-semibold mb-1">1. Upload GIF to Vercel Blob</p>
             <p className="text-muted-foreground">
@@ -272,7 +272,7 @@ export default function IconManagerPage() {
       </Card>
 
       <Link href="/admin-panel-2024">
-        <Button variant="outline">← Back to Admin</Button>
+        <Button variant="outline" className="text-xs sm:text-sm">← Back to Admin</Button>
       </Link>
     </div>
   )

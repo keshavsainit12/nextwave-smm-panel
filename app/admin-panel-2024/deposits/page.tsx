@@ -20,8 +20,10 @@ export default async function AdminDepositsPage() {
 
   if (error) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold tracking-tight">Crypto Deposits</h1>
+      <div className="space-y-3 sm:space-y-4 md:space-y-6">
+        <div className="bg-white dark:bg-slate-900 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 shadow-sm border border-gray-200 dark:border-gray-800">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Crypto Deposits</h1>
+        </div>
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>Failed to load deposits: {error.message}</AlertDescription>
@@ -71,25 +73,25 @@ export default async function AdminDepositsPage() {
   const pendingCount = enrichedDeposits?.filter((d) => d.status === "pending").length || 0
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Crypto Deposits</h1>
-          <p className="text-muted-foreground">Review and approve user crypto deposits</p>
+    <div className="space-y-3 sm:space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 bg-white dark:bg-slate-900 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 shadow-sm border border-gray-200 dark:border-gray-800">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Crypto Deposits</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">Review and approve user crypto deposits</p>
         </div>
         {pendingCount > 0 && (
-          <div className="bg-yellow-100 dark:bg-yellow-900/20 px-4 py-2 rounded-lg">
-            <span className="text-sm font-medium">{pendingCount} pending approval</span>
+          <div className="bg-yellow-100 dark:bg-yellow-900/20 px-3 py-2 rounded-lg flex-shrink-0">
+            <span className="text-xs sm:text-sm font-medium">{pendingCount} pending approval</span>
           </div>
         )}
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>All Deposits ({enrichedDeposits?.length || 0})</CardTitle>
-          <CardDescription>Review crypto payment submissions from users</CardDescription>
+      <Card className="bg-white dark:bg-slate-900 border-gray-200 dark:border-gray-800">
+        <CardHeader className="p-3 sm:p-4 md:p-6">
+          <CardTitle className="text-lg sm:text-xl">All Deposits ({enrichedDeposits?.length || 0})</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">Review crypto payment submissions from users</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-4 md:p-6 overflow-x-auto">
           <CryptoDepositList deposits={enrichedDeposits || []} />
         </CardContent>
       </Card>

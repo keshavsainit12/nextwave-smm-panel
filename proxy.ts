@@ -5,6 +5,9 @@ export async function middleware(request: NextRequest) {
   return await updateSession(request)
 }
 
+// Export the same function as proxy for Next.js 16 compatibility
+export { middleware as proxy }
+
 export const config = {
   matcher: [
     /*

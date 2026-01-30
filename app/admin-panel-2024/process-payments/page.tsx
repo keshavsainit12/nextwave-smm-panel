@@ -98,21 +98,21 @@ export default function ProcessPendingPaymentsPage() {
   )
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Process Pending Payments</h1>
-        <p className="text-muted-foreground">Process instant gateway payments for individual users or all at once</p>
+    <div className="space-y-3 sm:space-y-4 md:space-y-6">
+      <div className="bg-white dark:bg-slate-900 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 shadow-sm border border-gray-200 dark:border-gray-800">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Process Pending Payments</h1>
+        <p className="text-xs sm:text-sm text-muted-foreground mt-1">Process instant gateway payments for individual users or all at once</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
         {/* Pending Users List */}
         <div className="lg:col-span-2 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Pending Payments List</CardTitle>
-              <CardDescription>Users with pending instant payments</CardDescription>
+          <Card className="bg-white dark:bg-slate-900 border-gray-200 dark:border-gray-800">
+            <CardHeader className="p-3 sm:p-4 md:p-6">
+              <CardTitle className="text-lg sm:text-xl">Pending Payments List</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Users with pending instant payments</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="p-3 sm:p-4 md:p-6 space-y-4">
               {/* Search Box */}
               <div className="space-y-2">
                 <Label htmlFor="search" className="text-sm font-medium">Search Users</Label>
@@ -181,12 +181,12 @@ export default function ProcessPendingPaymentsPage() {
 
         {/* Process Payment Panel */}
         <div>
-          <Card className="sticky top-4">
-            <CardHeader>
-              <CardTitle>Process Payment</CardTitle>
-              <CardDescription>Single or bulk processing</CardDescription>
+          <Card className="sticky top-4 bg-white dark:bg-slate-900 border-gray-200 dark:border-gray-800">
+            <CardHeader className="p-3 sm:p-4 md:p-6">
+              <CardTitle className="text-lg sm:text-xl">Process Payment</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Single or bulk processing</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="p-3 sm:p-4 md:p-6 space-y-4">
               {/* Selected User Info */}
               {selectedUser && (
                 <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-900">
@@ -267,21 +267,21 @@ export default function ProcessPendingPaymentsPage() {
 
       {/* Results Display */}
       {result && (
-        <Card>
-          <CardHeader>
+        <Card className="bg-white dark:bg-slate-900 border-gray-200 dark:border-gray-800">
+          <CardHeader className="p-3 sm:p-4 md:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Processing Results</CardTitle>
-                <CardDescription>Summary of processed payments</CardDescription>
+                <CardTitle className="text-lg sm:text-xl">Processing Results</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">Summary of processed payments</CardDescription>
               </div>
               {result.success ? (
-                <Badge className="bg-green-600">Success</Badge>
+                <Badge className="bg-green-600 text-xs">Success</Badge>
               ) : (
-                <Badge variant="destructive">Failed</Badge>
+                <Badge variant="destructive" className="text-xs">Failed</Badge>
               )}
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="p-3 sm:p-4 md:p-6 space-y-4">
             <div className="grid grid-cols-3 gap-4">
               <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-900">
                 <p className="text-sm text-muted-foreground">Processed</p>
