@@ -49,6 +49,7 @@ async function OrdersContent({ page = 1 }: { page: number }) {
     const price = parseFloat(String(order.price)) || 0
     return {
       ...order,
+      order_id: order.id, // Add order_id for mobile component compatibility
       price: isNaN(price) ? 0 : Math.max(0, price),
       services: {
         ...order.services,

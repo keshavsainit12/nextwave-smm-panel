@@ -264,12 +264,13 @@ export default async function TransactionHistoryPage() {
                           <div className="text-xs">
                             <div className="font-semibold">{transaction.orders?.services?.name}</div>
                             <div className="text-muted-foreground">{transaction.orders?.quantity?.toLocaleString()} units</div>
+                            <div className="text-muted-foreground font-mono mt-1">Order ID: {transaction.orders?.id}</div>
                           </div>
                         )}
                         {transaction.transaction_type === "refund" && (
                           <div className="text-xs">
                             <div className="font-semibold">Order Refund</div>
-                            <div className="text-muted-foreground">ID: {transaction.orders?.id?.substring(0, 8)}</div>
+                            <div className="text-muted-foreground font-mono">Order ID: {transaction.orders?.id}</div>
                           </div>
                         )}
                       </TableCell>
