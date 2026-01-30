@@ -124,7 +124,7 @@ export async function cancelOrder(orderId: string, reason: string) {
     console.log("[v0] Order canceled successfully:", orderId)
 
     // Log activity
-    await supabase.from("activity_logs").insert({
+    const { error: activityLogError } = await supabase.from("activity_logs").insert({
       user_id: order.user_id,
       action: "order_canceled",
       entity_type: "order",
@@ -134,7 +134,11 @@ export async function cancelOrder(orderId: string, reason: string) {
         refund_amount: order.price,
       },
       ip_address: "admin",
-    }).catch((err) => console.log("[v0] Activity log error (non-critical):", err))
+    })
+    
+    if (activityLogError) {
+      console.log("[v0] Activity log error (non-critical):", activityLogError)
+    }
 
     revalidatePath("/admin-panel-2024")
     revalidatePath("/admin-panel-2024/orders")

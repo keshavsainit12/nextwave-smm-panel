@@ -162,11 +162,14 @@ export async function POST(req: NextRequest) {
         if (balanceError) {
           console.error("[v0] Balance update error:", balanceError.message)
           // Revert transaction status if balance update fails
-          await supabase
+          const { error: revertError } = await supabase
             .from("transactions")
             .update({ status: "pending" })
             .eq("id", transaction.id)
-            .catch((err) => console.log("[v0] Revert failed:", err))
+          
+          if (revertError) {
+            console.log("[v0] Revert failed:", revertError)
+          }
           return NextResponse.json({ success: false, error: "Balance update failed" }, { status: 500 })
         }
 
