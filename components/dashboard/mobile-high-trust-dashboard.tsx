@@ -39,7 +39,8 @@ const getTierInfo = (priceMultiplier: number | undefined | null) => {
   if (multiplier <= 1.5) return { name: "VIP Elite", color: "from-amber-500 to-yellow-400", textColor: "text-amber-600", bgColor: "bg-amber-100", icon: Crown, isVip: true }
   if (multiplier <= 2) return { name: "Reseller", color: "from-purple-500 to-indigo-500", textColor: "text-purple-600", bgColor: "bg-purple-100", icon: Star, isVip: true }
   if (multiplier <= 2.5) return { name: "Bulk Buyer", color: "from-blue-500 to-cyan-500", textColor: "text-blue-600", bgColor: "bg-blue-100", icon: Star, isVip: false }
-  return { name: "Basic User", color: "from-slate-400 to-slate-500", textColor: "text-slate-600", bgColor: "bg-slate-100", icon: null, isVip: false }
+  if (multiplier < 3.0) return { name: "VIP", color: "from-yellow-500 to-amber-500", textColor: "text-yellow-600", bgColor: "bg-yellow-100", icon: Crown, isVip: true }
+  return { name: "Normal User", color: "from-slate-400 to-slate-500", textColor: "text-slate-600", bgColor: "bg-slate-100", icon: null, isVip: false }
 }
 
 // Declare getIconEmoji function or import it from the correct module
