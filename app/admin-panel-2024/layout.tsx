@@ -14,9 +14,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-950 lg:overflow-hidden">
-      {/* Mobile Header */}
+      {/* Mobile Header with Menu */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 z-30">
-        <h1 className="text-xl font-bold text-slate-900 dark:text-white">Admin</h1>
+        <h1 className="text-xl font-bold text-slate-900 dark:text-white">Admin Panel</h1>
         <MobileAdminMenu />
       </div>
 

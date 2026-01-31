@@ -1,7 +1,8 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { Grid3x3, ListTodo, User, MessageCircle } from "lucide-react"
+import { Grid3x3, ListTodo, User, MessageCircle, Crown, Star } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 
 interface UserProfile {
   id: string
@@ -13,13 +14,37 @@ interface UserProfile {
   total_orders: number
   total_spent: number
   created_at: string
+  price_multiplier?: number
 }
-
-const tierNames = ["Regular Member", "Silver Member", "Gold Member", "Platinum Member", "Diamond Member"]
 
 export function MobileProfile({ user, userProfile }: { user: any; userProfile: UserProfile }) {
   const router = useRouter()
-  const tierName = tierNames[userProfile?.tier || 0]
+  
+  // Calculate tier based on price_multiplier (like in sidebar)
+  let tierName = "Normal User"
+  let tierColor = "bg-gray-500"
+  let tierIcon = null
+  let discountPercent = 0
+  
+  if (userProfile?.price_multiplier) {
+    const multiplier = userProfile.price_multiplier
+    const normalMultiplier = 3.0
+    discountPercent = ((normalMultiplier - multiplier) / normalMultiplier) * 100
+    
+    if (multiplier <= 2) {
+      tierName = "Reseller"
+      tierColor = "bg-purple-500"
+      tierIcon = <Star className="h-3 w-3" />
+    } else if (multiplier <= 2.5) {
+      tierName = "Bulk Buyer"
+      tierColor = "bg-blue-500"
+      tierIcon = <Star className="h-3 w-3" />
+    } else if (multiplier < 3) {
+      tierName = "VIP"
+      tierColor = "bg-yellow-500"
+      tierIcon = <Crown className="h-3 w-3" />
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark pb-24 font-sans">
@@ -30,7 +55,24 @@ export function MobileProfile({ user, userProfile }: { user: any; userProfile: U
             <User size={32} className="text-primary" />
           </div>
           <h2 className="text-lg font-bold text-[#111318] dark:text-white">{userProfile?.full_name || "User"}</h2>
-          <p className="text-sm text-[#616f89]">{tierName}</p>
+          <div className="flex items-center justify-center gap-2 mt-2">
+            {tierName !== "Normal User" && (
+              <Badge className={`${tierColor} text-white border-0 px-2 py-1 flex items-center gap-1`}>
+                {tierIcon}
+                <span className="font-bold">{tierName}</span>
+              </Badge>
+            )}
+            {tierName === "Normal User" && (
+              <p className="text-sm text-[#616f89]">{tierName}</p>
+            )}
+          </div>
+          {discountPercent > 0 && (
+            <div className="mt-2">
+              <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-1 rounded">
+                {discountPercent.toFixed(0)}% OFF on all services
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
