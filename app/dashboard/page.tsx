@@ -53,6 +53,7 @@ export default async function DashboardPage() {
 
     const transformedServices = services?.map((service: any) => ({
       ...service,
+      price_multiplier: userProfile?.price_multiplier || 3.0, // Attach user's multiplier to each service
     })) || []
 
     const firstName = userProfile?.full_name?.split(' ')[0] || 'User'

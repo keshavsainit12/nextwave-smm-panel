@@ -82,19 +82,22 @@ export function MobileHighTrustDashboard({
   const totalPrice = useMemo(() => {
     if (!selectedService) return 0
     const servicePrice = Number(selectedService.price || selectedService.base_price || 0)
-    const multiplier = isBulkBuy ? 2.5 : 3.0
+    // Use user's price_multiplier from props (e.g., 2.8 for VIP) instead of hardcoded 3.0
+    const userMultiplier = priceMultiplier || 3.0
+    const multiplier = isBulkBuy ? Math.min(userMultiplier * 0.9, 2.5) : userMultiplier
     const priceBeforeDiscount = (quantity / 1000) * servicePrice * multiplier
     const finalPrice = appliedCouponDiscount > 0 ? priceBeforeDiscount * (1 - appliedCouponDiscount / 100) : priceBeforeDiscount
     return finalPrice
-  }, [selectedService, quantity, isBulkBuy, appliedCouponDiscount])
+  }, [selectedService, quantity, isBulkBuy, appliedCouponDiscount, priceMultiplier])
 
   const savings = useMemo(() => {
     if (!selectedService || !isBulkBuy) return 0
     const servicePrice = Number(selectedService.price || selectedService.base_price || 0)
-    const regularPrice = (quantity / 1000) * servicePrice * 3.0
-    const bulkPrice = (quantity / 1000) * servicePrice * 2.5
+    const userMultiplier = priceMultiplier || 3.0
+    const regularPrice = (quantity / 1000) * servicePrice * userMultiplier
+    const bulkPrice = (quantity / 1000) * servicePrice * Math.min(userMultiplier * 0.9, 2.5)
     return regularPrice - bulkPrice
-  }, [selectedService, quantity, isBulkBuy])
+  }, [selectedService, quantity, isBulkBuy, priceMultiplier])
 
   const categoriesWithServices = useMemo(() => {
     return categories.filter((category) => services.some((s) => s.category_id === category.id))
