@@ -5,6 +5,9 @@ import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 import * as bcrypt from "bcryptjs"
 
+// Hardcoded admin credentials (matching login route)
+const ADMIN_PASSWORD_HASH = "$2b$10$xAZfhfccemWZ.3qSG2Zpz.KJg15724ESXNnREOIwBNhkVXd9OGiVK" // admin@123
+
 export async function changeAdminPassword(params: {
   userId: string
   currentPassword: string
@@ -29,47 +32,22 @@ export async function changeAdminPassword(params: {
       return { success: false, error: "New password must be different from current password" }
     }
 
-    const supabase = createAdminClient()
-    
-    // Get current admin credentials from database
-    const { data: adminCreds, error: fetchError } = await supabase
-      .from("admin_credentials")
-      .select("password_hash, username")
-      .eq("user_id", params.userId)
-      .single()
-
-    if (fetchError || !adminCreds) {
-      console.error("[v0] Fetch admin credentials error:", fetchError)
-      return { success: false, error: "Failed to retrieve admin credentials" }
-    }
-
-    // Verify current password
-    if (!bcrypt.compareSync(params.currentPassword, adminCreds.password_hash)) {
+    // Verify current password against hardcoded hash
+    if (!bcrypt.compareSync(params.currentPassword, ADMIN_PASSWORD_HASH)) {
       return { success: false, error: "Current password is incorrect" }
     }
 
     // Hash new password
     const newPasswordHash = bcrypt.hashSync(params.newPassword, 10)
     
-    // Update password in database
-    const { error: updateError } = await supabase
-      .from("admin_credentials")
-      .update({ 
-        password_hash: newPasswordHash,
-        updated_at: new Date().toISOString()
-      })
-      .eq("user_id", params.userId)
+    console.log("[v0] ⚠️  Password change requested but system uses hardcoded credentials")
+    console.log("[v0] New password hash (update in code):", newPasswordHash)
+    console.log("[v0] Update ADMIN_PASSWORD_HASH in /app/api/admin/login/route.ts with this hash")
 
-    if (updateError) {
-      console.error("[v0] Update password error:", updateError)
-      return { success: false, error: "Failed to update password" }
-    }
-
-    console.log("[v0] Admin password updated successfully for user:", params.userId)
     revalidatePath("/admin-panel-2024/settings")
     return { 
       success: true, 
-      message: "Password changed successfully" 
+      message: "Password validated successfully. To change password, update ADMIN_PASSWORD_HASH in the code with the new hash shown in server logs." 
     }
   } catch (error) {
     console.error("[v0] Change password error:", error)
@@ -89,33 +67,9 @@ export async function changeAdminUsername(params: {
       return { success: false, error: "Username must be at least 3 characters" }
     }
 
-    const supabase = createAdminClient()
-    
-    // Check if username already exists (for future multi-admin support)
-    const { data: existing, error: checkError } = await supabase
-      .from("admin_credentials")
-      .select("id")
-      .eq("username", params.newUsername)
-      .neq("user_id", params.userId)
-      .single()
-
-    if (existing) {
-      return { success: false, error: "Username already taken" }
-    }
-
-    // Update username in database
-    const { error: updateError } = await supabase
-      .from("admin_credentials")
-      .update({ 
-        username: params.newUsername,
-        updated_at: new Date().toISOString()
-      })
-      .eq("user_id", params.userId)
-
-    if (updateError) {
-      console.error("[v0] Update username error:", updateError)
-      return { success: false, error: "Failed to update username" }
-    }
+    console.log("[v0] ⚠️  Username change requested but system uses hardcoded credentials")
+    console.log("[v0] New username:", params.newUsername)
+    console.log("[v0] Update ADMIN_USERNAME in /app/api/admin/login/route.ts to:", params.newUsername)
 
     // Update username cookie so it's immediately reflected
     const cookieStore = await cookies()
@@ -127,11 +81,10 @@ export async function changeAdminUsername(params: {
       path: "/",
     })
 
-    console.log("[v0] Admin username updated successfully to:", params.newUsername)
     revalidatePath("/admin-panel-2024/settings")
     return { 
       success: true, 
-      message: "Username changed successfully. Please use your new username on next login." 
+      message: "Username validated successfully. To change username permanently, update ADMIN_USERNAME in the code." 
     }
   } catch (error) {
     console.error("[v0] Change username error:", error)
