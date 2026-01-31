@@ -31,28 +31,44 @@ export function DashboardHeader({ user }: { user: any }) {
         let tierIcon = null
         
         if (data.price_multiplier) {
-          if (data.price_multiplier <= 2) {
+          const multiplier = data.price_multiplier
+          
+          // Calculate discount percentage from normal user (3.0x)
+          const normalMultiplier = 3.0
+          const discountPercent = ((normalMultiplier - multiplier) / normalMultiplier) * 100
+          
+          if (multiplier <= 2) {
             tierName = "Reseller"
             tierColor = "bg-purple-500"
             tierIcon = <Star className="h-3 w-3" />
-          } else if (data.price_multiplier <= 2.5) {
+          } else if (multiplier <= 2.5) {
             tierName = "Bulk Buyer"
             tierColor = "bg-blue-500"
             tierIcon = <Star className="h-3 w-3" />
-          } else if (data.price_multiplier < 3) {
+          } else if (multiplier < 3) {
             tierName = "VIP"
             tierColor = "bg-yellow-500"
             tierIcon = <Crown className="h-3 w-3" />
           }
+          
+          setUserTier({
+            name: tierName,
+            color: tierColor,
+            icon: tierIcon,
+            multiplier: data.price_multiplier || 3.0,
+            discount: discountPercent > 0 ? discountPercent : 0,
+            totalSpent: data.total_spent || 0
+          })
+        } else {
+          setUserTier({
+            name: tierName,
+            color: tierColor,
+            icon: tierIcon,
+            multiplier: 3.0,
+            discount: 0,
+            totalSpent: data.total_spent || 0
+          })
         }
-        
-        setUserTier({
-          name: tierName,
-          color: tierColor,
-          icon: tierIcon,
-          multiplier: data.price_multiplier || 3.0,
-          totalSpent: data.total_spent || 0
-        })
       }
     }
 
@@ -187,16 +203,20 @@ export function DashboardHeader({ user }: { user: any }) {
           </div>
         </div>
 
-        <div className="hidden md:flex items-center gap-2 sm:gap-3">
-          {/* VIP Badge */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* VIP Badge - Now visible on both mobile and desktop */}
           {userTier && userTier.name !== "Normal User" && (
-            <Badge className={`${userTier.color} text-white border-0 px-3 py-1 flex items-center gap-1 animate-pulse`}>
-              {userTier.icon}
-              <span className="font-bold">{userTier.name}</span>
-              <span className="text-xs opacity-90">
-                ({(userTier.multiplier).toFixed(1)}x)
-              </span>
-            </Badge>
+            <div className="flex flex-col items-center gap-0.5">
+              <Badge className={`${userTier.color} text-white border-0 px-2 sm:px-3 py-1 flex items-center gap-1 animate-pulse`}>
+                {userTier.icon}
+                <span className="font-bold text-xs sm:text-sm">{userTier.name}</span>
+              </Badge>
+              {userTier.discount > 0 && (
+                <span className="text-[10px] sm:text-xs font-semibold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">
+                  {userTier.discount.toFixed(0)}% OFF
+                </span>
+              )}
+            </div>
           )}
           
           <DropdownMenu>

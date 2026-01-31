@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
-import { Menu } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Menu, Crown, Star } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -21,10 +22,76 @@ const navigation = [
   { name: "API Access", href: "/dashboard/api", icon: Code },
 ]
 
-export function MobileSidebar() {
+export function MobileSidebar({ user }: { user?: any }) {
   const [open, setOpen] = useState(false)
+  const [userTier, setUserTier] = useState<any>(null)
   const pathname = usePathname()
   const router = useRouter()
+
+  useEffect(() => {
+    if (!user?.id) return
+    
+    const supabase = createClient()
+    
+    const fetchUserTier = async () => {
+      const { data } = await supabase
+        .from("users")
+        .select("tier, price_multiplier, total_spent")
+        .eq("id", user.id)
+        .single()
+      
+      if (data) {
+        let tierName = "Normal User"
+        let tierColor = "bg-gray-500"
+        let tierIcon = null
+        
+        if (data.price_multiplier) {
+          const multiplier = data.price_multiplier
+          const normalMultiplier = 3.0
+          const discountPercent = ((normalMultiplier - multiplier) / normalMultiplier) * 100
+          
+          if (multiplier <= 2) {
+            tierName = "Reseller"
+            tierColor = "bg-purple-500"
+            tierIcon = <Star className="h-3 w-3" />
+          } else if (multiplier <= 2.5) {
+            tierName = "Bulk Buyer"
+            tierColor = "bg-blue-500"
+            tierIcon = <Star className="h-3 w-3" />
+          } else if (multiplier < 3) {
+            tierName = "VIP"
+            tierColor = "bg-yellow-500"
+            tierIcon = <Crown className="h-3 w-3" />
+          }
+          
+          setUserTier({
+            name: tierName,
+            color: tierColor,
+            icon: tierIcon,
+            discount: discountPercent > 0 ? discountPercent : 0
+          })
+        }
+      }
+    }
+
+    fetchUserTier()
+    
+    const userChannel = supabase
+      .channel("mobile-user-tier-changes")
+      .on("postgres_changes", {
+        event: "UPDATE",
+        schema: "public",
+        table: "users",
+        filter: `id=eq.${user.id}`,
+      }, () => {
+        fetchUserTier()
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(userChannel)
+    }
+  }, [user?.id])
 
   const handleLogout = async () => {
     const supabase = createClient()
@@ -42,10 +109,23 @@ export function MobileSidebar() {
       </SheetTrigger>
       <SheetContent side="left" className="w-64 p-0">
         <div className="flex flex-col h-full bg-white">
-          <div className="flex h-16 items-center px-6 border-b border-slate-200/50">
+          <div className="flex h-16 items-center justify-between px-6 border-b border-slate-200/50">
             <Link href="/dashboard" onClick={() => setOpen(false)}>
               <Image src="/logo.png" alt="NextWave SMM" width={140} height={35} className="h-7 w-auto" />
             </Link>
+            {userTier && userTier.name !== "Normal User" && (
+              <div className="flex flex-col items-end gap-0.5">
+                <Badge className={`${userTier.color} text-white border-0 px-2 py-0.5 flex items-center gap-1 text-xs`}>
+                  {userTier.icon}
+                  <span className="font-bold">{userTier.name}</span>
+                </Badge>
+                {userTier.discount > 0 && (
+                  <span className="text-[9px] font-semibold text-green-600 bg-green-50 px-1 py-0.5 rounded">
+                    {userTier.discount.toFixed(0)}% OFF
+                  </span>
+                )}
+              </div>
+            )}
           </div>
           <nav className="flex-1 space-y-1 p-3">
             {navigation.map((item) => {
