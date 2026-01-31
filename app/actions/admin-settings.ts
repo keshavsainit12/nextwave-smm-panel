@@ -67,11 +67,11 @@ export async function changeAdminUsername(params: {
       return { success: false, error: "Username must be at least 3 characters" }
     }
 
-    console.log("[v0] ⚠️  Username change requested but system uses hardcoded credentials")
+    console.log("[v0] ⚠️  Username change requested (hardcoded credentials system)")
     console.log("[v0] New username:", params.newUsername)
-    console.log("[v0] Update ADMIN_USERNAME in /app/api/admin/login/route.ts to:", params.newUsername)
+    console.log("[v0] To make permanent: Update ADMIN_USERNAME in /app/api/admin/login/route.ts to:", params.newUsername)
 
-    // Update username cookie so it's immediately reflected
+    // Update username cookie so it's immediately reflected in UI
     const cookieStore = await cookies()
     cookieStore.set("admin_username", params.newUsername, {
       httpOnly: true,
@@ -84,7 +84,8 @@ export async function changeAdminUsername(params: {
     revalidatePath("/admin-panel-2024/settings")
     return { 
       success: true, 
-      message: "Username validated successfully. To change username permanently, update ADMIN_USERNAME in the code." 
+      message: "Username changed successfully for this session! Username will show as '" + params.newUsername + "' in the UI now. Note: To make this permanent, update the code (see server logs).",
+      tempChange: true // Indicates this is a session-only change
     }
   } catch (error) {
     console.error("[v0] Change username error:", error)

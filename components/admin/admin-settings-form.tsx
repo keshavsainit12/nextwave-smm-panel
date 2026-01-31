@@ -93,7 +93,7 @@ export default function AdminSettingsForm({ userId, userEmail, initialUsername }
       })
 
       if (result.success) {
-        toast.success("Username changed successfully")
+        toast.success(result.message || "Username changed successfully")
         setCurrentUsername(newUsername)
         setNewUsername("")
         setUsernameSuccess(true)
@@ -331,12 +331,17 @@ export default function AdminSettingsForm({ userId, userEmail, initialUsername }
               <p className="text-xs text-muted-foreground">Minimum 3 characters. Use letters, numbers, and underscores.</p>
             </div>
 
-            {/* Info Alert */}
+            {/* Info Alert - Hardcoded System */}
             <Alert className="border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/20">
               <AlertTriangle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              <AlertTitle className="text-blue-900 dark:text-blue-100">Note</AlertTitle>
+              <AlertTitle className="text-blue-900 dark:text-blue-100">Hardcoded Credentials System</AlertTitle>
               <AlertDescription className="text-blue-800 dark:text-blue-200">
-                You'll use this new username when logging into the admin panel. The email remains the same.
+                <div className="space-y-2">
+                  <p>✅ <strong>No database needed!</strong> Admin credentials are hardcoded in the code.</p>
+                  <p>📝 <strong>Username change:</strong> Updates your current session (visible in UI immediately)</p>
+                  <p>🔄 <strong>Next login:</strong> Use the old username until you update the code permanently</p>
+                  <p>💡 <strong>To make permanent:</strong> Update <code>ADMIN_USERNAME</code> in the login code (see server logs)</p>
+                </div>
               </AlertDescription>
             </Alert>
 
