@@ -181,37 +181,40 @@ export async function POST(req: NextRequest) {
         })
       }
 
-      // Log activity
-      try {
-        await supabase.from("activity_logs").insert({
-          user_id: transaction.user_id,
-          action: "deposit",
-          entity_type: "transaction",
-          entity_id: transaction.id,
-          details: {
-            amount: transaction.amount,
-            method: "instant_payment",
-            status: "completed",
-            transactionId: webhookTransactionId,
-          },
-          ip_address: req.ip || "unknown",
-        })
-      } catch (logErr) {
-        console.warn("[v0] Activity log error:", logErr)
+      // Log activity (non-blocking)
+      const { error: activityError } = await supabase.from("activity_logs").insert({
+        user_id: transaction.user_id,
+        action: "deposit",
+        entity_type: "transaction",
+        entity_id: transaction.id,
+        details: {
+          amount: transaction.amount,
+          method: "instant_payment",
+          status: "completed",
+          transactionId: webhookTransactionId,
+        },
+        ip_address: req.ip || "unknown",
+      })
+      
+      if (activityError) {
+        console.warn("[v0] Activity log error (non-critical):", activityError.message)
       }
 
-      // Revalidate admin dashboard and deposits page
-      try {
-        revalidatePath("/admin-panel-2024")
-        revalidatePath("/admin-panel-2024/deposits")
-        revalidatePath("/admin-panel-2024/transaction-history")
-        revalidatePath("/dashboard/deposit")
-        revalidatePath("/dashboard")
-        revalidatePath("/dashboard/transaction-history")
-        console.log("[v0] All pages revalidated after deposit completion")
-      } catch (err) {
-        console.log("[v0] Note: Could not revalidate pages:", err)
-      }
+      // Revalidate pages (non-blocking, fire-and-forget)
+      // This happens in background, doesn't block webhook response
+      Promise.resolve().then(() => {
+        try {
+          revalidatePath("/admin-panel-2024")
+          revalidatePath("/admin-panel-2024/deposits")
+          revalidatePath("/admin-panel-2024/transaction-history")
+          revalidatePath("/dashboard/deposit")
+          revalidatePath("/dashboard")
+          revalidatePath("/dashboard/transaction-history")
+          console.log("[v0] ✅ All pages revalidated after deposit completion")
+        } catch (err) {
+          console.log("[v0] Note: Page revalidation error (non-critical):", err)
+        }
+      })
 
       return NextResponse.json({ success: true, message: "Payment processed successfully" })
     } else if (body.status === -1 || body.status === "-1" || body.status === "failed") {
@@ -227,14 +230,17 @@ export async function POST(req: NextRequest) {
         console.error("[v0] Transaction update error:", error.message)
       }
 
-      try {
-        revalidatePath("/dashboard/deposit")
-        revalidatePath("/dashboard/transaction-history")
-        revalidatePath("/admin-panel-2024/transaction-history")
-        console.log("[v0] Pages revalidated after deposit failure")
-      } catch (err) {
-        console.log("[v0] Note: Could not revalidate pages:", err)
-      }
+      // Revalidate pages (non-blocking)
+      Promise.resolve().then(() => {
+        try {
+          revalidatePath("/dashboard/deposit")
+          revalidatePath("/dashboard/transaction-history")
+          revalidatePath("/admin-panel-2024/transaction-history")
+          console.log("[v0] ✅ Pages revalidated after deposit failure")
+        } catch (err) {
+          console.log("[v0] Note: Page revalidation error (non-critical):", err)
+        }
+      })
 
       return NextResponse.json({ success: true, message: "Payment failed" })
     } else {
