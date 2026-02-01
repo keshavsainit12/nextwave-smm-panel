@@ -21,8 +21,7 @@ function LoginContent() {
     const errorParam = searchParams.get("error")
     
     if (errorParam) {
-      // Show the actual error message from OAuth callback
-      setError(decodeURIComponent(errorParam))
+      setError("Authentication failed. Please try again.")
     }
   }, [searchParams])
 

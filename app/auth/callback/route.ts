@@ -53,21 +53,12 @@ export async function GET(request: NextRequest) {
 
     if (exchangeError) {
       console.error("[v0] Exchange error:", exchangeError)
-      console.error("[v0] Exchange error details:", {
-        message: exchangeError.message,
-        status: exchangeError.status,
-        name: exchangeError.name
-      })
-      return NextResponse.redirect(
-        new URL(`/auth/login?error=${encodeURIComponent(exchangeError.message || "Authentication failed")}`, requestUrl.origin)
-      )
+      return NextResponse.redirect(new URL("/auth/login", requestUrl.origin))
     }
 
     if (!sessionData?.session) {
       console.error("[v0] No session returned after code exchange")
-      return NextResponse.redirect(
-        new URL("/auth/login?error=No session created", requestUrl.origin)
-      )
+      return NextResponse.redirect(new URL("/auth/login", requestUrl.origin))
     }
 
     console.log("[v0] Session created successfully for user:", sessionData.user?.email)
