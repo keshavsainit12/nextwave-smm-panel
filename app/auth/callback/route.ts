@@ -103,6 +103,7 @@ export async function GET(request: NextRequest) {
       
       const referralCode = "REF" + Math.random().toString(36).substring(2, 10).toUpperCase()
 
+      // Create user with minimal required fields for faster insert
       const { error: insertError } = await supabaseAdmin.from("users").insert({
         id: user.id,
         email: user.email!,
@@ -117,7 +118,6 @@ export async function GET(request: NextRequest) {
 
       if (insertError) {
         console.error("[v0] Failed to create user profile:", insertError)
-        console.error("[v0] Insert error details:", insertError.message)
         return NextResponse.redirect(new URL("/auth/login?error=Failed to create profile", request.url))
       }
 
