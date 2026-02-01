@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { CouponPasteCard } from '@/components/dashboard/coupon-paste-card'
 
 export default function LandingPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [services, setServices] = useState<Array<any>>([])
   const [selectedService, setSelectedService] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
@@ -21,6 +22,15 @@ export default function LandingPage() {
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
   const [showServiceDropdown, setShowServiceDropdown] = useState(false)
   const [couponDiscount, setCouponDiscount] = useState(0)
+
+  // Handle OAuth callback redirect
+  useEffect(() => {
+    const code = searchParams.get('code')
+    if (code) {
+      console.log('[v0] OAuth code detected on landing page, redirecting to callback...')
+      router.push(`/auth/callback?code=${code}`)
+    }
+  }, [searchParams, router])
 
   useEffect(() => {
     const fetchServices = async () => {
