@@ -154,6 +154,13 @@ export function DesktopDashboard({
     }
   }, [categoriesWithServices, services, selectedCategory])
 
+  // Reset bulk buy when service changes to prevent incorrect discount
+  useEffect(() => {
+    if (isBulkBuy && selectedService) {
+      setIsBulkBuy(false)
+    }
+  }, [selectedService?.id])
+
   const handleQuantityChange = (newQuantity: number) => {
     const minQty = selectedService?.min_quantity || 100
     const maxQty = selectedService?.max_quantity || 1000000
