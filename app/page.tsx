@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { CouponPasteCard } from '@/components/dashboard/coupon-paste-card'
+import OAuthCodeHandler from '@/components/auth/OAuthCodeHandler'
 
 export default function LandingPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [services, setServices] = useState<Array<any>>([])
   const [selectedService, setSelectedService] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
@@ -22,15 +22,6 @@ export default function LandingPage() {
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
   const [showServiceDropdown, setShowServiceDropdown] = useState(false)
   const [couponDiscount, setCouponDiscount] = useState(0)
-
-  // Handle OAuth callback redirect
-  useEffect(() => {
-    const code = searchParams.get('code')
-    if (code) {
-      console.log('[v0] OAuth code detected on landing page, redirecting to callback...')
-      router.push(`/auth/callback?code=${code}`)
-    }
-  }, [searchParams, router])
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -82,7 +73,13 @@ export default function LandingPage() {
   const finalPrice = couponDiscount > 0 ? (basePrice * (1 - couponDiscount / 100)).toFixed(2) : basePrice.toFixed(2)
 
   return (
-    <div className="bg-white text-slate-900">
+    <>
+      {/* OAuth Code Handler - wrapped in Suspense to prevent build error */}
+      <Suspense fallback={null}>
+        <OAuthCodeHandler />
+      </Suspense>
+      
+      <div className="bg-white text-slate-900">
       {/* Background */}
       <div className="fixed inset-0 z-0 bg-white overflow-hidden">
         <div className="absolute w-[500px] h-[500px] -top-[10%] -left-[20%] rounded-full blur-[80px] opacity-40 bg-gradient-to-br from-blue-600 to-transparent"></div>
@@ -576,5 +573,6 @@ export default function LandingPage() {
         )}
       </div>
     </div>
+    </>
   )
 }
