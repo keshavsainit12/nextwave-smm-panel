@@ -1,5 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin'
-import { revalidateTag } from 'next/cache'
+import { revalidateTag, revalidatePath } from 'next/cache'
 
 export async function POST(request: Request) {
   try {
@@ -23,10 +23,15 @@ export async function POST(request: Request) {
     }
 
     // 2. Delete icon from the category (set to null)
-    await supabase
+    const { error: updateCategoryError } = await supabase
       .from('service_categories')
       .update({ icon: null })
       .eq('id', mainCategory.id)
+
+    if (updateCategoryError) {
+      console.error('[v0] Category icon delete error:', updateCategoryError)
+      throw new Error('Failed to delete category icon')
+    }
 
     // 3. Delete icon from all services under this category
     await supabase
@@ -40,10 +45,19 @@ export async function POST(request: Request) {
       .update({ icon: null })
       .eq('name', categoryName)
 
-    // Revalidate pages
+    // Revalidate all relevant pages
     revalidateTag('services')
     revalidateTag('categories')
     revalidateTag('icons')
+    
+    // Revalidate specific paths
+    revalidatePath('/admin-panel-2024/icon-manager')
+    revalidatePath('/admin-panel-2024/manage-icons')
+    revalidatePath('/admin-panel-2024/services')
+    revalidatePath('/dashboard')
+    revalidatePath('/dashboard/new-order')
+
+    console.log(`[v0] Successfully deleted ${categoryName} icon`)
 
     return Response.json({
       success: true,

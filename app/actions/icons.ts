@@ -21,15 +21,18 @@ export async function updateServiceIcon(serviceId: string, iconUrl: string) {
 
   if (error) {
     console.error("[v0] Update service icon error:", error)
-    throw new Error("Failed to update service icon")
+    throw new Error("Failed to update service icon: " + (error.message || "Unknown error"))
   }
 
   console.log("[v0] Service icon updated:", serviceId)
 
   // Revalidate all service-related pages
   revalidatePath("/dashboard")
+  revalidatePath("/dashboard/new-order")
   revalidatePath("/admin-panel-2024")
   revalidatePath("/admin-panel-2024/services")
+  revalidatePath("/admin-panel-2024/icon-manager")
+  revalidatePath("/admin-panel-2024/manage-icons")
 
   return { success: true, message: "Service icon updated successfully" }
 }
@@ -52,15 +55,18 @@ export async function updateCategoryIcon(categoryId: string, iconUrl: string) {
 
   if (error) {
     console.error("[v0] Update category icon error:", error)
-    throw new Error("Failed to update category icon")
+    throw new Error("Failed to update category icon: " + (error.message || "Unknown error"))
   }
 
   console.log("[v0] Category icon updated:", categoryId)
 
   // Revalidate all category-related pages
   revalidatePath("/dashboard")
+  revalidatePath("/dashboard/new-order")
   revalidatePath("/admin-panel-2024")
   revalidatePath("/admin-panel-2024/services")
+  revalidatePath("/admin-panel-2024/icon-manager")
+  revalidatePath("/admin-panel-2024/manage-icons")
 
   return { success: true, message: "Category icon updated successfully" }
 }
