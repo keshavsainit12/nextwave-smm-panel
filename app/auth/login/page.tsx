@@ -19,8 +19,23 @@ function LoginContent() {
 
   useEffect(() => {
     const errorParam = searchParams.get("error")
+    const hint = searchParams.get("hint")
+    
     if (errorParam) {
-      setError(decodeURIComponent(errorParam))
+      let errorMessage = decodeURIComponent(errorParam)
+      
+      // Provide user-friendly messages for common OAuth errors
+      if (errorParam === "session_expired" || errorMessage.includes("flow state")) {
+        errorMessage = "Session expired. Please clear your browser cache (Ctrl+Shift+Delete) and try again."
+      } else if (errorMessage.includes("Auth session missing")) {
+        errorMessage = "Authentication session expired. Please try again."
+      }
+      
+      if (hint === "clear_cache") {
+        errorMessage += " Tip: Clear browser cache and cookies, then retry."
+      }
+      
+      setError(errorMessage)
     }
   }, [searchParams])
 
