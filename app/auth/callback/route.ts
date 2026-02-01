@@ -53,20 +53,7 @@ export async function GET(request: NextRequest) {
 
     if (exchangeError) {
       console.error("[v0] Exchange error:", exchangeError)
-      
-      // Special handling for flow state errors - common OAuth issue
-      if (exchangeError.message?.includes("Auth session missing") || 
-          exchangeError.message?.includes("flow state") ||
-          exchangeError.message?.includes("invalid flow")) {
-        console.log("[v0] Flow state error detected - redirecting to retry login")
-        return NextResponse.redirect(
-          new URL("/auth/login?error=session_expired&hint=clear_cache", requestUrl.origin)
-        )
-      }
-      
-      return NextResponse.redirect(
-        new URL(`/auth/login?error=${encodeURIComponent(exchangeError.message)}`, requestUrl.origin)
-      )
+      return NextResponse.redirect(new URL("/auth/login", requestUrl.origin))
     }
 
     // Get user data
