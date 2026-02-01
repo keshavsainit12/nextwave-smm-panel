@@ -18,6 +18,7 @@ export default async function DepositPage() {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // Early return if no user - prevents build-time errors
   if (!user) {
     return (
       <div className="space-y-6">
@@ -29,48 +30,66 @@ export default async function DepositPage() {
     )
   }
 
-  const { data: userData, error: userDataError } = await supabase
-    .from("users")
-    .select("balance, full_name")
-    .eq("id", user.id)
-    .single()
+  // Only fetch data if user exists - prevents build-time errors
+  let userData = null
+  let cryptoCurrencies = null
+  let cryptoDeposits = null
+  let cryptoCurrencyMap = null
 
-  if (userDataError) {
-    console.error("[v0] User data fetch error:", userDataError)
-  }
+  try {
+    const { data: userDataResult, error: userDataError } = await supabase
+      .from("users")
+      .select("balance, full_name")
+      .eq("id", user.id)
+      .single()
 
-  const { data: cryptoCurrencies, error: cryptoCurrenciesError } = await supabase
-    .from("crypto_currencies")
-    .select("*")
-    .eq("is_active", true)
-    .order("display_order", { ascending: true })
+    if (userDataError) {
+      console.error("[v0] User data fetch error:", userDataError)
+    } else {
+      userData = userDataResult
+    }
 
-  if (cryptoCurrenciesError) {
-    console.error("[v0] Crypto currencies fetch error:", cryptoCurrenciesError)
-  }
+    const { data: cryptoCurrenciesResult, error: cryptoCurrenciesError } = await supabase
+      .from("crypto_currencies")
+      .select("*")
+      .eq("is_active", true)
+      .order("display_order", { ascending: true })
 
-  // Fetch crypto deposits
-  const { data: cryptoDeposits, error: cryptoDepositsError } = await supabase
-    .from("crypto_deposits")
-    .select("id, user_id, crypto_currency_id, amount, crypto_amount, transaction_hash, screenshot_url, status, admin_notes, created_at")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
+    if (cryptoCurrenciesError) {
+      console.error("[v0] Crypto currencies fetch error:", cryptoCurrenciesError)
+    } else {
+      cryptoCurrencies = cryptoCurrenciesResult
+    }
 
-  if (cryptoDepositsError) {
-    console.error("[v0] Crypto deposits fetch error:", cryptoDepositsError)
-  }
+    // Fetch crypto deposits
+    const { data: cryptoDepositsResult, error: cryptoDepositsError } = await supabase
+      .from("crypto_deposits")
+      .select("id, user_id, crypto_currency_id, amount, crypto_amount, transaction_hash, screenshot_url, status, admin_notes, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
 
-  // Fetch related crypto currency data
-  const cryptoCurrencyIds = cryptoDeposits?.map((d: any) => d.crypto_currency_id).filter(Boolean) || []
-  const { data: cryptoCurrencyMap, error: currencyError } = cryptoCurrencyIds.length > 0
-    ? await supabase
+    if (cryptoDepositsError) {
+      console.error("[v0] Crypto deposits fetch error:", cryptoDepositsError)
+    } else {
+      cryptoDeposits = cryptoDepositsResult
+    }
+
+    // Fetch related crypto currency data
+    const cryptoCurrencyIds = cryptoDeposits?.map((d: any) => d.crypto_currency_id).filter(Boolean) || []
+    if (cryptoCurrencyIds.length > 0) {
+      const { data: cryptoCurrencyMapResult, error: currencyError } = await supabase
         .from("crypto_currencies")
         .select("id, symbol, name")
         .in("id", cryptoCurrencyIds)
-    : { data: [], error: null }
 
-  if (currencyError) {
-    console.error("[v0] Crypto currency map fetch error:", currencyError)
+      if (currencyError) {
+        console.error("[v0] Crypto currency map fetch error:", currencyError)
+      } else {
+        cryptoCurrencyMap = cryptoCurrencyMapResult
+      }
+    }
+  } catch (error) {
+    console.error("[v0] Error fetching deposit data:", error)
   }
 
   // Create a map for easy lookup

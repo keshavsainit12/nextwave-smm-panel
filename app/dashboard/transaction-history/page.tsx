@@ -13,6 +13,7 @@ export default async function TransactionHistoryPage() {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // Early return if no user - prevents build-time errors
   if (!user) {
     return (
       <div className="space-y-6">
@@ -25,27 +26,40 @@ export default async function TransactionHistoryPage() {
     )
   }
 
-  // Fetch crypto deposits
-  const { data: cryptoDeposits, error: cryptoError } = await supabase
-    .from("crypto_deposits")
-    .select("id, user_id, crypto_currency_id, amount, crypto_amount, transaction_hash, screenshot_url, status, admin_notes, created_at")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
+  // Only fetch data if user exists - prevents build-time errors
+  let cryptoDeposits = null
+  let cryptoCurrencyMap = null
 
-  // Fetch related crypto currencies
-  const cryptoCurrencyIds = cryptoDeposits?.map((d: any) => d.crypto_currency_id).filter(Boolean) || []
-  const { data: cryptoCurrencyMap, error: currencyError } = cryptoCurrencyIds.length > 0
-    ? await supabase
+  try {
+    // Fetch crypto deposits
+    const { data: cryptoDepositsData, error: cryptoError } = await supabase
+      .from("crypto_deposits")
+      .select("id, user_id, crypto_currency_id, amount, crypto_amount, transaction_hash, screenshot_url, status, admin_notes, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+
+    if (cryptoError) {
+      console.error("[v0] Crypto deposits fetch error:", cryptoError)
+    } else {
+      cryptoDeposits = cryptoDepositsData
+    }
+
+    // Fetch related crypto currencies
+    const cryptoCurrencyIds = cryptoDeposits?.map((d: any) => d.crypto_currency_id).filter(Boolean) || []
+    if (cryptoCurrencyIds.length > 0) {
+      const { data: cryptoCurrencyData, error: currencyError } = await supabase
         .from("crypto_currencies")
         .select("id, symbol, name")
         .in("id", cryptoCurrencyIds)
-    : { data: [], error: null }
 
-  if (cryptoError) {
-    console.error("[v0] Crypto deposits fetch error:", cryptoError)
-  }
-  if (currencyError) {
-    console.error("[v0] Crypto currencies fetch error:", currencyError)
+      if (currencyError) {
+        console.error("[v0] Crypto currencies fetch error:", currencyError)
+      } else {
+        cryptoCurrencyMap = cryptoCurrencyData
+      }
+    }
+  } catch (error) {
+    console.error("[v0] Error fetching crypto data:", error)
   }
 
   // Map crypto currencies by ID
@@ -55,27 +69,45 @@ export default async function TransactionHistoryPage() {
   }, {})
 
   // Fetch instant payment transactions (deposits)
-  const { data: instantPayments, error: instantError } = await supabase
-    .from("transactions")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("type", "deposit")
-    .eq("payment_method", "instant_xaf")
-    .order("created_at", { ascending: false })
+  let instantPayments = null
+  try {
+    const { data: instantPaymentsData, error: instantError } = await supabase
+      .from("transactions")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("type", "deposit")
+      .eq("payment_method", "instant_xaf")
+      .order("created_at", { ascending: false })
 
-  if (instantError) {
-    console.error("[v0] Instant payments fetch error:", instantError)
+    if (instantError) {
+      console.error("[v0] Instant payments fetch error:", instantError)
+    } else {
+      instantPayments = instantPaymentsData
+    }
+  } catch (error) {
+    console.error("[v0] Error fetching instant payments:", error)
   }
 
   // Fetch order transactions (debits/charges)
-  const { data: orderTransactions, error: orderError } = await supabase
-    .from("transactions")
-    .select("*, orders(id, service_id, services(name), quantity, price, status)")
-    .eq("user_id", user.id)
-    .eq("type", "order")
-    .order("created_at", { ascending: false })
+  let orderTransactions = null
+  try {
+    const { data: orderTransactionsData, error: orderError } = await supabase
+      .from("transactions")
+      .select("*, orders(id, service_id, services(name), quantity, price, status)")
+      .eq("user_id", user.id)
+      .eq("type", "order")
+      .order("created_at", { ascending: false })
 
-  if (orderError) {
+    if (orderError) {
+      console.error("[v0] Order transactions fetch error:", orderError)
+    } else {
+      orderTransactions = orderTransactionsData
+    }
+  } catch (error) {
+    console.error("[v0] Error fetching order transactions:", error)
+  }
+
+  // Rest of the page logic...
     console.error("[v0] Order transactions fetch error:", orderError)
   }
 
