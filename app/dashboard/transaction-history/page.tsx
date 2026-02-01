@@ -107,10 +107,6 @@ export default async function TransactionHistoryPage() {
     console.error("[v0] Error fetching order transactions:", error)
   }
 
-  // Rest of the page logic...
-    console.error("[v0] Order transactions fetch error:", orderError)
-  }
-
   // Fetch refund transactions
   const { data: refundTransactions, error: refundError } = await supabase
     .from("transactions")
