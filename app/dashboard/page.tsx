@@ -26,7 +26,7 @@ export default async function DashboardPage() {
         .limit(10),
       supabase
         .from("services")
-        .select("id, name, icon, platform, category_id, min_quantity, max_quantity, base_price, has_refill, is_active, description")
+        .select("id, name, icon, platform, category_id, min_quantity, max_quantity, base_price, price, has_refill, is_active, description, service_categories(name)")
         .eq("is_active", true),
       supabase
         .from("service_categories")

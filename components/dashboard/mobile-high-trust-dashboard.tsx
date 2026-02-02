@@ -81,19 +81,21 @@ export function MobileHighTrustDashboard({
   const totalPrice = useMemo(() => {
     if (!selectedService) return 0
     const servicePrice = Number(selectedService.price || selectedService.base_price || 0)
-    const multiplier = isBulkBuy ? 2.5 : 3.0
+    const userMultiplier = priceMultiplier ?? 3.0
+    const multiplier = isBulkBuy ? 2.5 : userMultiplier
     const priceBeforeDiscount = (quantity / 1000) * servicePrice * multiplier
     const finalPrice = appliedCouponDiscount > 0 ? priceBeforeDiscount * (1 - appliedCouponDiscount / 100) : priceBeforeDiscount
     return finalPrice
-  }, [selectedService, quantity, isBulkBuy, appliedCouponDiscount])
+  }, [selectedService, quantity, isBulkBuy, appliedCouponDiscount, priceMultiplier])
 
   const savings = useMemo(() => {
     if (!selectedService || !isBulkBuy) return 0
     const servicePrice = Number(selectedService.price || selectedService.base_price || 0)
-    const regularPrice = (quantity / 1000) * servicePrice * 3.0
+    const userMultiplier = priceMultiplier ?? 3.0
+    const regularPrice = (quantity / 1000) * servicePrice * userMultiplier
     const bulkPrice = (quantity / 1000) * servicePrice * 2.5
     return regularPrice - bulkPrice
-  }, [selectedService, quantity, isBulkBuy])
+  }, [selectedService, quantity, isBulkBuy, priceMultiplier])
 
   const categoriesWithServices = useMemo(() => {
     return categories.filter((category) => services.some((s) => s.category_id === category.id))
@@ -473,6 +475,7 @@ export function MobileHighTrustDashboard({
                     const category = categoriesWithServices.find((c) => c.id === value)
                     if (category) {
                       setSelectedCategory(category)
+                      setIsBulkBuy(false) // Reset bulk toggle when category changes
                       const firstService = services.find((s) => s.category_id === category.id)
                       if (firstService) {
                         setSelectedService(firstService)
@@ -542,6 +545,7 @@ export function MobileHighTrustDashboard({
                         const service = filteredServices.find((s) => s.id === value)
                         if (service) {
                           setSelectedService(service)
+                          setIsBulkBuy(false) // Reset bulk toggle when service changes
                           setQuantity(service.min_quantity || 1000)
                         }
                       }}
