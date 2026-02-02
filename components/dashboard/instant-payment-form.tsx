@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { Loader2 } from "lucide-react"
 import { createInstantPayment } from "@/app/actions/instant-payments"
+import { convertXAFtoUSD } from "@/lib/currency"
 import { toast } from "sonner"
 
 interface InstantPaymentFormProps {
@@ -22,8 +23,10 @@ export function InstantPaymentForm({ userId, userEmail, userName, currentBalance
   const [amount, setAmount] = useState("")
   const [loading, setLoading] = useState(false)
 
-  // Convert XAF to USD
-  const balanceInUSD = currentBalance / 600
+  // Convert balance (stored in USD) to XAF for display
+  // User balance is always in USD (platform base currency)
+  const balanceInUSD = currentBalance
+  const balanceInXAF = Math.round(currentBalance * 600)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -84,6 +87,10 @@ export function InstantPaymentForm({ userId, userEmail, userName, currentBalance
               <span className="text-slate-600 dark:text-slate-400">Current Balance:</span>
               <span className="font-semibold text-purple-600 dark:text-purple-400">${balanceInUSD.toFixed(2)} USD</span>
             </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-500 dark:text-slate-500">Equivalent in XAF:</span>
+              <span className="text-slate-600 dark:text-slate-400">{balanceInXAF.toLocaleString()} XAF</span>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -101,7 +108,14 @@ export function InstantPaymentForm({ userId, userEmail, userName, currentBalance
           onChange={(e) => setAmount(e.target.value)}
           disabled={loading}
         />
-        <p className="text-xs text-muted-foreground">Minimum XAF 100. Your balance will be credited instantly.</p>
+        <p className="text-xs text-muted-foreground">
+          Minimum XAF 100. Your balance will be credited in USD (1 USD = 600 XAF).
+          {amount && Number(amount) > 0 && (
+            <span className="block mt-1 font-medium text-purple-600 dark:text-purple-400">
+              {Number(amount).toLocaleString()} XAF = ${convertXAFtoUSD(Number(amount)).toFixed(2)} USD
+            </span>
+          )}
+        </p>
       </div>
 
       <Button

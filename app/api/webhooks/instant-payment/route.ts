@@ -104,6 +104,10 @@ export async function POST(req: NextRequest) {
         transactionId: transaction.id,
       })
 
+      // IMPORTANT: transaction.amount is already in USD (converted from XAF during transaction creation)
+      // The conversion happens in createInstantPayment() before storing the transaction
+      // So we can safely credit this USD amount to the user's balance
+
       // Update transaction status FIRST with atomic check
       const { data: updateResult, error: txError } = await supabase
         .from("transactions")
