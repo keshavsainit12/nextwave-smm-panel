@@ -22,8 +22,9 @@ export function InstantPaymentForm({ userId, userEmail, userName, currentBalance
   const [amount, setAmount] = useState("")
   const [loading, setLoading] = useState(false)
 
-  // Convert XAF to USD
-  const balanceInUSD = currentBalance / 600
+  // Convert USD balance to XAF for display (1 USD = 620 XAF)
+  const XAF_TO_USD_RATE = 620
+  const balanceInXAF = currentBalance * XAF_TO_USD_RATE
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -81,8 +82,12 @@ export function InstantPaymentForm({ userId, userEmail, userName, currentBalance
 
           <div className="bg-white dark:bg-slate-900 rounded-lg p-3 space-y-2 text-sm border border-purple-100 dark:border-purple-900">
             <div className="flex justify-between">
-              <span className="text-slate-600 dark:text-slate-400">Current Balance:</span>
-              <span className="font-semibold text-purple-600 dark:text-purple-400">${balanceInUSD.toFixed(2)} USD</span>
+              <span className="text-slate-600 dark:text-slate-400">Current Balance (USD):</span>
+              <span className="font-semibold text-purple-600 dark:text-purple-400">${currentBalance.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-500 dark:text-slate-500">≈ in XAF:</span>
+              <span className="text-slate-600 dark:text-slate-400">{balanceInXAF.toFixed(0)} FCFA</span>
             </div>
           </div>
         </CardContent>
