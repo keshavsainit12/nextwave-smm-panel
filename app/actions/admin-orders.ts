@@ -107,11 +107,29 @@ export async function cancelOrder(orderId: string, reason: string) {
 
     console.log("[v0] Balance refunded successfully for user:", order.user_id, "new balance:", newBalance)
 
+    // Create transaction record for refund
+    const { error: transactionError } = await supabase.from("transactions").insert({
+      user_id: order.user_id,
+      order_id: orderId,
+      type: "refund",
+      amount: order.price,
+      balance_before: userData.balance || 0,
+      balance_after: newBalance,
+      status: "completed",
+    })
+
+    if (transactionError) {
+      console.error("[v0] Transaction record error (non-critical):", transactionError)
+      // Don't fail the whole operation if transaction log fails
+    } else {
+      console.log("[v0] Transaction record created for refund")
+    }
+
     // Update order status
     const { error: updateError } = await supabase
       .from("orders")
       .update({
-        status: "cancelled",
+        status: "canceled",  // Use US spelling to match database constraint
         admin_notes: reason || "Cancelled by admin",
         updated_at: new Date().toISOString(),
       })
