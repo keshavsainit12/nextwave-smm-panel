@@ -198,7 +198,16 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
       try {
         console.log("[v0] Sending order to external API provider...")
         const apiClient = new SMMApiClient(service.provider.api_url, service.provider.api_key)
-        const apiResponse = await apiClient.createOrder(Number.parseInt(service.external_service_id), link, quantity)
+        
+        // Determine auth mode from provider settings
+        const authMode = (service.provider as any).auth_mode === "bearer" ? "bearer" : "key"
+        
+        const apiResponse = await apiClient.createOrder(
+          Number.parseInt(service.external_service_id),
+          link,
+          quantity,
+          { authMode },
+        )
 
         console.log("[v0] API order created with ID:", apiResponse.order)
 
@@ -213,9 +222,23 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
         if (apiUpdateError) {
           console.warn("[v0] Failed to update order with external ID (non-critical):", apiUpdateError.message)
         }
-      } catch (error) {
-        console.error("[v0] Failed to send order to API (non-critical):", error)
+      } catch (error: any) {
+        // Log comprehensive error details for diagnostics
+        const errorResponse = error.response || {}
+        console.error("[v0] Failed to send order to API provider:", {
+          order_id: order.id,
+          provider_id: service.provider.id,
+          provider_api_url: service.provider.api_url,
+          masked_api_key: service.provider.api_key
+            ? `${service.provider.api_key.slice(0, 4)}...${service.provider.api_key.slice(-4)}`
+            : "none",
+          service_external_id: service.external_service_id,
+          error_message: error.message,
+          provider_response_status: errorResponse.status,
+          provider_response_body: errorResponse.body,
+        })
         // Order stays in pending status if API fails - user still got charged and order is recorded
+        // Admin can use the resend utility to retry with updated credentials
       }
     }
 
@@ -253,7 +276,10 @@ export async function syncOrderStatus(orderId: string) {
 
   try {
     const apiClient = new SMMApiClient(provider.api_url, provider.api_key)
-    const status = await apiClient.getOrderStatus(Number.parseInt(order.external_order_id))
+    const authMode = (provider as any).auth_mode === "bearer" ? "bearer" : "key"
+    const status = await apiClient.getOrderStatus(Number.parseInt(order.external_order_id), {
+      authMode,
+    })
 
     // Map API status to our status
     let newStatus = order.status
@@ -277,7 +303,18 @@ export async function syncOrderStatus(orderId: string) {
     revalidatePath("/admin-panel-2024/orders")
 
     return { success: true, status: newStatus }
-  } catch (error) {
+  } catch (error: any) {
+    const errorResponse = error.response || {}
+    console.error("[v0] Failed to sync order status:", {
+      order_id: orderId,
+      external_order_id: order.external_order_id,
+      provider_id: provider.id,
+      provider_api_url: provider.api_url,
+      masked_api_key: provider.api_key ? `${provider.api_key.slice(0, 4)}...${provider.api_key.slice(-4)}` : "none",
+      error_message: error.message,
+      provider_response_status: errorResponse.status,
+      provider_response_body: errorResponse.body,
+    })
     return { error: String(error) }
   }
 }

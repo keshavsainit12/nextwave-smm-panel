@@ -309,6 +309,104 @@ curl -X GET "https://nextwavesmm.com/api/v1/order?order_id=order-uuid" \
 
 ---
 
+## Debugging & Admin Tools
+
+### Provider API Diagnostics
+
+The system now includes enhanced logging for debugging order delivery issues:
+
+**Debug Logging:**
+Set environment variable `DEBUG_SMM_API=true` to enable detailed logging of all provider API requests and responses. When enabled, logs include:
+- Request URL, action, and authentication mode
+- Masked API keys (showing first 4 and last 4 characters only)
+- Request payload
+- Response status and body
+- Retry attempts
+
+**Production Logging:**
+Even without debug mode, all provider API failures are logged with comprehensive context:
+- Order ID
+- Provider ID and API URL
+- Masked API key
+- External service ID
+- Error message and provider response
+
+### Manual Provider API Testing
+
+To manually test if your provider API is working, use curl with values from your database:
+
+\`\`\`bash
+# Get provider details from database first
+# provider.api_url, provider.api_key, service.external_service_id
+
+# Test balance endpoint
+curl -X POST "https://provider.example.com/api/v2" \\
+  -H "Content-Type: application/x-www-form-urlencoded" \\
+  -d "key=YOUR_PROVIDER_API_KEY&action=balance"
+
+# Test order creation
+curl -X POST "https://provider.example.com/api/v2" \\
+  -H "Content-Type: application/x-www-form-urlencoded" \\
+  -d "key=YOUR_PROVIDER_API_KEY&action=add&service=123&link=https://instagram.com/test&quantity=100"
+
+# For Bearer token authentication (if provider.auth_mode = 'bearer')
+curl -X POST "https://provider.example.com/api/v2" \\
+  -H "Authorization: Bearer YOUR_PROVIDER_API_KEY" \\
+  -H "Content-Type: application/x-www-form-urlencoded" \\
+  -d "action=balance"
+\`\`\`
+
+**Common Provider Errors:**
+- `401 Unauthorized`: API key is invalid or expired (regenerate on provider dashboard)
+- `400 Bad Request`: Check service ID, link format, or quantity limits
+- `500 Server Error`: Provider system issue (retry automatically handled)
+
+### Resending Failed Orders (Admin Only)
+
+If orders fail to reach the provider (remain in "pending" status), admins can resend them using the current provider API key.
+
+**Admin Resend Endpoint:**
+\`\`\`
+POST /api/admin/resend-order
+Authorization: Bearer YOUR_ADMIN_SESSION_TOKEN
+Content-Type: application/json
+
+{
+  "order_id": "order-uuid-here"
+}
+\`\`\`
+
+**Response:**
+\`\`\`json
+{
+  "success": true,
+  "message": "Order successfully sent to provider",
+  "external_order_id": "12345"
+}
+\`\`\`
+
+**Error Response:**
+\`\`\`json
+{
+  "success": false,
+  "error": "Provider API error: 401 Unauthorized",
+  "details": { "error": "Invalid API key" }
+}
+\`\`\`
+
+**When to Use:**
+- Order stuck in "pending" status after provider API key rotation
+- Network failure during initial order placement
+- Provider temporary downtime resolved
+
+**How to Test Locally:**
+1. Find a pending order ID from database
+2. Use your admin session cookie or token
+3. Send POST request to `/api/admin/resend-order` with the order ID
+4. Check server logs for detailed provider response
+
+---
+
 ## Best Practices
 
 1. **Keep Your API Key Secure**

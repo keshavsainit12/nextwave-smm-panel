@@ -42,9 +42,14 @@ export async function GET(request: Request) {
 
         const provider = order.services.provider
         const apiClient = new SMMApiClient(provider.api_url, provider.api_key)
+        
+        // Determine auth mode from provider settings
+        const authMode = (provider as any).auth_mode === "bearer" ? "bearer" : "key"
 
         // Get status from external API
-        const status = await apiClient.getOrderStatus(Number.parseInt(order.external_order_id))
+        const status = await apiClient.getOrderStatus(Number.parseInt(order.external_order_id), {
+          authMode,
+        })
 
         // Map API status to our status
         let newStatus = order.status
@@ -68,9 +73,18 @@ export async function GET(request: Request) {
           syncedCount++
           console.log(`[CRON] Order ${order.id} updated: ${order.status} → ${newStatus}`)
         }
-      } catch (error) {
+      } catch (error: any) {
         errorCount++
-        console.error(`[CRON] Failed to sync order ${order.id}:`, error)
+        const errorResponse = error.response || {}
+        console.error(`[CRON] Failed to sync order ${order.id}:`, {
+          order_id: order.id,
+          external_order_id: order.external_order_id,
+          provider_id: order.services?.provider?.id,
+          provider_api_url: order.services?.provider?.api_url,
+          error_message: error.message,
+          provider_response_status: errorResponse.status,
+          provider_response_body: errorResponse.body,
+        })
       }
     }
 
