@@ -441,25 +441,14 @@ export function MobileHighTrustDashboard({
                     <span>You're enjoying VIP benefits!</span>
                   </div>
                   
-                  {/* VIP Savings Indicator */}
-                  <div className="grid grid-cols-3 gap-2 mt-2">
-                    <div className="bg-white rounded-lg p-2 text-center border border-amber-200">
-                      <p className="text-amber-600 font-bold text-sm">
+                  {/* Tier Discount Indicator */}
+                  <div className="flex justify-center mt-2">
+                    <div className="bg-white rounded-lg p-3 text-center border-2 border-amber-300 shadow-sm">
+                      <p className="text-amber-600 font-bold text-xl">
                         {priceMultiplier ? ((3.0 - priceMultiplier) / 3.0 * 100).toFixed(0) : 50}%
                       </p>
-                      <p className="text-slate-600 text-[10px]">Discount</p>
-                    </div>
-                    <div className="bg-white rounded-lg p-2 text-center border border-amber-200">
-                      <p className="text-amber-600 font-bold text-sm">
-                        {priceMultiplier ? priceMultiplier.toFixed(1) : 1.5}×
-                      </p>
-                      <p className="text-slate-600 text-[10px]">Multiplier</p>
-                    </div>
-                    <div className="bg-white rounded-lg p-2 text-center border border-amber-200">
-                      <p className="text-amber-600 font-bold text-sm">
-                        ${((3.0 - (priceMultiplier || 1.5)) * (totalSpent / (priceMultiplier || 1.5) / 3.0)).toFixed(0)}
-                      </p>
-                      <p className="text-slate-600 text-[10px]">Saved</p>
+                      <p className="text-slate-600 text-xs font-medium">Your Discount</p>
+                      <p className="text-slate-500 text-[10px] mt-0.5">(Save {priceMultiplier ? ((3.0 - priceMultiplier) / 3.0 * 100).toFixed(0) : 50}% off!)</p>
                     </div>
                   </div>
                 </div>

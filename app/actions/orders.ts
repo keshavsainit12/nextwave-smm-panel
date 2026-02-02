@@ -48,11 +48,15 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
 
     const baseMultiplier = userData.price_multiplier || 3.0
     const priceMultiplier = isBulkBuy ? 2.5 : baseMultiplier
-    const finalServicePrice = servicePrice * priceMultiplier
+    
+    // base_price is stored for normal users (3x markup)
+    // Calculate provider cost first, then apply user's multiplier
+    const providerPrice = servicePrice / 3.0
+    const finalServicePrice = providerPrice * priceMultiplier
     let price = (quantity / 1000) * finalServicePrice
 
     console.log(
-      `[v0] Order calculation: ${quantity} units × $${servicePrice}/1K × ${priceMultiplier}x (${isBulkBuy ? "BULK" : "REGULAR"}) = $${price.toFixed(4)}`,
+      `[v0] Order calculation: ${quantity} units × (${servicePrice}/3.0 = $${providerPrice.toFixed(4)}) × ${priceMultiplier}x (${isBulkBuy ? "BULK" : "REGULAR"}) = $${price.toFixed(4)}`,
     )
 
     // Apply coupon discount if provided

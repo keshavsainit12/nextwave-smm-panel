@@ -395,25 +395,14 @@ export function DesktopDashboard({
               </div>
             </div>
             
-            {/* VIP Discount Indicator */}
-            <div className="grid grid-cols-3 gap-3">
-              <div className="bg-white rounded-xl p-3 text-center border border-amber-200">
-                <p className="text-amber-600 font-bold text-lg">
+            {/* Tier Discount Indicator */}
+            <div className="flex justify-center">
+              <div className="bg-white rounded-xl p-4 text-center border-2 border-amber-300 shadow-sm min-w-[160px]">
+                <p className="text-amber-600 font-bold text-2xl">
                   {priceMultiplier ? ((3.0 - priceMultiplier) / 3.0 * 100).toFixed(0) : 50}%
                 </p>
-                <p className="text-slate-600 text-xs">Your Discount</p>
-              </div>
-              <div className="bg-white rounded-xl p-3 text-center border border-amber-200">
-                <p className="text-amber-600 font-bold text-lg">
-                  {priceMultiplier ? priceMultiplier.toFixed(1) : 1.5}×
-                </p>
-                <p className="text-slate-600 text-xs">Price Multiplier</p>
-              </div>
-              <div className="bg-white rounded-xl p-3 text-center border border-amber-200">
-                <p className="text-amber-600 font-bold text-lg">
-                  ${((3.0 - (priceMultiplier || 1.5)) * (totalSpent / (priceMultiplier || 1.5) / 3.0)).toFixed(0)}
-                </p>
-                <p className="text-slate-600 text-xs">Total Saved</p>
+                <p className="text-slate-600 text-sm font-medium">Your Discount</p>
+                <p className="text-slate-500 text-xs mt-1">(You save {priceMultiplier ? ((3.0 - priceMultiplier) / 3.0 * 100).toFixed(0) : 50}% off!)</p>
               </div>
             </div>
           </div>
