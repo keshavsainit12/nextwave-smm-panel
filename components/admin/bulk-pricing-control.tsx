@@ -15,6 +15,7 @@ export function BulkPricingControl() {
   const [loading, setLoading] = useState(false)
   const [multiplierLoading, setMultiplierLoading] = useState<number | null>(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [selectedMultiplier, setSelectedMultiplier] = useState<number>(3) // Track selected multiplier, default to 3x
   const router = useRouter()
 
   const handleUpdate = async (increase: boolean) => {
@@ -61,6 +62,8 @@ export function BulkPricingControl() {
 
   const handleSetMultiplier = async (multiplier: number) => {
     setMultiplierLoading(multiplier)
+    setSelectedMultiplier(multiplier) // Update selected multiplier immediately for UI feedback
+    
     try {
       console.log(`[v0] Setting multiplier to ${multiplier}x`)
       const result = await setAllServicesMultiplier(multiplier)
@@ -89,6 +92,8 @@ export function BulkPricingControl() {
     } catch (error) {
       console.error("[v0] Multiplier update error:", error)
       toast.error(error instanceof Error ? error.message : "Failed to set multiplier")
+      // Revert selected multiplier on error
+      setSelectedMultiplier(3)
     } finally {
       setMultiplierLoading(null)
       setRefreshing(false)
@@ -131,7 +136,7 @@ export function BulkPricingControl() {
               ].map((mult) => (
                 <Button
                   key={mult.value}
-                  variant={mult.recommended ? "default" : "outline"}
+                  variant={selectedMultiplier === mult.value ? "default" : "outline"}
                   size="lg"
                   onClick={() => handleSetMultiplier(mult.value)}
                   disabled={isUpdating}
@@ -149,7 +154,7 @@ export function BulkPricingControl() {
             </div>
             <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
               <p className="text-sm text-blue-900 dark:text-blue-100">
-                <strong>Example:</strong> Provider cost = $1.00 → 3x = $3.00 selling price (you earn $2.00 profit per 1K)
+                <strong>Example:</strong> Provider cost = $1.00 → {selectedMultiplier}x = ${(1 * selectedMultiplier).toFixed(2)} selling price (you earn ${(1 * selectedMultiplier - 1).toFixed(2)} profit per 1K)
               </p>
             </div>
           </div>
