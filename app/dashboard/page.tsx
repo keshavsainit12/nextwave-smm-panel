@@ -3,6 +3,10 @@ import { redirect } from "next/navigation"
 import { MobileHighTrustDashboard } from "@/components/dashboard/mobile-high-trust-dashboard"
 import { DesktopDashboard } from "@/components/dashboard/desktop-dashboard"
 
+// Force dynamic rendering to prevent caching
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function DashboardPage() {
   const supabase = await createClient()
 

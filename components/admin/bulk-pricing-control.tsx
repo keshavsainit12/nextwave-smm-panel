@@ -17,16 +17,34 @@ export function BulkPricingControl() {
   const router = useRouter()
 
   const handleUpdate = async (increase: boolean) => {
+    if (percentage === 0) {
+      toast.error("Please enter a percentage value")
+      return
+    }
+    
     setLoading(true)
     try {
       const finalPercentage = increase ? Math.abs(percentage) : -Math.abs(percentage)
+      console.log(`[v0] Updating all services with ${finalPercentage}% change`)
+      
       const result = await updateAllServicesPricing(finalPercentage)
-      toast.success(`Updated ${result.updated} services with ${increase ? "+" : ""}${finalPercentage}% change`)
+      
+      console.log(`[v0] Percentage update result:`, result)
+      
+      if (result.errors && result.errors > 0) {
+        toast.warning(`Updated ${result.updated} of ${result.total} services. ${result.errors} failed.`)
+      } else {
+        toast.success(`Updated ${result.updated} services with ${increase ? "+" : ""}${finalPercentage}% change`)
+      }
+      
       setPercentage(0)
+      
+      // Wait a bit before refresh to ensure database updates propagate
+      await new Promise((resolve) => setTimeout(resolve, 500))
       router.refresh()
     } catch (error) {
       console.error("[v0] Pricing update error:", error)
-      toast.error("Failed to update pricing")
+      toast.error(error instanceof Error ? error.message : "Failed to update pricing")
     } finally {
       setLoading(false)
     }

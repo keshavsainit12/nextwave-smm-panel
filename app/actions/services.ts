@@ -49,8 +49,11 @@ export async function updateServicePrice(serviceId: string, newPrice: number) {
 
   if (error) throw error
 
+  // Revalidate all paths where services are displayed
   revalidatePath("/admin-panel-2024/services")
-  revalidatePath("/dashboard")
+  revalidatePath("/dashboard", "layout")
+  revalidatePath("/api/v1/services")
+  
   return { success: true }
 }
 
@@ -79,8 +82,11 @@ export async function updateService(serviceId: string, data: any) {
 
   if (error) throw error
 
+  // Revalidate all paths where services are displayed
   revalidatePath("/admin-panel-2024/services")
-  revalidatePath("/dashboard")
+  revalidatePath("/dashboard", "layout")
+  revalidatePath("/api/v1/services")
+  
   return { success: true }
 }
 
@@ -89,19 +95,47 @@ export async function updateAllServicesPricing(percentage: number) {
 
   const { data: services, error: fetchError } = await supabase.from("services").select("id, base_price, provider_price")
 
-  if (fetchError) throw fetchError
-
-  let updated = 0
-  for (const service of services || []) {
-    const currentPrice = service.base_price || service.provider_price * 3
-    const newPrice = currentPrice * (1 + percentage / 100)
-    const { error } = await supabase.from("services").update({ base_price: newPrice }).eq("id", service.id)
-    if (!error) updated++
+  if (fetchError) {
+    console.error("[v0] Failed to fetch services:", fetchError)
+    throw fetchError
   }
 
+  if (!services || services.length === 0) {
+    console.warn("[v0] No services found to update")
+    return { success: true, updated: 0 }
+  }
+
+  console.log(`[v0] Updating ${services.length} services with ${percentage}% change`)
+
+  let updated = 0
+  const errors: string[] = []
+  
+  for (const service of services) {
+    const currentPrice = service.base_price || service.provider_price * 3
+    const newPrice = currentPrice * (1 + percentage / 100)
+    
+    const { error } = await supabase.from("services").update({ base_price: newPrice }).eq("id", service.id)
+    
+    if (error) {
+      console.error(`[v0] Failed to update service ${service.id}:`, error)
+      errors.push(service.id)
+    } else {
+      updated++
+    }
+  }
+
+  console.log(`[v0] Successfully updated ${updated}/${services.length} services`)
+  
+  if (errors.length > 0) {
+    console.error(`[v0] Failed to update ${errors.length} services:`, errors)
+  }
+
+  // Revalidate all paths where services are displayed
   revalidatePath("/admin-panel-2024/services")
-  revalidatePath("/dashboard")
-  return { success: true, updated }
+  revalidatePath("/dashboard", "layout")
+  revalidatePath("/api/v1/services")
+  
+  return { success: true, updated, total: services.length, errors: errors.length }
 }
 
 export async function setAllServicesMultiplier(multiplier: number) {
@@ -162,9 +196,10 @@ export async function setAllServicesMultiplier(multiplier: number) {
       console.error(`[v0] Failed to update ${errors.length} services:`, errors)
     }
 
+    // Revalidate all paths where services are displayed
     revalidatePath("/admin-panel-2024/services")
-    revalidatePath("/dashboard/new-order")
-    revalidatePath("/dashboard")
+    revalidatePath("/dashboard", "layout")
+    revalidatePath("/api/v1/services")
 
     return { success: true, updated, total: services.length, errors: errors.length }
   } catch (error) {
