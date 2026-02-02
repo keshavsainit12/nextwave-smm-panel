@@ -8,12 +8,7 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { ArrowLeft, Loader2 } from "lucide-react"
 
-// Declare global to avoid TypeScript errors
-declare global {
-  interface Window {
-    grecaptcha?: any
-  }
-}
+
 
 function LoginContent() {
   const [email, setEmail] = useState("")
@@ -39,30 +34,6 @@ function LoginContent() {
     setError(null)
 
     try {
-      // Check if reCAPTCHA is available
-      if (typeof window !== 'undefined' && window.grecaptcha && process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) {
-        try {
-          console.log("[v0] Getting reCAPTCHA token...")
-          const token = await window.grecaptcha.execute(process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY, { action: 'login' })
-          
-          // Verify reCAPTCHA token on server
-          const recaptchaResponse = await fetch('/api/verify-recaptcha', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token })
-          })
-          
-          if (!recaptchaResponse.ok) {
-            throw new Error('reCAPTCHA verification failed. Please try again.')
-          }
-          
-          console.log("[v0] reCAPTCHA verified successfully")
-        } catch (recaptchaError) {
-          console.warn("[v0] reCAPTCHA error:", recaptchaError)
-          // Continue with login even if reCAPTCHA fails (optional - can be made required)
-        }
-      }
-
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,

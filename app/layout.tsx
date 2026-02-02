@@ -64,19 +64,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const recaptchaSiteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY
-  
   return (
     <html lang="en">
-      <head>
-        {recaptchaSiteKey && (
-          <script
-            src={`https://www.google.com/recaptcha/api.js?render=${recaptchaSiteKey}`}
-            async
-            defer
-          />
-        )}
-      </head>
+      <head></head>
       <body className={`${inter.variable} ${jetbrainsMono.variable} ${poppins.variable} font-sans antialiased`}>
         {children}
         <Toaster position="top-right" richColors />
