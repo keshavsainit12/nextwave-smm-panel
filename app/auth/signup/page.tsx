@@ -8,13 +8,6 @@ import { useRouter } from "next/navigation"
 import { ArrowLeft, Loader2 } from "lucide-react"
 import { signupUser } from "@/app/actions/auth"
 
-// Declare global to avoid TypeScript errors
-declare global {
-  interface Window {
-    grecaptcha?: any
-  }
-}
-
 function SignupContent() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")

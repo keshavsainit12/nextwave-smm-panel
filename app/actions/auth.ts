@@ -5,57 +5,6 @@ import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 import { COMPANY_NAME, EMAIL_CONFIG } from "@/lib/constants/company"
 
-// Verify reCAPTCHA token
-export async function verifyRecaptcha(token: string) {
-  try {
-    const secretKey = process.env.RECAPTCHA_SECRET_KEY
-    
-    // If no reCAPTCHA configured, allow login (don't block user)
-    if (!secretKey) {
-      console.warn("[v0] RECAPTCHA_SECRET_KEY not configured - skipping verification")
-      return { success: true }
-    }
-
-    // If no token provided, allow login (optional)
-    if (!token || token.trim() === "") {
-      console.warn("[v0] No reCAPTCHA token provided - skipping verification")
-      return { success: true }
-    }
-
-    console.log("[v0] Verifying reCAPTCHA token with Google API...")
-    const response = await fetch("https://www.google.com/recaptcha/api/siteverify", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: `secret=${secretKey}&response=${token}`,
-    })
-
-    if (!response.ok) {
-      console.warn("[v0] reCAPTCHA API returned non-200 status:", response.status)
-      return { success: true } // Allow login if reCAPTCHA API is down
-    }
-
-    const data = await response.json()
-    console.log("[v0] reCAPTCHA API response:", { success: data.success, score: data.score, action: data.action })
-
-    // For reCAPTCHA v2 (checkbox), just check success flag
-    // For reCAPTCHA v3, also check score > 0.5
-    if (data.success) {
-      console.log("[v0] reCAPTCHA verification successful")
-      return { success: true }
-    }
-
-    console.error("[v0] reCAPTCHA verification failed:", data)
-    // Don't block login - just warn about verification
-    return { success: true }
-  } catch (error) {
-    console.error("[v0] reCAPTCHA verification error:", error)
-    // Don't block login on reCAPTCHA errors
-    return { success: true }
-  }
-}
-
 export async function signupUser(formData: {
   email: string
   password: string
