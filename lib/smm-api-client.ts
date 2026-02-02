@@ -147,7 +147,7 @@ export class SMMApiClient {
           }
 
           if (isServerError && attempt < retries) {
-            // Exponential backoff: 1s, 2s, 4s
+            // Exponential backoff: 1s, 2s
             const delayMs = Math.pow(2, attempt - 1) * 1000
             console.warn(
               `[SMM-API] Server error ${response.status}, retrying in ${delayMs}ms (attempt ${attempt}/${retries})`,

@@ -256,7 +256,7 @@ export async function resendOrderToProvider(orderId: string) {
           },
           ip_address: "admin",
         })
-        .catch((err) => console.log("[ADMIN] Activity log error (non-critical):", err))
+        .catch((err) => console.error("[ADMIN] Activity log error (non-critical):", err))
 
       revalidatePath("/admin-panel-2024")
       revalidatePath("/admin-panel-2024/orders")
