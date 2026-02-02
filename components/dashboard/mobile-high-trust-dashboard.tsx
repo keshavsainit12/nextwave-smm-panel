@@ -159,6 +159,14 @@ export function MobileHighTrustDashboard({
     }
   }, [categoriesWithServices, services, selectedCategory])
 
+  // Auto-reset bulk mode when service or category changes
+  useEffect(() => {
+    if (isBulkBuy) {
+      setIsBulkBuy(false)
+      console.log("[v0] Bulk mode auto-reset due to service/category change")
+    }
+  }, [selectedService?.id, selectedCategory?.id])
+
   const handleQuantityChange = (newQuantity: number) => {
     const minQty = selectedService?.min_quantity || 100
     const maxQty = selectedService?.max_quantity || 1000000
