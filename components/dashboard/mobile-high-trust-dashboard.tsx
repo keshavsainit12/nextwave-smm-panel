@@ -473,6 +473,7 @@ export function MobileHighTrustDashboard({
                     const category = categoriesWithServices.find((c) => c.id === value)
                     if (category) {
                       setSelectedCategory(category)
+                      setIsBulkBuy(false) // Reset bulk toggle when category changes
                       const firstService = services.find((s) => s.category_id === category.id)
                       if (firstService) {
                         setSelectedService(firstService)
@@ -542,6 +543,7 @@ export function MobileHighTrustDashboard({
                         const service = filteredServices.find((s) => s.id === value)
                         if (service) {
                           setSelectedService(service)
+                          setIsBulkBuy(false) // Reset bulk toggle when service changes
                           setQuantity(service.min_quantity || 1000)
                         }
                       }}
