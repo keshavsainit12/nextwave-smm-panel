@@ -23,7 +23,6 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
       console.log("[v0] OrderDialog opened with service:", {
         id: service.id,
         name: service.name,
-        price: service.price,
         base_price: service.base_price,
         min_quantity: service.min_quantity,
         price_multiplier: service.price_multiplier,
@@ -57,7 +56,7 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
   }, [quantity, isBulkEligible, service.min_quantity])
   
   // Memoize price calculations to ensure they update reactively
-  const servicePrice = useMemo(() => Number(service.price || service.base_price || 0), [service])
+  const servicePrice = useMemo(() => Number(service.base_price || 0), [service])
   const priceMultiplier = useMemo(() => {
     // Bulk pricing: 2.5x if eligible, otherwise use user's multiplier (or default 3.0)
     return isBulkEligible ? 2.5 : (service.price_multiplier || 3.0)

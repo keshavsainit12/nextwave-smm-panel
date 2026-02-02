@@ -415,7 +415,7 @@ export function MobileOrderInterface({
         {showSearchResults && searchQuery && filteredServices.length > 0 && (
           <div className="bg-white/90 backdrop-blur-xl rounded-xl shadow-xl border border-white/30 max-h-64 overflow-y-auto">
             {filteredServices.slice(0, 10).map((service: any) => {
-              const servicePrice = Number(service.price || service.base_price || 0)
+              const servicePrice = Number(service.base_price || 0)
               return (
                 <button
                   key={service.id}
@@ -501,7 +501,7 @@ export function MobileOrderInterface({
                 className="w-[var(--radix-select-trigger-width)] max-h-[300px]"
               >
                 {filteredServices.map((service: any) => {
-                  const servicePrice = Number(service.price || service.base_price || 0)
+                  const servicePrice = Number(service.base_price || 0)
                   const iconUrl = getIconUrl(service.name)
                   return (
                     <SelectItem key={service.id} value={service.id} className="text-sm">

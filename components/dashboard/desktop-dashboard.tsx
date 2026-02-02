@@ -507,7 +507,7 @@ export function DesktopDashboard({
                                   }}
                                 />
                               )}
-                              <span>{service.name} - ${Number(service.price || service.base_price || 0).toFixed(2)}/1k</span>
+                              <span>{service.name} - ${Number(service.base_price || 0).toFixed(2)}/1k</span>
                             </div>
                           </SelectItem>
                         )
