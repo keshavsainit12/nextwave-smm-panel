@@ -435,9 +435,33 @@ export function MobileHighTrustDashboard({
                   </div>
                 </>
               ) : (
-                <div className="flex items-center gap-2 text-sm text-amber-700">
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>You're enjoying VIP benefits!</span>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-amber-700">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>You're enjoying VIP benefits!</span>
+                  </div>
+                  
+                  {/* VIP Savings Indicator */}
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    <div className="bg-white rounded-lg p-2 text-center border border-amber-200">
+                      <p className="text-amber-600 font-bold text-sm">
+                        {priceMultiplier ? ((3.0 - priceMultiplier) / 3.0 * 100).toFixed(0) : 50}%
+                      </p>
+                      <p className="text-slate-600 text-[10px]">Discount</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-2 text-center border border-amber-200">
+                      <p className="text-amber-600 font-bold text-sm">
+                        {priceMultiplier ? priceMultiplier.toFixed(1) : 1.5}×
+                      </p>
+                      <p className="text-slate-600 text-[10px]">Multiplier</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-2 text-center border border-amber-200">
+                      <p className="text-amber-600 font-bold text-sm">
+                        ${((3.0 - (priceMultiplier || 1.5)) * (totalSpent / (priceMultiplier || 1.5) / 3.0)).toFixed(0)}
+                      </p>
+                      <p className="text-slate-600 text-[10px]">Saved</p>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

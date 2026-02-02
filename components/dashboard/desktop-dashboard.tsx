@@ -386,11 +386,35 @@ export function DesktopDashboard({
             </div>
           </div>
         ) : (
-          <div className="flex items-center gap-3 p-4 bg-amber-100 rounded-xl">
-            <Check className="w-6 h-6 text-amber-600" />
-            <div>
-              <p className="text-amber-800 font-bold">You're a VIP member!</p>
-              <p className="text-amber-700 text-sm">Enjoy exclusive discounts and priority support on all orders.</p>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-4 bg-amber-100 rounded-xl">
+              <Check className="w-6 h-6 text-amber-600" />
+              <div>
+                <p className="text-amber-800 font-bold">You're a VIP member!</p>
+                <p className="text-amber-700 text-sm">Enjoying exclusive benefits on all orders.</p>
+              </div>
+            </div>
+            
+            {/* VIP Discount Indicator */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-white rounded-xl p-3 text-center border border-amber-200">
+                <p className="text-amber-600 font-bold text-lg">
+                  {priceMultiplier ? ((3.0 - priceMultiplier) / 3.0 * 100).toFixed(0) : 50}%
+                </p>
+                <p className="text-slate-600 text-xs">Your Discount</p>
+              </div>
+              <div className="bg-white rounded-xl p-3 text-center border border-amber-200">
+                <p className="text-amber-600 font-bold text-lg">
+                  {priceMultiplier ? priceMultiplier.toFixed(1) : 1.5}×
+                </p>
+                <p className="text-slate-600 text-xs">Price Multiplier</p>
+              </div>
+              <div className="bg-white rounded-xl p-3 text-center border border-amber-200">
+                <p className="text-amber-600 font-bold text-lg">
+                  ${((3.0 - (priceMultiplier || 1.5)) * (totalSpent / (priceMultiplier || 1.5) / 3.0)).toFixed(0)}
+                </p>
+                <p className="text-slate-600 text-xs">Total Saved</p>
+              </div>
             </div>
           </div>
         )}
