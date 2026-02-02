@@ -12,6 +12,10 @@ export const dynamic = 'force-dynamic'
 
 export default async function AdminServicesPage() {
   const supabase = await createClient()
+  
+  // Generate a timestamp to force fresh data
+  const timestamp = Date.now()
+  
   const [{ data: services }, { data: categories }, { data: providers }] = await Promise.all([
     supabase
       .from("services")
@@ -44,7 +48,7 @@ export default async function AdminServicesPage() {
 
       <BulkPricingControl />
 
-      <Tabs defaultValue="all" className="w-full">
+      <Tabs defaultValue="all" className="w-full" key={timestamp}>
         <TabsList className="grid grid-cols-3 gap-1 w-full h-auto">
           <TabsTrigger value="all" className="text-xs sm:text-sm">
             All ({services?.length || 0})
@@ -64,7 +68,7 @@ export default async function AdminServicesPage() {
               <CardDescription className="text-xs sm:text-sm">Complete list of available services</CardDescription>
             </CardHeader>
             <CardContent className="p-3 sm:p-4 md:p-6 overflow-x-auto">
-              <ServiceList services={services || []} />
+              <ServiceList services={services || []} key={`all-${timestamp}`} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -76,7 +80,7 @@ export default async function AdminServicesPage() {
               <CardDescription className="text-xs sm:text-sm">Services available to users</CardDescription>
             </CardHeader>
             <CardContent className="p-3 sm:p-4 md:p-6 overflow-x-auto">
-              <ServiceList services={services?.filter((s) => s.is_active) || []} />
+              <ServiceList services={services?.filter((s) => s.is_active) || []} key={`active-${timestamp}`} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -88,7 +92,7 @@ export default async function AdminServicesPage() {
               <CardDescription className="text-xs sm:text-sm">Disabled services</CardDescription>
             </CardHeader>
             <CardContent className="p-3 sm:p-4 md:p-6 overflow-x-auto">
-              <ServiceList services={services?.filter((s) => !s.is_active) || []} />
+              <ServiceList services={services?.filter((s) => !s.is_active) || []} key={`inactive-${timestamp}`} />
             </CardContent>
           </Card>
         </TabsContent>
