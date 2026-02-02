@@ -161,13 +161,17 @@ export async function setAllServicesMultiplier(multiplier: number) {
 
     // Update all services in parallel
     const updatePromises = services.map(async (service) => {
-      const basePrice = service.provider_price || service.base_price || 0
-      if (basePrice <= 0) {
-        console.warn(`[v0] Skipping service ${service.id} - no valid base price`)
+      // IMPORTANT: Always use provider_price as base for multiplier calculation
+      // Do NOT fallback to base_price as that would compound the multiplier
+      const providerPrice = service.provider_price || 0
+      
+      if (providerPrice <= 0) {
+        console.warn(`[v0] Skipping service ${service.id} - no valid provider_price`)
         return
       }
 
-      const newPrice = Number((basePrice * multiplier).toFixed(4))
+      // Calculate new price: provider_price × multiplier
+      const newPrice = Number((providerPrice * multiplier).toFixed(4))
 
       const { error } = await supabase
         .from("services")
@@ -181,7 +185,7 @@ export async function setAllServicesMultiplier(multiplier: number) {
         errors.push(service.id)
       } else {
         updated++
-        console.log(`[v0] ✓ Service ${service.id}: $${basePrice.toFixed(4)} × ${multiplier} = $${newPrice.toFixed(4)}`)
+        console.log(`[v0] ✓ Service ${service.id}: $${providerPrice.toFixed(4)} × ${multiplier} = $${newPrice.toFixed(4)}`)
       }
     })
 
