@@ -110,13 +110,14 @@ export function DesktopDashboard({
   const totalPrice = useMemo(() => {
     if (!selectedService) return 0
     const servicePrice = Number(selectedService.price || selectedService.base_price || 0)
-    const multiplier = isBulkBuy ? 2.5 : 3.0
+    const userMultiplier = priceMultiplier ?? 3.0
+    const multiplier = isBulkBuy ? 2.5 : userMultiplier
     const priceBeforeDiscount = (quantity / 1000) * servicePrice * multiplier
     if (appliedCouponDiscount > 0) {
       return priceBeforeDiscount * (1 - appliedCouponDiscount / 100)
     }
     return priceBeforeDiscount
-  }, [selectedService, quantity, isBulkBuy, appliedCouponDiscount])
+  }, [selectedService, quantity, isBulkBuy, appliedCouponDiscount, priceMultiplier])
 
   const handleCouponApplied = useCallback((couponCode: string, discount: number) => {
     if (typeof discount === 'number' && discount > 0) {
