@@ -331,6 +331,67 @@ Even without debug mode, all provider API failures are logged with comprehensive
 - External service ID
 - Error message and provider response
 
+### Test Provider API Connection (Admin)
+
+**IMPORTANT: Use this FIRST to diagnose why orders are not reaching provider!**
+
+Test your provider API connection and find exactly where the issue is:
+
+\`\`\`bash
+# Test provider connection
+curl -X POST "https://nextwavesmm.com/api/admin/test-provider" \\
+  -H "Authorization: Bearer YOUR_ADMIN_SESSION_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -d '{"provider_id": "YOUR_PROVIDER_ID"}'
+\`\`\`
+
+**Response shows:**
+- Configuration validity (API URL, API key present)
+- URL format check
+- Balance check (tests authentication) ✅ or ❌
+- Services list retrieval ✅ or ❌
+- Overall status and suggestions
+
+**Example Success Response:**
+\`\`\`json
+{
+  "success": true,
+  "diagnostics": {
+    "overall_status": "ALL_TESTS_PASSED",
+    "message": "Provider API working correctly!",
+    "tests": [
+      {
+        "test": "Balance Check (Auth Test)",
+        "status": "PASSED",
+        "message": "Authentication successful",
+        "data": { "balance": "150.50", "currency": "USD" }
+      }
+    ]
+  }
+}
+\`\`\`
+
+**Example Failure Response (401 Unauthorized):**
+\`\`\`json
+{
+  "success": false,
+  "diagnostics": {
+    "overall_status": "TESTS_FAILED",
+    "message": "Provider API has issues. Check failed tests.",
+    "tests": [
+      {
+        "test": "Balance Check (Auth Test)",
+        "status": "FAILED",
+        "error": "Provider API request failed (401): Invalid API key",
+        "http_status": 401,
+        "provider_response": { "error": "Invalid API key" },
+        "suggestion": "API key invalid/expired. Regenerate on provider dashboard."
+      }
+    ]
+  }
+}
+\`\`\`
+
 ### Manual Provider API Testing
 
 To manually test if your provider API is working, use curl with values from your database:
@@ -360,6 +421,24 @@ curl -X POST "https://provider.example.com/api/v2" \\
 - `401 Unauthorized`: API key is invalid or expired (regenerate on provider dashboard)
 - `400 Bad Request`: Check service ID, link format, or quantity limits
 - `500 Server Error`: Provider system issue (retry automatically handled)
+
+### Detailed Order Placement Logs
+
+When placing an order, check your server logs for detailed output:
+
+\`\`\`
+[v0] ===== SENDING ORDER TO PROVIDER =====
+[v0] Provider Details: { provider_id, api_url, auth_mode, masked_api_key }
+[v0] Order Details: { order_id, external_service_id, link, quantity }
+[v0] Using auth mode: key
+[v0] ✅ SUCCESS! API order created with external ID: 12345
+\`\`\`
+
+If order fails, you'll see:
+\`\`\`
+[v0] ❌ FAILED to send order to API provider
+[v0] Error Details: { provider_http_status: 401, provider_response_body: "Invalid API key" }
+\`\`\`
 
 ### Resending Failed Orders (Admin Only)
 

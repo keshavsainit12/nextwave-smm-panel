@@ -196,11 +196,29 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
     // Send to API provider
     if (service.provider && service.provider.is_active && service.external_service_id) {
       try {
-        console.log("[v0] Sending order to external API provider...")
+        console.log("[v0] ===== SENDING ORDER TO PROVIDER =====")
+        console.log("[v0] Provider Details:", {
+          provider_id: service.provider.id,
+          provider_name: service.provider.name,
+          api_url: service.provider.api_url,
+          is_active: service.provider.is_active,
+          auth_mode: (service.provider as any).auth_mode || "key (default)",
+          masked_api_key: service.provider.api_key
+            ? `${service.provider.api_key.slice(0, 4)}...${service.provider.api_key.slice(-4)}`
+            : "MISSING",
+        })
+        console.log("[v0] Order Details:", {
+          order_id: order.id,
+          external_service_id: service.external_service_id,
+          link: link,
+          quantity: quantity,
+        })
+
         const apiClient = new SMMApiClient(service.provider.api_url, service.provider.api_key)
         
         // Determine auth mode from provider settings
         const authMode = (service.provider as any).auth_mode === "bearer" ? "bearer" : "key"
+        console.log("[v0] Using auth mode:", authMode)
         
         const apiResponse = await apiClient.createOrder(
           Number.parseInt(service.external_service_id),
@@ -209,7 +227,8 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
           { authMode },
         )
 
-        console.log("[v0] API order created with ID:", apiResponse.order)
+        console.log("[v0] ✅ SUCCESS! API order created with external ID:", apiResponse.order)
+        console.log("[v0] Full API Response:", apiResponse)
 
         const { error: apiUpdateError } = await supabase
           .from("orders")
@@ -221,25 +240,39 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
 
         if (apiUpdateError) {
           console.warn("[v0] Failed to update order with external ID (non-critical):", apiUpdateError.message)
+        } else {
+          console.log("[v0] ✅ Order updated in database with external_order_id:", apiResponse.order)
         }
       } catch (error: any) {
         // Log comprehensive error details for diagnostics
         const errorResponse = error.response || {}
-        console.error("[v0] Failed to send order to API provider:", {
+        console.error("[v0] ❌ FAILED to send order to API provider")
+        console.error("[v0] Error Details:", {
           order_id: order.id,
           provider_id: service.provider.id,
+          provider_name: service.provider.name,
           provider_api_url: service.provider.api_url,
           masked_api_key: service.provider.api_key
             ? `${service.provider.api_key.slice(0, 4)}...${service.provider.api_key.slice(-4)}`
             : "none",
           service_external_id: service.external_service_id,
+          auth_mode: (service.provider as any).auth_mode || "key",
           error_message: error.message,
-          provider_response_status: errorResponse.status,
+          provider_http_status: errorResponse.status,
           provider_response_body: errorResponse.body,
         })
+        console.error("[v0] Full Error Stack:", error.stack)
+        console.error("[v0] ===================================")
         // Order stays in pending status if API fails - user still got charged and order is recorded
         // Admin can use the resend utility to retry with updated credentials
       }
+    } else {
+      // Log why order is not being sent to provider
+      console.log("[v0] Order NOT sent to provider. Reason:", {
+        has_provider: !!service.provider,
+        provider_is_active: service.provider?.is_active,
+        has_external_service_id: !!service.external_service_id,
+      })
     }
 
     revalidatePath("/dashboard")
