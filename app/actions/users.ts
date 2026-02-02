@@ -3,6 +3,14 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 
+// Tier to price multiplier mapping
+const TIER_MULTIPLIERS: Record<number, number> = {
+  1: 3.0,  // Normal User
+  2: 2.5,  // Bulk Buyer
+  3: 2.0,  // Reseller
+  4: 1.5,  // VIP
+}
+
 export async function updateUser(
   userId: string,
   data: {
@@ -18,26 +26,11 @@ export async function updateUser(
     console.log("[v0] Updating user:", userId, data)
 
     // Prepare update data
-    const updateData: any = { ...data }
+    const updateData: Record<string, any> = { ...data }
     
     // Auto-set price_multiplier based on tier
     if (data.tier !== undefined) {
-      switch (data.tier) {
-        case 1:
-          updateData.price_multiplier = 3.0 // Normal User
-          break
-        case 2:
-          updateData.price_multiplier = 2.5 // Bulk Buyer
-          break
-        case 3:
-          updateData.price_multiplier = 2.0 // Reseller
-          break
-        case 4:
-          updateData.price_multiplier = 1.5 // VIP (can be customized later)
-          break
-        default:
-          updateData.price_multiplier = 3.0
-      }
+      updateData.price_multiplier = TIER_MULTIPLIERS[data.tier] || 3.0
       console.log("[v0] Setting price_multiplier:", updateData.price_multiplier, "for tier:", data.tier)
     }
 

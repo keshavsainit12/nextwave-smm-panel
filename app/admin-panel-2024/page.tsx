@@ -29,6 +29,9 @@ export default async function AdminDashboardPage() {
     supabase.from("users").select("id", { count: "exact", head: false }).gte("last_login", thirtyDaysAgo.toISOString()).limit(100),
   ])
 
+  // Revenue calculation constants
+  const DEFAULT_MARKUP_RATIO = 3 // Standard markup for normal users
+  
   console.log("[v0] Admin dashboard - Loaded", ordersData?.length || 0, "completed orders for revenue calculation")
 
   // Calculate Order Revenue & Profit (Only from completed orders)
@@ -49,12 +52,13 @@ export default async function AdminDashboardPage() {
       // Use provider price per 1K
       cost = (quantity / 1000) * providerPrice
     } else {
-      // Fallback: estimate cost from order base_price or assume 33% of selling price
+      // Fallback: estimate cost from order base_price or assume standard markup
       const basePrice = Number(order.base_price || 0)
       if (basePrice > 0) {
-        cost = (quantity / 1000) * (basePrice / 3) // Assume 3x markup
+        cost = (quantity / 1000) * (basePrice / DEFAULT_MARKUP_RATIO)
       } else {
-        cost = Number(order.price || 0) / 3 // Very rough estimate
+        // Very rough estimate when no pricing data available
+        cost = Number(order.price || 0) / DEFAULT_MARKUP_RATIO
       }
     }
     
