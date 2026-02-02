@@ -48,15 +48,17 @@ export function BulkPricingControl() {
       // Wait longer before refresh to ensure database updates propagate
       await new Promise((resolve) => setTimeout(resolve, 1000))
       
-      // Force a complete refresh
+      // Force a complete refresh with cache busting
       router.refresh()
       
-      // Keep refreshing state visible to show the update
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      // Add a small delay then do a hard refresh to ensure fresh data
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      if (typeof window !== 'undefined') {
+        window.location.href = window.location.href.split('?')[0] + '?t=' + Date.now()
+      }
     } catch (error) {
       console.error("[v0] Pricing update error:", error)
       toast.error(error instanceof Error ? error.message : "Failed to update pricing")
-    } finally {
       setLoading(false)
       setRefreshing(false)
     }
@@ -88,17 +90,19 @@ export function BulkPricingControl() {
       // Wait longer before refresh to ensure database updates propagate
       await new Promise((resolve) => setTimeout(resolve, 1000))
       
-      // Force a complete refresh
+      // Force a complete refresh with cache busting
       router.refresh()
       
-      // Keep refreshing state visible to show the update
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      // Add a small delay then do a hard refresh to ensure fresh data
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      if (typeof window !== 'undefined') {
+        window.location.href = window.location.href.split('?')[0] + '?t=' + Date.now()
+      }
     } catch (error) {
       console.error("[v0] Multiplier update error:", error)
       toast.error(error instanceof Error ? error.message : "Failed to set multiplier")
       // Revert selected multiplier on error
       setSelectedMultiplier(3)
-    } finally {
       setMultiplierLoading(null)
       setRefreshing(false)
     }
