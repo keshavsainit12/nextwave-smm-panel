@@ -24,18 +24,17 @@ redirect("/auth/login")
 }
 
 
-// ✅ FIXED: user_tiers JOIN added
-const { data: userProfile } = await supabase
-.from("users")
-.select(`
-*,
-user_tiers (
-name,
-price_multiplier
-)
-`)
-.eq("id", user.id)
-.single()
+  // Get user profile with basic fields
+  const { data: userProfile, error: profileError } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", user.id)
+    .single()
+
+  if (profileError) {
+    console.error("[v0] Dashboard layout - user profile error:", profileError)
+    redirect("/auth/login")
+  }
 
 
 return (
@@ -43,11 +42,11 @@ return (
 <div className="flex flex-col md:flex-row h-screen bg-slate-50/50 md:overflow-hidden">
 {/* Sidebar */}
 <div className="hidden md:flex md:w-56 lg:w-64 flex-shrink-0 md:border-r md:border-gray-200 md:dark:border-gray-800">
-<DashboardSidebar
-userName={userProfile?.full_name || user?.email || "User"}
-userBalance={userProfile?.balance || 0}
-priceMultiplier={userProfile?.user_tiers?.price_multiplier}
-/>
+        <DashboardSidebar
+          userName={userProfile?.full_name || user?.email || "User"}
+          userBalance={userProfile?.balance || 0}
+          priceMultiplier={userProfile?.price_multiplier}
+        />
 </div>
 
 
@@ -55,10 +54,10 @@ priceMultiplier={userProfile?.user_tiers?.price_multiplier}
 <div className="flex flex-col flex-1 md:overflow-hidden w-full">
 {/* Header */}
 <div className="flex-shrink-0 md:border-b md:border-gray-200 md:dark:border-gray-800">
-<DashboardHeader
-user={userProfile}
-priceMultiplier={userProfile?.user_tiers?.price_multiplier}
-/>
+        <DashboardHeader
+          user={userProfile}
+          priceMultiplier={userProfile?.price_multiplier}
+        />
 </div>
 
 
