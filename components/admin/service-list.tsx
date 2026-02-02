@@ -104,8 +104,10 @@ export function ServiceList({ services }: { services: any[] }) {
           </TableHeader>
           <TableBody>
             {filteredServices.map((service) => {
-              const providerPrice = Number(service.provider_price || 0)
               const sellingPrice = Number(service.base_price || 0)
+              // Calculate provider price from selling price (assuming 3x multiplier)
+              // If user has custom multiplier, this shows estimated provider cost
+              const providerPrice = sellingPrice > 0 ? sellingPrice / 3 : 0
               const profit = providerPrice > 0 ? (((sellingPrice - providerPrice) / providerPrice) * 100).toFixed(0) : 0
 
               return (
