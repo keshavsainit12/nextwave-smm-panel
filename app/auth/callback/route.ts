@@ -95,8 +95,7 @@ export async function GET(request: NextRequest) {
 
     if (userCheckError && userCheckError.code !== "PGRST116") {
       console.error("[v0] User check error:", userCheckError)
-      const redirectUrl = source === "signup" ? "/auth/signup" : "/auth/login"
-      return NextResponse.redirect(new URL(`${redirectUrl}?error=Database error`, request.url))
+      return NextResponse.redirect(new URL("/auth/login?error=Database error", request.url))
     }
 
     if (!existingUser) {

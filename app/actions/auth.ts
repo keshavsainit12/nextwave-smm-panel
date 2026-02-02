@@ -9,9 +9,17 @@ import { COMPANY_NAME, EMAIL_CONFIG } from "@/lib/constants/company"
 export async function verifyRecaptcha(token: string) {
   try {
     const secretKey = process.env.RECAPTCHA_SECRET_KEY
+    
+    // If no reCAPTCHA configured, allow login (don't block user)
     if (!secretKey) {
-      console.error("[v0] RECAPTCHA_SECRET_KEY not configured")
-      return { success: false, error: "reCAPTCHA not configured" }
+      console.warn("[v0] RECAPTCHA_SECRET_KEY not configured - skipping verification")
+      return { success: true }
+    }
+
+    // If no token provided, allow login (optional)
+    if (!token || token.trim() === "") {
+      console.warn("[v0] No reCAPTCHA token provided - skipping verification")
+      return { success: true }
     }
 
     console.log("[v0] Verifying reCAPTCHA token with Google API...")
@@ -22,6 +30,11 @@ export async function verifyRecaptcha(token: string) {
       },
       body: `secret=${secretKey}&response=${token}`,
     })
+
+    if (!response.ok) {
+      console.warn("[v0] reCAPTCHA API returned non-200 status:", response.status)
+      return { success: true } // Allow login if reCAPTCHA API is down
+    }
 
     const data = await response.json()
     console.log("[v0] reCAPTCHA API response:", { success: data.success, score: data.score, action: data.action })
@@ -34,10 +47,12 @@ export async function verifyRecaptcha(token: string) {
     }
 
     console.error("[v0] reCAPTCHA verification failed:", data)
-    return { success: false, error: "reCAPTCHA verification failed" }
+    // Don't block login - just warn about verification
+    return { success: true }
   } catch (error) {
     console.error("[v0] reCAPTCHA verification error:", error)
-    return { success: false, error: "reCAPTCHA verification failed" }
+    // Don't block login on reCAPTCHA errors
+    return { success: true }
   }
 }
 

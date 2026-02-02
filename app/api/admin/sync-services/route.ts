@@ -22,7 +22,13 @@ function determineCategoryFromName(serviceName: string): string {
 
 export async function POST(request: Request) {
   try {
-    const { providerId, multiplier = 3.0 } = await request.json()
+    const body = await request.json()
+    const providerId = body?.providerId
+    const multiplier = body?.multiplier || 3.0
+
+    if (!providerId) {
+      return NextResponse.json({ error: "providerId is required" }, { status: 400 })
+    }
 
     const supabase = await createClient()
 
@@ -33,14 +39,42 @@ export async function POST(request: Request) {
       .single()
 
     if (providerError || !provider) {
-      return NextResponse.json({ error: "Provider not found" }, { status: 404 })
+      console.error("[v0] Provider not found:", providerId, providerError)
+      return NextResponse.json({ 
+        error: "Provider not found",
+        providerId: providerId,
+        details: providerError?.message
+      }, { status: 404 })
     }
 
     const apiClient = new SMMApiClient(provider.api_url, provider.api_key)
-    const services = await apiClient.getServices()
+    
+    let services
+    try {
+      services = await apiClient.getServices()
+    } catch (apiError: any) {
+      console.error("[v0] Error fetching services from API:", apiError)
+      return NextResponse.json({ 
+        error: "Failed to fetch services from provider",
+        details: apiError?.message
+      }, { status: 500 })
+    }
 
-    if (!Array.isArray(services) || services.length === 0) {
-      return NextResponse.json({ error: "No services received from API" }, { status: 400 })
+    if (!Array.isArray(services)) {
+      console.error("[v0] Services is not an array:", typeof services)
+      return NextResponse.json({ 
+        error: "Invalid response from provider - services should be an array",
+        received: typeof services
+      }, { status: 400 })
+    }
+
+    if (services.length === 0) {
+      console.warn("[v0] No services received from API for provider:", providerId)
+      return NextResponse.json({ 
+        error: "No services received from API",
+        synced: 0,
+        total: 0
+      }, { status: 200 })
     }
 
     const { data: existingCategories } = await supabase.from("service_categories").select("id, name")
@@ -97,61 +131,83 @@ export async function POST(request: Request) {
 
     let syncedCount = 0
     let errorCount = 0
+    const failedServices: string[] = []
+
+    console.log(`[v0] Starting service sync for provider ${providerId} with ${services.length} services`)
 
     for (const service of services) {
-      let categoryId = null
+      try {
+        let categoryId = null
 
-      // Try to use category from API
-      if (service.category) {
-        categoryId = categoryMap.get(service.category.toLowerCase()) || null
-      }
+        // Try to use category from API
+        if (service.category) {
+          categoryId = categoryMap.get(service.category.toLowerCase()) || null
+        }
 
-      // If no category from API, determine from service name automatically
-      if (!categoryId) {
-        const determinedCategory = determineCategoryFromName(service.name)
-        categoryId = categoryMap.get(determinedCategory.toLowerCase()) || null
-      }
+        // If no category from API, determine from service name automatically
+        if (!categoryId && service.name) {
+          const determinedCategory = determineCategoryFromName(service.name)
+          categoryId = categoryMap.get(determinedCategory.toLowerCase()) || null
+        }
 
-      const providerPrice = Number.parseFloat(service.rate) || 0
-      const sellingPrice = providerPrice * multiplier
+        const providerPrice = Number.parseFloat(service.rate) || 0
+        const sellingPrice = providerPrice > 0 ? providerPrice * multiplier : 0
 
-      const serviceData = {
-        name: service.name,
-        category_id: categoryId,
-        provider_id: providerId,
-        external_service_id: String(service.service),
-        provider_price: providerPrice,
-        base_price: sellingPrice,
-        min_quantity: Number.parseInt(service.min) || 1,
-        max_quantity: Number.parseInt(service.max) || 10000,
-        description: service.name,
-        is_active: true,
-        has_refill: service.refill === true || service.refill === "true",
-        cancel: service.cancel === true || service.cancel === "true",
-        dripfeed: service.dripfeed === true || service.dripfeed === "true",
-      }
+        const serviceData = {
+          name: service.name || "Unknown Service",
+          category_id: categoryId,
+          provider_id: providerId,
+          external_service_id: String(service.service || service.id),
+          provider_price: providerPrice,
+          base_price: sellingPrice,
+          min_quantity: Number.parseInt(service.min) || 1,
+          max_quantity: Number.parseInt(service.max) || 10000,
+          description: service.description || service.name || "Service",
+          is_active: true,
+          has_refill: service.refill === true || service.refill === "true",
+          cancel: service.cancel === true || service.cancel === "true",
+          dripfeed: service.dripfeed === true || service.dripfeed === "true",
+        }
 
-      const { error: upsertError } = await supabase.from("services").upsert(serviceData, {
-        onConflict: "external_service_id,provider_id",
-      })
+        const { error: upsertError } = await supabase.from("services").upsert(serviceData, {
+          onConflict: "external_service_id,provider_id",
+        })
 
-      if (upsertError) {
+        if (upsertError) {
+          console.error(`[v0] Failed to sync service ${service.service}:`, upsertError)
+          errorCount++
+          failedServices.push(String(service.service))
+        } else {
+          syncedCount++
+        }
+      } catch (serviceError: any) {
+        console.error(`[v0] Error processing service:`, serviceError)
         errorCount++
-      } else {
-        syncedCount++
       }
     }
 
-    await supabase.from("api_providers").update({ last_sync: new Date().toISOString() }).eq("id", providerId)
+    // Update last sync time
+    try {
+      await supabase.from("api_providers").update({ last_sync: new Date().toISOString() }).eq("id", providerId)
+    } catch (e) {
+      console.warn("[v0] Failed to update last_sync time:", e)
+    }
+
+    console.log(`[v0] Service sync complete: ${syncedCount} synced, ${errorCount} errors out of ${services.length}`)
 
     return NextResponse.json({
-      success: true,
+      success: errorCount === 0,
       message: `Synced ${syncedCount} services with ${multiplier}x pricing`,
       synced: syncedCount,
       errors: errorCount,
       total: services.length,
+      failedServices: failedServices.length > 0 ? failedServices : undefined,
     })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to sync services" }, { status: 500 })
+    console.error("[v0] Sync services error:", error)
+    return NextResponse.json({ 
+      error: error?.message || "Failed to sync services",
+      success: false
+    }, { status: 500 })
   }
 }
