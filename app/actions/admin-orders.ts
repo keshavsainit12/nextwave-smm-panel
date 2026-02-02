@@ -143,7 +143,7 @@ export async function cancelOrder(orderId: string, reason: string) {
     console.log("[v0] Order cancelled successfully:", orderId)
 
     // Log activity
-    await supabase.from("activity_logs").insert({
+    const activityResult = await supabase.from("activity_logs").insert({
       user_id: order.user_id,
       action: "order_cancelled",
       entity_type: "order",
@@ -153,7 +153,11 @@ export async function cancelOrder(orderId: string, reason: string) {
         refund_amount: order.price,
       },
       ip_address: "admin",
-    }).catch((err) => console.log("[v0] Activity log error (non-critical):", err))
+    })
+    
+    if (activityResult.error) {
+      console.log("[v0] Activity log error (non-critical):", activityResult.error)
+    }
 
     revalidatePath("/admin-panel-2024")
     revalidatePath("/admin-panel-2024/orders")
@@ -260,7 +264,7 @@ export async function resendOrderToProvider(orderId: string) {
       }
 
       // Log activity
-      await supabase
+      const activityLogResult = await supabase
         .from("activity_logs")
         .insert({
           user_id: order.user_id,
@@ -274,7 +278,10 @@ export async function resendOrderToProvider(orderId: string) {
           },
           ip_address: "admin",
         })
-        .catch((err) => console.error("[ADMIN] Activity log error (non-critical):", err))
+      
+      if (activityLogResult.error) {
+        console.error("[ADMIN] Activity log error (non-critical):", activityLogResult.error)
+      }
 
       revalidatePath("/admin-panel-2024")
       revalidatePath("/admin-panel-2024/orders")
