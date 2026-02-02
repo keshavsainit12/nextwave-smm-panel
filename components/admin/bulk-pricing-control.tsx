@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -17,6 +17,20 @@ export function BulkPricingControl() {
   const [refreshing, setRefreshing] = useState(false)
   const [selectedMultiplier, setSelectedMultiplier] = useState<number>(3) // Track selected multiplier, default to 3x
   const router = useRouter()
+
+  // Restore selected multiplier from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('selectedMultiplier')
+      if (saved) {
+        const mult = Number(saved)
+        if (!isNaN(mult) && [2, 2.5, 3, 4, 5].includes(mult)) {
+          setSelectedMultiplier(mult)
+          console.log(`[v0] Restored selectedMultiplier from localStorage: ${mult}`)
+        }
+      }
+    }
+  }, [])
 
   const handleUpdate = async (increase: boolean) => {
     if (percentage === 0) {
@@ -45,14 +59,10 @@ export function BulkPricingControl() {
       setRefreshing(true)
       toast.info("Refreshing service list...")
       
-      // Wait longer before refresh to ensure database updates propagate
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      // Wait even longer (2 seconds) to ensure database updates fully propagate
+      await new Promise((resolve) => setTimeout(resolve, 2000))
       
       // Force a complete refresh with cache busting
-      router.refresh()
-      
-      // Add a small delay then do a hard refresh to ensure fresh data
-      await new Promise((resolve) => setTimeout(resolve, 500))
       if (typeof window !== 'undefined') {
         window.location.href = window.location.href.split('?')[0] + '?t=' + Date.now()
       }
@@ -67,6 +77,12 @@ export function BulkPricingControl() {
   const handleSetMultiplier = async (multiplier: number) => {
     setMultiplierLoading(multiplier)
     setSelectedMultiplier(multiplier) // Update selected multiplier immediately for UI feedback
+    
+    // Save to localStorage BEFORE reload so it persists
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('selectedMultiplier', multiplier.toString())
+      console.log(`[v0] Saved selectedMultiplier to localStorage: ${multiplier}`)
+    }
     
     try {
       console.log(`[v0] Setting multiplier to ${multiplier}x`)
@@ -87,14 +103,10 @@ export function BulkPricingControl() {
       setRefreshing(true)
       toast.info("Refreshing service list...")
       
-      // Wait longer before refresh to ensure database updates propagate
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      // Wait even longer (2 seconds) to ensure database updates fully propagate
+      await new Promise((resolve) => setTimeout(resolve, 2000))
       
       // Force a complete refresh with cache busting
-      router.refresh()
-      
-      // Add a small delay then do a hard refresh to ensure fresh data
-      await new Promise((resolve) => setTimeout(resolve, 500))
       if (typeof window !== 'undefined') {
         window.location.href = window.location.href.split('?')[0] + '?t=' + Date.now()
       }
@@ -103,6 +115,9 @@ export function BulkPricingControl() {
       toast.error(error instanceof Error ? error.message : "Failed to set multiplier")
       // Revert selected multiplier on error
       setSelectedMultiplier(3)
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('selectedMultiplier', '3')
+      }
       setMultiplierLoading(null)
       setRefreshing(false)
     }
