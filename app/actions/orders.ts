@@ -420,8 +420,11 @@ export async function cancelOrder(orderId: string) {
   const user = userResponse.data.user
 
   if (!user) {
+    console.error("[v0] Cancel order - Unauthorized access attempt")
     return { error: "Unauthorized" }
   }
+
+  console.log(`[v0] Starting cancel for order ${orderId} by user ${user.id}`)
 
   const orderResponseData = await supabase
     .from("orders")
@@ -438,62 +441,95 @@ export async function cancelOrder(orderId: string) {
   const order = orderResponseData.data
 
   if (!order) {
+    console.error(`[v0] Order ${orderId} not found for user ${user.id}`)
     return { error: "Order not found" }
   }
 
+  console.log(`[v0] Order found - status: ${order.status}, price: ${order.price}, external_id: ${order.external_order_id}`)
+
   if (order.status === "completed" || order.status === "canceled") {
+    console.warn(`[v0] Cannot cancel order ${orderId} - status is ${order.status}`)
     return { error: "Cannot cancel this order" }
   }
 
   if (!order.external_order_id || !order.service?.provider) {
     // Just mark as canceled if no external order
-    console.log(`[v0] Canceling order ${orderId} - no external order`)
+    console.log(`[v0] Canceling order ${orderId} - no external order, marking as canceled`)
     await supabase
       .from("orders")
       .update({ status: ORDER_STATUSES.CANCELED }) // Use constant
       .eq("id", orderId)
     revalidatePath("/dashboard/orders")
-    return { success: true }
+    return { success: true, message: "Order canceled" }
   }
 
   const provider = order.service.provider
 
   try {
+    console.log(`[v0] Canceling order ${order.external_order_id} with provider ${provider.name}`)
     const apiClient = new SMMApiClient(provider.api_url, provider.api_key)
     await apiClient.cancelOrder(Number.parseInt(order.external_order_id))
+    console.log(`[v0] Provider cancellation successful`)
 
     // Update order and refund
     const refundAmount = order.price
+    console.log(`[v0] Refunding ${refundAmount} to user ${user.id}`)
+    
     const userDataResponse = await supabase.from("users").select("balance").eq("id", user.id).single()
     const userData = userDataResponse.data
 
-    if (userData) {
-      const newBalance = userData.balance + refundAmount
+    if (!userData) {
+      console.error(`[v0] User data not found for ${user.id}`)
+      return { error: "User data not found" }
+    }
 
-      await supabase.from("users").update({ balance: newBalance }).eq("id", user.id)
+    const newBalance = userData.balance + refundAmount
+    console.log(`[v0] Balance update: ${userData.balance} → ${newBalance}`)
 
-      await supabase.from("transactions").insert({
-        user_id: user.id,
-        order_id: orderId,
-        type: "refund",
-        amount: refundAmount,
-        balance_before: userData.balance,
-        balance_after: newBalance,
-        status: "completed",
-      })
+    const { error: balanceError } = await supabase.from("users").update({ balance: newBalance }).eq("id", user.id)
+    
+    if (balanceError) {
+      console.error(`[v0] Failed to update balance:`, balanceError)
+      return { error: "Failed to update balance" }
+    }
+
+    console.log(`[v0] Creating refund transaction`)
+    const { error: transactionError } = await supabase.from("transactions").insert({
+      user_id: user.id,
+      order_id: orderId,
+      type: "refund",
+      amount: refundAmount,
+      balance_before: userData.balance,
+      balance_after: newBalance,
+      status: "completed",
+    })
+
+    if (transactionError) {
+      console.error(`[v0] Failed to create transaction:`, transactionError)
+      // Continue anyway - balance was updated
+    } else {
+      console.log(`[v0] Transaction created successfully`)
     }
 
     console.log(`[v0] Updating order ${orderId} status to canceled`)
-    await supabase
+    const { error: orderError } = await supabase
       .from("orders")
       .update({ status: ORDER_STATUSES.CANCELED }) // Use constant
       .eq("id", orderId)
+
+    if (orderError) {
+      console.error(`[v0] Failed to update order status:`, orderError)
+      return { error: "Failed to update order status" }
+    }
+
+    console.log(`[v0] Order ${orderId} successfully canceled and refunded ${refundAmount}`)
 
     revalidatePath("/dashboard/orders")
     revalidatePath("/dashboard")
 
     return { success: true, message: "Order canceled and refunded" }
   } catch (error) {
+    console.error(`[v0] Error canceling order ${orderId}:`, error)
     return { error: String(error) }
   }
 }
