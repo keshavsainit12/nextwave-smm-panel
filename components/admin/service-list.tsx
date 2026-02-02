@@ -11,6 +11,10 @@ import { EditServiceDialog } from "./edit-service-dialog"
 import { useState } from "react"
 import { useToast } from "@/hooks/use-toast"
 
+// Standard multiplier used for price calculations
+// This represents the average markup: provider cost × 3 = selling price
+const DEFAULT_PRICE_MULTIPLIER = 3
+
 export function ServiceList({ services }: { services: any[] }) {
   const router = useRouter()
   const { toast } = useToast()
@@ -105,9 +109,9 @@ export function ServiceList({ services }: { services: any[] }) {
           <TableBody>
             {filteredServices.map((service) => {
               const sellingPrice = Number(service.base_price || 0)
-              // Calculate provider price from selling price (assuming 3x multiplier)
-              // If user has custom multiplier, this shows estimated provider cost
-              const providerPrice = sellingPrice > 0 ? sellingPrice / 3 : 0
+              // Calculate estimated provider cost from selling price
+              // Note: Uses standard 3x multiplier since provider_price column not in base schema
+              const providerPrice = sellingPrice > 0 ? sellingPrice / DEFAULT_PRICE_MULTIPLIER : 0
               const profit = providerPrice > 0 ? (((sellingPrice - providerPrice) / providerPrice) * 100).toFixed(0) : 0
 
               return (
