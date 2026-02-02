@@ -155,6 +155,7 @@ export function MobileHighTrustDashboard({
       if (firstService) {
         setSelectedService(firstService)
         setQuantity(firstService.min_quantity || 1000)
+        setIsBulkBuy(false) // Reset bulk pricing on initial load
       }
     }
   }, [categoriesWithServices, services, selectedCategory])
@@ -311,6 +312,7 @@ export function MobileHighTrustDashboard({
                   if (firstService) {
                     setSelectedService(firstService)
                     setQuantity(firstService.min_quantity || 1000)
+                    setIsBulkBuy(false) // Reset bulk pricing when switching category
                   }
                 }
               }}
@@ -477,6 +479,7 @@ export function MobileHighTrustDashboard({
                       if (firstService) {
                         setSelectedService(firstService)
                         setQuantity(firstService.min_quantity || 1000)
+                        setIsBulkBuy(false) // Reset bulk pricing when switching category
                       } else {
                         setSelectedService(null)
                       }
@@ -543,6 +546,7 @@ export function MobileHighTrustDashboard({
                         if (service) {
                           setSelectedService(service)
                           setQuantity(service.min_quantity || 1000)
+                          setIsBulkBuy(false) // Reset bulk pricing when changing service
                         }
                       }}
                     >
