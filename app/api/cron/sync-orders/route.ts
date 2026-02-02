@@ -53,10 +53,26 @@ export async function GET(request: Request) {
 
         // Map API status to our status
         let newStatus = order.status
-        if (status.status === "Completed") newStatus = "completed"
-        else if (status.status === "Partial") newStatus = "partial"
-        else if (status.status === "In progress" || status.status === "Processing") newStatus = "processing"
-        else if (status.status === "Canceled") newStatus = "canceled"
+        const providerStatus = status.status
+        
+        if (providerStatus === "Completed") newStatus = "completed"
+        else if (providerStatus === "Partial") newStatus = "partial"
+        else if (providerStatus === "In progress" || providerStatus === "Processing") newStatus = "processing"
+        else if (providerStatus === "Canceled" || providerStatus === "Cancelled") newStatus = "canceled"
+        else if (providerStatus === "Refunded" || providerStatus === "Refund") newStatus = "refunded"
+        else if (providerStatus === "Refunding") newStatus = "refunding"
+        else if (providerStatus === "Pending") newStatus = "pending"
+        else {
+          // Unknown status from provider - keep current status and log warning
+          console.warn(`[CRON] Unknown provider status "${providerStatus}" for order ${order.id}, keeping current status: ${order.status}`)
+        }
+        
+        // Validate that newStatus is one of the allowed values before updating
+        const validStatuses = ['pending', 'processing', 'completed', 'partial', 'canceled', 'refunding', 'refunded']
+        if (!validStatuses.includes(newStatus)) {
+          console.error(`[CRON] Invalid status "${newStatus}" for order ${order.id}, skipping update`)
+          continue
+        }
 
         // Update order if status changed
         if (newStatus !== order.status) {
