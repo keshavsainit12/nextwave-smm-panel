@@ -13,7 +13,7 @@ import { Wallet, ShoppingCart, AlertCircle, CheckCircle2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
 
-export function OrderDialog({ service, open, onClose }: { service: any; open: boolean; onClose: () => void }) {
+export function OrderDialog({ service, open, onClose, priceMultiplier }: { service: any; open: boolean; onClose: () => void; priceMultiplier?: number }) {
   const [link, setLink] = useState("")
   const [quantity, setQuantity] = useState(service.min_quantity || 100)
   
@@ -58,11 +58,12 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
   
   // Memoize price calculations to ensure they update reactively
   const servicePrice = useMemo(() => Number(service.price || service.base_price || 0), [service])
-  const priceMultiplier = useMemo(() => {
+  const calculatedPriceMultiplier = useMemo(() => {
     // Bulk pricing: 2.5x if eligible, otherwise use user's multiplier (or default 3.0)
-    return isBulkEligible ? 2.5 : (service.price_multiplier || 3.0)
-  }, [service, isBulkEligible])
-  const finalServicePrice = useMemo(() => servicePrice * priceMultiplier, [servicePrice, priceMultiplier])
+    const userMultiplier = priceMultiplier ?? 3.0
+    return isBulkEligible ? 2.5 : userMultiplier
+  }, [priceMultiplier, isBulkEligible])
+  const finalServicePrice = useMemo(() => servicePrice * calculatedPriceMultiplier, [servicePrice, calculatedPriceMultiplier])
   
   const totalPrice = useMemo(() => {
     const price = ((quantity / 1000) * finalServicePrice)
@@ -70,12 +71,12 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
       quantity,
       finalServicePrice,
       servicePrice,
-      priceMultiplier,
+      priceMultiplier: calculatedPriceMultiplier,
       isBulkEligible,
       totalPrice: price.toFixed(2),
     })
     return price.toFixed(2)
-  }, [quantity, finalServicePrice, servicePrice, priceMultiplier, isBulkEligible])
+  }, [quantity, finalServicePrice, servicePrice, calculatedPriceMultiplier, isBulkEligible])
   
   const discountedTotal = useMemo(() => {
     const total = Number(totalPrice)
@@ -347,7 +348,7 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
             <Alert className="border-green-200/50 bg-green-50">
               <CheckCircle2 className="h-4 w-4 text-green-600" />
               <AlertDescription className="text-sm text-green-700">
-                ✓ <strong>Bulk Pricing Active!</strong> You get 2.5x multiplier (instead of {(service.price_multiplier || 3.0).toFixed(1)}x) on this order
+                ✓ <strong>Bulk Pricing Active!</strong> You get 2.5x multiplier (instead of {(priceMultiplier || 3.0).toFixed(1)}x) on this order
               </AlertDescription>
             </Alert>
           )}
