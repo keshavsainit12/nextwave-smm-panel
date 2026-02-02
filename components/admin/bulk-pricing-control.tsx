@@ -5,55 +5,44 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { updateAllServicesPricing, setAllServicesMultiplier } from "@/app/actions/services"
+import { updateAllServicesPricing } from "@/app/actions/services"
 import { toast } from "sonner"
-import { Percent, TrendingUp, TrendingDown, Loader2, X } from "lucide-react"
+import { Percent, TrendingUp, TrendingDown, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { Separator } from "@/components/ui/separator"
 
 export function BulkPricingControl() {
-  const [percentage, setPercentage] = useState(0)
-  const [multiplier, setMultiplier] = useState(2)
+  const [percentage, setPercentage] = useState(10)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
   const handleUpdate = async (increase: boolean) => {
-    setLoading(true)
-    try {
-      const finalPercentage = increase ? Math.abs(percentage) : -Math.abs(percentage)
-      const result = await updateAllServicesPricing(finalPercentage)
-      toast.success(`Updated ${result.updated} services with ${increase ? "+" : ""}${finalPercentage}% change`)
-      setPercentage(0)
-      router.refresh()
-    } catch (error) {
-      console.error("[v0] Pricing update error:", error)
-      toast.error("Failed to update pricing")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleMultiplierUpdate = async () => {
-    if (multiplier <= 0) {
-      toast.error("Multiplier must be greater than 0")
+    if (percentage <= 0 || percentage > 100) {
+      toast.error("Please enter a valid percentage (1-100)")
       return
     }
 
     setLoading(true)
     try {
-      console.log(`[v0] Setting ${multiplier}× multiplier for all services`)
-      const result = await setAllServicesMultiplier(multiplier)
+      console.log(`[v0] Adjusting all service prices by ${percentage}% (${increase ? 'increase' : 'decrease'})`)
       
-      if (result.errors > 0) {
-        toast.warning(`Updated ${result.updated}/${result.total} services (${result.errors} failed)`)
+      const finalPercentage = increase ? Math.abs(percentage) : -Math.abs(percentage)
+      const result = await updateAllServicesPricing(finalPercentage)
+      
+      if (result.error) {
+        toast.error(result.error)
+      } else if (result.updated === 0) {
+        toast.warning("No services were updated. Please check if services exist.")
       } else {
-        toast.success(`Successfully updated ${result.updated} service${result.updated === 1 ? '' : 's'} with ${multiplier}× multiplier`)
+        toast.success(
+          `Successfully ${increase ? 'increased' : 'decreased'} prices for ${result.updated} service${result.updated === 1 ? '' : 's'} by ${percentage}%`
+        )
       }
       
+      // Refresh to show updated prices in real-time
       router.refresh()
     } catch (error) {
-      console.error("[v0] Multiplier update error:", error)
-      toast.error(error instanceof Error ? error.message : "Failed to update services")
+      console.error("[v0] Pricing update error:", error)
+      toast.error("Failed to update pricing. Please try again.")
     } finally {
       setLoading(false)
     }
@@ -63,46 +52,18 @@ export function BulkPricingControl() {
     <Card>
       <CardHeader>
         <CardTitle>Bulk Pricing Control</CardTitle>
-        <CardDescription>Apply pricing changes to all services quickly</CardDescription>
+        <CardDescription>
+          Adjust all service prices by percentage. Changes apply to admin panel and user dashboard in real-time.
+        </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Price Multiplier */}
-        <div className="space-y-2">
-          <Label htmlFor="multiplier" className="text-base font-semibold">
-            Set Price Multiplier
-          </Label>
-          <p className="text-sm text-muted-foreground">
-            Apply a multiplier to provider prices (e.g., ×2 = double the price)
-          </p>
-          <div className="flex items-center gap-2">
-            <X className="h-4 w-4 text-muted-foreground" />
-            <Input
-              id="multiplier"
-              type="number"
-              step="0.1"
-              value={multiplier}
-              onChange={(e) => setMultiplier(Number(e.target.value))}
-              placeholder="Enter multiplier (e.g. 2)"
-              min="0.1"
-              max="10"
-            />
-            <Button onClick={handleMultiplierUpdate} disabled={loading || multiplier <= 0} className="whitespace-nowrap">
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Apply ×{multiplier}
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Example: If provider price is $1, a ×2 multiplier will set service price to $2
-          </p>
-        </div>
-
-        <Separator />
-
-        {/* Percentage Change */}
+      <CardContent className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="percentage" className="text-base font-semibold">
             Adjust All Prices by Percentage
           </Label>
+          <p className="text-sm text-muted-foreground">
+            Enter a percentage to increase or decrease all service prices
+          </p>
           <div className="flex items-center gap-2">
             <Percent className="h-4 w-4 text-muted-foreground" />
             <Input
@@ -111,14 +72,27 @@ export function BulkPricingControl() {
               value={percentage}
               onChange={(e) => setPercentage(Number(e.target.value))}
               placeholder="Enter percentage (e.g. 10)"
-              min="0"
+              min="1"
               max="100"
+              disabled={loading}
             />
           </div>
+          <p className="text-xs text-muted-foreground">
+            Example: 10% on $3.00 → Increase: $3.30 | Decrease: $2.70
+          </p>
         </div>
+        
         <div className="flex gap-2">
-          <Button onClick={() => handleUpdate(true)} disabled={loading || percentage === 0} className="flex-1">
-            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <TrendingUp className="mr-2 h-4 w-4" />}
+          <Button 
+            onClick={() => handleUpdate(true)} 
+            disabled={loading || percentage === 0} 
+            className="flex-1"
+          >
+            {loading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <TrendingUp className="mr-2 h-4 w-4" />
+            )}
             Increase +{percentage}%
           </Button>
           <Button
@@ -127,7 +101,11 @@ export function BulkPricingControl() {
             variant="destructive"
             className="flex-1"
           >
-            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <TrendingDown className="mr-2 h-4 w-4" />}
+            {loading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <TrendingDown className="mr-2 h-4 w-4" />
+            )}
             Decrease -{percentage}%
           </Button>
         </div>
