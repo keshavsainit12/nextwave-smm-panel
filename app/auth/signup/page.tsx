@@ -60,6 +60,30 @@ function SignupContent() {
     setError(null)
 
     try {
+      // Check if reCAPTCHA is available
+      if (typeof window !== 'undefined' && window.grecaptcha && process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) {
+        try {
+          console.log("[v0] Getting reCAPTCHA token...")
+          const token = await window.grecaptcha.execute(process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY, { action: 'signup' })
+          
+          // Verify reCAPTCHA token on server
+          const recaptchaResponse = await fetch('/api/verify-recaptcha', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token })
+          })
+          
+          if (!recaptchaResponse.ok) {
+            throw new Error('reCAPTCHA verification failed. Please try again.')
+          }
+          
+          console.log("[v0] reCAPTCHA verified successfully")
+        } catch (recaptchaError) {
+          console.warn("[v0] reCAPTCHA error:", recaptchaError)
+          // Continue with signup even if reCAPTCHA fails (optional - can be made required)
+        }
+      }
+
       console.log("[v0] Creating user account...")
       const result = await signupUser({
         email,
