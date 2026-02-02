@@ -8,14 +8,17 @@ export async function addService(formData: FormData) {
 
   const providerId = formData.get("provider_id") as string
   const finalProviderId = providerId === "none" ? null : providerId
+  const basePrice = Number(formData.get("base_price"))
+  // Calculate provider_price from base_price (assume base_price is 3x markup)
+  const providerPrice = basePrice / 3.0
 
   const { error } = await supabase.from("services").insert({
     name: formData.get("name") as string,
     description: formData.get("description") as string,
     category_id: formData.get("category_id") as string,
     provider_id: finalProviderId,
-    base_price: Number(formData.get("base_price")),
-    provider_price: Number(formData.get("base_price")),
+    base_price: basePrice,
+    provider_price: providerPrice, // Store calculated provider cost
     min_quantity: Number(formData.get("min_quantity")),
     max_quantity: Number(formData.get("max_quantity")),
     has_refill: formData.get("has_refill") === "on",
