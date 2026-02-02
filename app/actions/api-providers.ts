@@ -223,3 +223,66 @@ export async function testApiProvider(providerId: string) {
     return { success: false, error: String(error) }
   }
 }
+
+/**
+ * Update provider's price multiplier and recalculate all service prices
+ */
+export async function updateApiProviderMultiplier(providerId: string, multiplier: number) {
+  try {
+    const supabase = await createClient()
+    
+    console.log(`[v0] Updating provider ${providerId} multiplier to ${multiplier}x`)
+    
+    // 1. Update provider multiplier
+    const { error: providerError } = await supabase
+      .from("api_providers")
+      .update({ price_multiplier: multiplier })
+      .eq("id", providerId)
+    
+    if (providerError) {
+      console.error("[v0] Provider update failed:", providerError)
+      throw providerError
+    }
+    
+    // 2. Fetch all services for this provider
+    const { data: services, error: servicesError } = await supabase
+      .from("services")
+      .select("id, provider_price")
+      .eq("provider_id", providerId)
+    
+    if (servicesError) {
+      console.error("[v0] Services fetch failed:", servicesError)
+      throw servicesError
+    }
+    
+    console.log(`[v0] Recalculating prices for ${services?.length || 0} services`)
+    
+    // 3. Update each service's selling price (provider_price × multiplier)
+    let updated = 0
+    for (const service of services || []) {
+      const providerPrice = Number(service.provider_price || 0)
+      if (providerPrice > 0) {
+        const newPrice = providerPrice * multiplier
+        const { error: updateError } = await supabase
+          .from("services")
+          .update({ base_price: newPrice })
+          .eq("id", service.id)
+        
+        if (!updateError) {
+          updated++
+        }
+      }
+    }
+    
+    console.log(`[v0] Successfully updated ${updated} service prices`)
+    
+    revalidatePath("/admin-panel-2024/api-providers")
+    revalidatePath("/admin-panel-2024/services")
+    
+    return { success: true, updated }
+    
+  } catch (error: any) {
+    console.error("[v0] Multiplier update failed:", error)
+    return { success: false, error: error.message || "Failed to update multiplier" }
+  }
+}
