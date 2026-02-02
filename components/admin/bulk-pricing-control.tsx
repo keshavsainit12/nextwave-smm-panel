@@ -39,16 +39,29 @@ export function BulkPricingControl() {
       const result = await setAllServicesMultiplier(multiplier)
       console.log(`[v0] Multiplier update result:`, result)
 
-      toast.success(
-        `Set ${result.updated} services to ${multiplier}x provider price (${((multiplier - 1) * 100).toFixed(0)}% profit)`,
-      )
+      if (result.updated === 0) {
+        toast.error(`No services were updated. ${result.skipped ? `${result.skipped} services had no base price. ` : ''}Please check your services.`)
+      } else {
+        const profitPercent = ((multiplier - 1) * 100).toFixed(0)
+        let message = `✓ Set ${result.updated} of ${result.total} services to ${multiplier}x provider price (${profitPercent}% profit)`
+        
+        if (result.skipped > 0) {
+          message += `. ${result.skipped} skipped (no base price)`
+        }
+        if (result.errors > 0) {
+          message += `. ${result.errors} errors`
+        }
+        
+        toast.success(message, { duration: 5000 })
+      }
 
       // Wait a bit before refresh to ensure database updates propagate
       await new Promise((resolve) => setTimeout(resolve, 500))
       router.refresh()
     } catch (error) {
       console.error("[v0] Multiplier update error:", error)
-      toast.error(error instanceof Error ? error.message : "Failed to set multiplier")
+      const errorMsg = error instanceof Error ? error.message : "Failed to set multiplier"
+      toast.error(errorMsg, { duration: 6000 })
     } finally {
       setMultiplierLoading(null)
     }

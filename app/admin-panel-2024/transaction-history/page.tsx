@@ -25,50 +25,62 @@ export default async function AdminTransactionHistoryPage() {
     console.log("[v0] Fetching admin transaction history...")
 
     // Fetch all orders - ONLY COMPLETED ONES
-    const { data: ordersData, error: ordersError } = await supabase
-      .from("orders")
-      .select("*, services(name, category, provider_price), users(email, full_name, balance)")
-      .eq("status", "completed")
-      .order("created_at", { ascending: false })
-      .limit(100)
+    try {
+      const { data: ordersData, error: ordersError } = await supabase
+        .from("orders")
+        .select("*, services(name, category_id, provider_price), users(email, full_name, balance)")
+        .eq("status", "completed")
+        .order("created_at", { ascending: false })
+        .limit(100)
 
-    if (ordersError) {
-      console.error("[v0] Orders fetch error:", ordersError)
-    } else {
-      console.log("[v0] Orders fetched:", ordersData?.length || 0)
-      orders = ordersData
+      if (ordersError) {
+        console.error("[v0] Orders fetch error:", ordersError)
+      } else {
+        console.log("[v0] Orders fetched:", ordersData?.length || 0)
+        orders = ordersData
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching orders:", error)
     }
 
     // Fetch all crypto deposits - ONLY APPROVED ONES
-    const { data: cryptoDepositsData, error: cryptoError } = await supabase
-      .from("crypto_deposits")
-      .select("*, crypto_currency_id(symbol, name), users(email, full_name)")
-      .eq("status", "approved")
-      .order("created_at", { ascending: false })
-      .limit(100)
+    try {
+      const { data: cryptoDepositsData, error: cryptoError } = await supabase
+        .from("crypto_deposits")
+        .select("*, crypto_currencies(symbol, name), users(email, full_name)")
+        .eq("status", "approved")
+        .order("created_at", { ascending: false })
+        .limit(100)
 
-    if (cryptoError) {
-      console.error("[v0] Crypto deposits fetch error:", cryptoError)
-    } else {
-      console.log("[v0] Crypto deposits fetched:", cryptoDepositsData?.length || 0)
-      cryptoDeposits = cryptoDepositsData
+      if (cryptoError) {
+        console.error("[v0] Crypto deposits fetch error:", cryptoError)
+      } else {
+        console.log("[v0] Crypto deposits fetched:", cryptoDepositsData?.length || 0)
+        cryptoDeposits = cryptoDepositsData
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching crypto deposits:", error)
     }
 
     // Fetch all instant payment transactions - ONLY COMPLETED ONES
-    const { data: instantPaymentsData, error: instantError } = await supabase
-      .from("transactions")
-      .select("*, users(email, full_name)")
-      .eq("type", "deposit")
-      .eq("payment_method", "instant_xaf")
-      .eq("status", "completed")
-      .order("created_at", { ascending: false })
-      .limit(100)
+    try {
+      const { data: instantPaymentsData, error: instantError } = await supabase
+        .from("transactions")
+        .select("*, users(email, full_name)")
+        .eq("type", "deposit")
+        .eq("payment_method", "instant_xaf")
+        .eq("status", "completed")
+        .order("created_at", { ascending: false })
+        .limit(100)
 
-    if (instantError) {
-      console.error("[v0] Instant payments fetch error:", instantError)
-    } else {
-      console.log("[v0] Instant payments fetched:", instantPaymentsData?.length || 0)
-      instantPayments = instantPaymentsData
+      if (instantError) {
+        console.error("[v0] Instant payments fetch error:", instantError)
+      } else {
+        console.log("[v0] Instant payments fetched:", instantPaymentsData?.length || 0)
+        instantPayments = instantPaymentsData
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching instant payments:", error)
     }
 
     // Calculate summary stats - ALL FROM COMPLETED/APPROVED ONLY
@@ -218,7 +230,7 @@ export default async function AdminTransactionHistoryPage() {
                             variant={
                               order.status === "completed"
                                 ? "default"
-                                : order.status === "cancelled"
+                                : order.status === "canceled"
                                   ? "destructive"
                                   : "secondary"
                             }
@@ -272,13 +284,13 @@ export default async function AdminTransactionHistoryPage() {
                       <TableCell className="font-medium">{deposit.users?.full_name || deposit.users?.email}</TableCell>
                       <TableCell>
                         <Badge variant="outline">
-                          Crypto - {deposit.crypto_currency_id?.symbol}
+                          Crypto - {deposit.crypto_currencies?.symbol}
                         </Badge>
                       </TableCell>
                       <TableCell className="font-semibold text-green-600">
                         ${Number(deposit.amount || 0).toFixed(2)}
                       </TableCell>
-                      <TableCell className="text-sm">{deposit.crypto_amount} {deposit.crypto_currency_id?.symbol}</TableCell>
+                      <TableCell className="text-sm">{deposit.crypto_amount} {deposit.crypto_currencies?.symbol}</TableCell>
                       <TableCell>
                         <Badge
                           variant={

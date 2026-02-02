@@ -73,9 +73,9 @@ export async function cancelOrder(orderId: string, reason: string) {
 
     console.log("[v0] Order found successfully:", { orderId, userId: order.user_id, amount: order.price, status: order.status })
 
-    // Check if order is already cancelled
+    // Check if order is already canceled
     if (order.status === "cancelled" || order.status === "canceled") {
-      return { error: "Order is already cancelled" }
+      return { error: "Order is already canceled" }
     }
 
     // Get current user balance
@@ -91,7 +91,8 @@ export async function cancelOrder(orderId: string, reason: string) {
     }
 
     // Calculate new balance
-    const newBalance = (userData.balance || 0) + order.price
+    const balanceBefore = userData.balance || 0
+    const newBalance = balanceBefore + order.price
 
     // Update user balance
     const { error: updateBalanceError } = await supabase
@@ -106,12 +107,33 @@ export async function cancelOrder(orderId: string, reason: string) {
 
     console.log("[v0] Balance refunded successfully for user:", order.user_id, "new balance:", newBalance)
 
+    // Create refund transaction record
+    const { error: transactionError } = await supabase
+      .from("transactions")
+      .insert({
+        user_id: order.user_id,
+        order_id: orderId,
+        type: "refund",
+        amount: order.price,
+        balance_before: balanceBefore,
+        balance_after: newBalance,
+        status: "completed",
+        notes: `Refund for canceled order: ${reason || "Canceled by admin"}`,
+      })
+
+    if (transactionError) {
+      console.error("[v0] Transaction record error:", transactionError)
+      // Non-critical - balance was already updated, just log the error
+    } else {
+      console.log("[v0] Refund transaction record created successfully")
+    }
+
     // Update order status
     const { error: updateError } = await supabase
       .from("orders")
       .update({
-        status: "cancelled",
-        admin_notes: reason || "Cancelled by admin",
+        status: "canceled",
+        admin_notes: reason || "Canceled by admin",
         updated_at: new Date().toISOString(),
       })
       .eq("id", orderId)
@@ -121,12 +143,12 @@ export async function cancelOrder(orderId: string, reason: string) {
       return { error: "Failed to update order status: " + updateError.message }
     }
 
-    console.log("[v0] Order cancelled successfully:", orderId)
+    console.log("[v0] Order canceled successfully:", orderId)
 
     // Log activity
-    await supabase.from("activity_logs").insert({
+    const { error: activityLogError } = await supabase.from("activity_logs").insert({
       user_id: order.user_id,
-      action: "order_cancelled",
+      action: "order_canceled",
       entity_type: "order",
       entity_id: orderId,
       details: {
@@ -134,7 +156,11 @@ export async function cancelOrder(orderId: string, reason: string) {
         refund_amount: order.price,
       },
       ip_address: "admin",
-    }).catch((err) => console.log("[v0] Activity log error (non-critical):", err))
+    })
+    
+    if (activityLogError) {
+      console.log("[v0] Activity log error (non-critical):", activityLogError)
+    }
 
     revalidatePath("/admin-panel-2024")
     revalidatePath("/admin-panel-2024/orders")

@@ -63,11 +63,14 @@ export async function deleteTransaction(transactionId: string) {
 
       if (user) {
         const newBalance = (user.balance || 0) - Number(transaction.amount)
-        await supabase
+        const { error: balanceUpdateError } = await supabase
           .from("users")
           .update({ balance: Math.max(0, newBalance) })
           .eq("id", transaction.user_id)
-          .catch((err) => console.log("[v0] Balance update error:", err))
+        
+        if (balanceUpdateError) {
+          console.log("[v0] Balance update error:", balanceUpdateError)
+        }
       }
     }
 
@@ -82,14 +85,18 @@ export async function deleteTransaction(transactionId: string) {
     }
 
     // Log activity
-    await supabase.from("activity_logs").insert({
+    const { error: activityLogError } = await supabase.from("activity_logs").insert({
       user_id: transaction.user_id,
       action: "transaction_deleted",
       entity_type: "transaction",
       entity_id: transactionId,
       details: { amount: transaction.amount, type: transaction.type },
       ip_address: "admin",
-    }).catch((err) => console.log("[v0] Activity log error:", err))
+    })
+    
+    if (activityLogError) {
+      console.log("[v0] Activity log error:", activityLogError)
+    }
 
     revalidatePath("/admin-panel-2024/transaction-history")
     revalidatePath("/dashboard/transaction-history")

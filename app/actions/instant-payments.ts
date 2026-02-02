@@ -164,9 +164,15 @@ interface PendingUser {
 
 export async function createInstantPayment(params: CreateInstantPaymentParams): Promise<PaymentResponse> {
   try {
+    // XAF to USD conversion rate (1 USD = 600 XAF)
+    const XAF_TO_USD_RATE = 600
+    const amountInXAF = params.amount
+    const amountInUSD = Number((amountInXAF / XAF_TO_USD_RATE).toFixed(2))
+
     console.log("[v0] Creating instant payment with params:", {
       userId: params.userId,
-      amount: params.amount,
+      amountXAF: amountInXAF,
+      amountUSD: amountInUSD,
       email: params.email,
     })
 
@@ -207,7 +213,7 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
 
     const supabase = await createClient()
 
-    // Get current user balance
+    // Get current user balance (in USD)
     const { data: userData, error: userError } = await supabase
       .from("users")
       .select("balance")
@@ -220,18 +226,18 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
 
     const balanceBefore = userData.balance || 0
 
-    // Create transaction record - with payment_id field for webhook to find it later
+    // Create transaction record with USD amount (platform currency)
     const { data: transaction, error: txError } = await supabase
       .from("transactions")
       .insert({
         user_id: params.userId,
-        amount: params.amount,
+        amount: amountInUSD, // Store in USD (platform base currency)
         type: "deposit",
         payment_method: "instant_xaf",
         status: "pending",
-        notes: `XAF Payment - ${params.userName}`,
+        notes: `XAF ${amountInXAF} Payment (${amountInUSD} USD) - ${params.userName}`,
         balance_before: balanceBefore,
-        balance_after: balanceBefore + params.amount,
+        balance_after: balanceBefore + amountInUSD, // USD balance
         payment_id: "", // Will be set after AccountPe API call
       })
       .select()
@@ -247,11 +253,12 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
       amount: transaction.amount,
     })
 
-    // Call AccountPe API to create payment link
+    // Call AccountPe API to create payment link (use XAF for payment gateway)
     console.log("[v0] Calling AccountPe API with:", {
       url: `${ACCOUNTPE_API_URL}/create_payment_links`,
       merchantId: ACCOUNTPE_MERCHANT_ID,
-      amount: params.amount,
+      amountXAF: amountInXAF,
+      amountUSD: amountInUSD,
       email: params.email,
     })
 
@@ -267,7 +274,7 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
         name: params.userName,
         email: params.email,
         mobile: params.phone || "",
-        amount: params.amount,
+        amount: amountInXAF, // Payment gateway receives XAF
         currency: "XAF",
         transaction_id: transaction.id,
         pass_digital_charge: true,
@@ -311,7 +318,7 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
         .from("transactions")
         .update({ 
           payment_id: accountPeTransactionId,
-          notes: `XAF Payment - ${params.userName} [AccountPe: ${accountPeTransactionId}]`
+          notes: `XAF ${amountInXAF} Payment (${amountInUSD} USD) - ${params.userName} [AccountPe: ${accountPeTransactionId}]`
         })
         .eq("id", transaction.id)
 
@@ -339,7 +346,7 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
         .from("transactions")
         .update({ 
           payment_id: data.data.id,
-          notes: `XAF Payment - ${params.userName} [AccountPe: ${data.data.id}]`
+          notes: `XAF ${amountInXAF} Payment (${amountInUSD} USD) - ${params.userName} [AccountPe: ${data.data.id}]`
         })
         .eq("id", transaction.id)
 

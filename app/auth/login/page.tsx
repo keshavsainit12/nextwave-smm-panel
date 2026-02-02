@@ -8,6 +8,8 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { ArrowLeft, Loader2 } from "lucide-react"
 
+
+
 function LoginContent() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -19,8 +21,9 @@ function LoginContent() {
 
   useEffect(() => {
     const errorParam = searchParams.get("error")
+    
     if (errorParam) {
-      setError(decodeURIComponent(errorParam))
+      setError("Authentication failed. Please try again.")
     }
   }, [searchParams])
 

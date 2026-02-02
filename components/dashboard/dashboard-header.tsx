@@ -7,14 +7,90 @@ import Image from "next/image"
 import { useEffect, useState } from "react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { createClient } from "@/lib/supabase/client"
-import { Menu, Bell } from "lucide-react"
+import { Menu, Bell, Crown, Star } from "lucide-react"
 
 export function DashboardHeader({ user }: { user: any }) {
   const [notifications, setNotifications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [userTier, setUserTier] = useState<any>(null)
 
   useEffect(() => {
     const supabase = createClient()
+
+    // Fetch user tier info
+    const fetchUserTier = async () => {
+      const { data } = await supabase
+        .from("users")
+        .select("tier, price_multiplier, total_spent")
+        .eq("id", user.id)
+        .single()
+      
+      if (data) {
+        let tierName = "Normal User"
+        let tierColor = "bg-gray-500"
+        let tierIcon = null
+        
+        if (data.price_multiplier) {
+          const multiplier = data.price_multiplier
+          
+          // Calculate discount percentage from normal user (3.0x)
+          const normalMultiplier = 3.0
+          const discountPercent = ((normalMultiplier - multiplier) / normalMultiplier) * 100
+          
+          if (multiplier <= 2) {
+            tierName = "Reseller"
+            tierColor = "bg-purple-500"
+            tierIcon = <Star className="h-3 w-3" />
+          } else if (multiplier <= 2.5) {
+            tierName = "Bulk Buyer"
+            tierColor = "bg-blue-500"
+            tierIcon = <Star className="h-3 w-3" />
+          } else if (multiplier < 3) {
+            tierName = "VIP"
+            tierColor = "bg-yellow-500"
+            tierIcon = <Crown className="h-3 w-3" />
+          }
+          
+          setUserTier({
+            name: tierName,
+            color: tierColor,
+            icon: tierIcon,
+            multiplier: data.price_multiplier || 3.0,
+            discount: discountPercent > 0 ? discountPercent : 0,
+            totalSpent: data.total_spent || 0
+          })
+        } else {
+          setUserTier({
+            name: tierName,
+            color: tierColor,
+            icon: tierIcon,
+            multiplier: 3.0,
+            discount: 0,
+            totalSpent: data.total_spent || 0
+          })
+        }
+      }
+    }
+
+    fetchUserTier()
+    
+    // Set up real-time subscription to user changes
+    const userChannel = supabase
+      .channel("user-tier-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "users",
+          filter: `id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log("[v0] User tier updated, refreshing badge...")
+          fetchUserTier()
+        }
+      )
+      .subscribe()
 
     // Fetch initial notifications
     const fetchNotifications = async () => {
@@ -93,6 +169,7 @@ export function DashboardHeader({ user }: { user: any }) {
       .subscribe()
 
     return () => {
+      supabase.removeChannel(userChannel)
       supabase.removeChannel(ticketChannel)
     }
   }, [user.id])
@@ -126,7 +203,22 @@ export function DashboardHeader({ user }: { user: any }) {
           </div>
         </div>
 
-        <div className="hidden md:flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* VIP Badge - Now visible on both mobile and desktop */}
+          {userTier && userTier.name !== "Normal User" && (
+            <div className="flex flex-col items-center gap-0.5">
+              <Badge className={`${userTier.color} text-white border-0 px-2 sm:px-3 py-1 flex items-center gap-1 animate-pulse`}>
+                {userTier.icon}
+                <span className="font-bold text-xs sm:text-sm">{userTier.name}</span>
+              </Badge>
+              {userTier.discount > 0 && (
+                <span className="text-[10px] sm:text-xs font-semibold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">
+                  {userTier.discount.toFixed(0)}% OFF
+                </span>
+              )}
+            </div>
+          )}
+          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative h-9 w-9">

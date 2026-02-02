@@ -49,14 +49,19 @@ export async function GET(request: NextRequest) {
     )
 
     console.log("[v0] Exchanging code for session...")
-    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+    const { data: sessionData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
 
     if (exchangeError) {
       console.error("[v0] Exchange error:", exchangeError)
-      return NextResponse.redirect(
-        new URL(`/auth/login?error=${encodeURIComponent(exchangeError.message)}`, requestUrl.origin)
-      )
+      return NextResponse.redirect(new URL("/auth/login", requestUrl.origin))
     }
+
+    if (!sessionData?.session) {
+      console.error("[v0] No session returned after code exchange")
+      return NextResponse.redirect(new URL("/auth/login", requestUrl.origin))
+    }
+
+    console.log("[v0] Session created successfully for user:", sessionData.user?.email)
 
     // Get user data
     const {
@@ -95,8 +100,7 @@ export async function GET(request: NextRequest) {
 
     if (userCheckError && userCheckError.code !== "PGRST116") {
       console.error("[v0] User check error:", userCheckError)
-      const redirectUrl = source === "signup" ? "/auth/signup" : "/auth/login"
-      return NextResponse.redirect(new URL(`${redirectUrl}?error=Database error`, request.url))
+      return NextResponse.redirect(new URL("/auth/login?error=Database error", request.url))
     }
 
     if (!existingUser) {
@@ -104,10 +108,12 @@ export async function GET(request: NextRequest) {
       
       const referralCode = "REF" + Math.random().toString(36).substring(2, 10).toUpperCase()
 
+      // Create user with minimal required fields for faster insert
       const { error: insertError } = await supabaseAdmin.from("users").insert({
         id: user.id,
         email: user.email!,
         full_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email!.split("@")[0],
+        avatar_url: user.user_metadata?.avatar_url || null,
         tier: 1,
         referral_code: referralCode,
         role: "user",
@@ -118,8 +124,14 @@ export async function GET(request: NextRequest) {
 
       if (insertError) {
         console.error("[v0] Failed to create user profile:", insertError)
-        console.error("[v0] Insert error details:", insertError.message)
-        return NextResponse.redirect(new URL("/auth/login?error=Failed to create profile", request.url))
+        console.error("[v0] Insert error details:", {
+          message: insertError.message,
+          code: insertError.code,
+          details: insertError.details
+        })
+        return NextResponse.redirect(
+          new URL(`/auth/login?error=${encodeURIComponent(insertError.message || "Failed to create profile")}`, request.url)
+        )
       }
 
       console.log("[v0] User profile created successfully")

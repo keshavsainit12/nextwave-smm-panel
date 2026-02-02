@@ -93,7 +93,7 @@ export function RecentOrders() {
                   variant={
                     order.status === "completed"
                       ? "default"
-                      : order.status === "cancelled"
+                      : order.status === "canceled"
                         ? "destructive"
                         : "secondary"
                   }

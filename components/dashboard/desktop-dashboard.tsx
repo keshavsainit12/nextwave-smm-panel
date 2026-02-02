@@ -30,7 +30,8 @@ const getTierInfo = (priceMultiplier: number | undefined | null) => {
   if (multiplier <= 1.5) return { name: "VIP Elite", color: "from-amber-500 to-yellow-400", textColor: "text-amber-600", bgColor: "bg-amber-100", icon: Crown, isVip: true }
   if (multiplier <= 2) return { name: "Reseller", color: "from-purple-500 to-indigo-500", textColor: "text-purple-600", bgColor: "bg-purple-100", icon: Star, isVip: true }
   if (multiplier <= 2.5) return { name: "Bulk Buyer", color: "from-blue-500 to-cyan-500", textColor: "text-blue-600", bgColor: "bg-blue-100", icon: Star, isVip: false }
-  return { name: "Basic User", color: "from-slate-400 to-slate-500", textColor: "text-slate-600", bgColor: "bg-slate-100", icon: null, isVip: false }
+  if (multiplier < 3.0) return { name: "VIP", color: "from-yellow-500 to-amber-500", textColor: "text-yellow-600", bgColor: "bg-yellow-100", icon: Crown, isVip: true }
+  return { name: "Normal User", color: "from-slate-400 to-slate-500", textColor: "text-slate-600", bgColor: "bg-slate-100", icon: null, isVip: false }
 }
 import {
   Select,
@@ -110,13 +111,15 @@ export function DesktopDashboard({
   const totalPrice = useMemo(() => {
     if (!selectedService) return 0
     const servicePrice = Number(selectedService.price || selectedService.base_price || 0)
-    const multiplier = isBulkBuy ? 2.5 : 3.0
+    // Use user's price_multiplier from props (e.g., 2.8 for VIP) instead of hardcoded 3.0
+    const userMultiplier = priceMultiplier || 3.0
+    const multiplier = isBulkBuy ? Math.min(userMultiplier * 0.9, 2.5) : userMultiplier
     const priceBeforeDiscount = (quantity / 1000) * servicePrice * multiplier
     if (appliedCouponDiscount > 0) {
       return priceBeforeDiscount * (1 - appliedCouponDiscount / 100)
     }
     return priceBeforeDiscount
-  }, [selectedService, quantity, isBulkBuy, appliedCouponDiscount])
+  }, [selectedService, quantity, isBulkBuy, appliedCouponDiscount, priceMultiplier])
 
   const handleCouponApplied = useCallback((couponCode: string, discount: number) => {
     if (typeof discount === 'number' && discount > 0) {
@@ -150,6 +153,14 @@ export function DesktopDashboard({
       }
     }
   }, [categoriesWithServices, services, selectedCategory])
+
+  // Reset bulk buy when service changes to prevent incorrect discount
+  useEffect(() => {
+    if (isBulkBuy) {
+      setIsBulkBuy(false)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedService?.id])
 
   const handleQuantityChange = (newQuantity: number) => {
     const minQty = selectedService?.min_quantity || 100

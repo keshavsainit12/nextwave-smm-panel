@@ -89,6 +89,9 @@ export default function IconManagerPage() {
       }))
 
       toast.success(`${categoryName} icon updated! All related services and categories updated automatically.`)
+      
+      // Reload icons to ensure fresh data
+      await loadIcons()
     } catch (error: any) {
       console.error('[v0] Error updating icon:', error)
       toast.error(error.message || 'Failed to update icon')
@@ -97,8 +100,27 @@ export default function IconManagerPage() {
     }
   }
 
+  const loadIcons = async () => {
+    try {
+      const response = await fetch('/api/icons/list')
+      const data = await response.json()
+
+      const iconMap: Record<string, string> = {}
+      MAIN_CATEGORIES.forEach(name => {
+        const category = data.categories.find((c: any) => c.name === name)
+        if (category?.icon) {
+          iconMap[name] = category.icon
+        }
+      })
+
+      setIcons(iconMap)
+    } catch (error) {
+      console.error('[v0] Error loading icons:', error)
+    }
+  }
+
   const handleDelete = async (categoryName: string) => {
-    if (!confirm(`Delete ${categoryName} icon?`)) return
+    if (!confirm(`Delete ${categoryName} icon? This will remove icons from all ${categoryName} services.`)) return
 
     setUpdating(categoryName)
     try {
@@ -108,8 +130,10 @@ export default function IconManagerPage() {
         body: JSON.stringify({ categoryName }),
       })
 
+      const result = await response.json()
+
       if (!response.ok) {
-        throw new Error('Failed to delete icon')
+        throw new Error(result.error || 'Failed to delete icon')
       }
 
       setIcons(prev => {
@@ -118,8 +142,12 @@ export default function IconManagerPage() {
         return updated
       })
 
-      toast.success(`${categoryName} icon deleted!`)
+      toast.success(`${categoryName} icon deleted from all services!`)
+      
+      // Reload icons to ensure fresh data
+      await loadIcons()
     } catch (error: any) {
+      console.error('[v0] Error deleting icon:', error)
       toast.error(error.message || 'Failed to delete icon')
     } finally {
       setUpdating(null)

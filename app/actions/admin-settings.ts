@@ -1,9 +1,12 @@
 "use server"
 
-import { createServerClient } from "@supabase/ssr"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
+import * as bcrypt from "bcryptjs"
+
+// Hardcoded admin credentials (matching login route)
+const ADMIN_PASSWORD_HASH = "$2b$10$xAZfhfccemWZ.3qSG2Zpz.KJg15724ESXNnREOIwBNhkVXd9OGiVK" // admin@123
 
 export async function changeAdminPassword(params: {
   userId: string
@@ -11,24 +14,6 @@ export async function changeAdminPassword(params: {
   newPassword: string
   confirmPassword: string
 }) {
-  const cookieStore = await cookies()
-
-  // Create regular client to verify current password
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
-        },
-      },
-    },
-  )
-
   try {
     // Validate inputs
     if (!params.currentPassword || !params.newPassword || !params.confirmPassword) {
@@ -47,35 +32,23 @@ export async function changeAdminPassword(params: {
       return { success: false, error: "New password must be different from current password" }
     }
 
-    // Get current user's email
-    const { data: userData, error: userError } = await supabase.auth.getUser()
-    if (userError || !userData.user?.email) {
-      return { success: false, error: "Failed to get user information" }
-    }
-
-    // Verify current password by attempting login
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: userData.user.email,
-      password: params.currentPassword,
-    })
-
-    if (signInError) {
+    // Verify current password against hardcoded hash
+    if (!bcrypt.compareSync(params.currentPassword, ADMIN_PASSWORD_HASH)) {
       return { success: false, error: "Current password is incorrect" }
     }
 
-    // Update password using admin client
-    const supabaseAdmin = createAdminClient()
-
-    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(params.userId, {
-      password: params.newPassword,
-    })
-
-    if (updateError) {
-      return { success: false, error: updateError.message }
-    }
+    // Hash new password
+    const newPasswordHash = bcrypt.hashSync(params.newPassword, 10)
+    
+    console.log("[v0] ⚠️  Password change requested but system uses hardcoded credentials")
+    console.log("[v0] New password hash (update in code):", newPasswordHash)
+    console.log("[v0] Update ADMIN_PASSWORD_HASH in /app/api/admin/login/route.ts with this hash")
 
     revalidatePath("/admin-panel-2024/settings")
-    return { success: true, message: "Password changed successfully" }
+    return { 
+      success: true, 
+      message: "Password validated successfully. To change password, update ADMIN_PASSWORD_HASH in the code with the new hash shown in server logs." 
+    }
   } catch (error) {
     console.error("[v0] Change password error:", error)
     return {
@@ -94,21 +67,26 @@ export async function changeAdminUsername(params: {
       return { success: false, error: "Username must be at least 3 characters" }
     }
 
-    const supabase = createAdminClient()
+    console.log("[v0] ⚠️  Username change requested (hardcoded credentials system)")
+    console.log("[v0] New username:", params.newUsername)
+    console.log("[v0] To make permanent: Update ADMIN_USERNAME in /app/api/admin/login/route.ts to:", params.newUsername)
 
-    // Update admin user's custom metadata with new username
-    const { error } = await supabase.auth.admin.updateUserById(params.userId, {
-      user_metadata: {
-        admin_username: params.newUsername,
-      },
+    // Update username cookie so it's immediately reflected in UI
+    const cookieStore = await cookies()
+    cookieStore.set("admin_username", params.newUsername, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 7,
+      path: "/",
     })
 
-    if (error) {
-      return { success: false, error: error.message }
-    }
-
     revalidatePath("/admin-panel-2024/settings")
-    return { success: true, message: "Username changed successfully" }
+    return { 
+      success: true, 
+      message: "Username changed successfully for this session! Username will show as '" + params.newUsername + "' in the UI now. Note: To make this permanent, update the code (see server logs).",
+      tempChange: true // Indicates this is a session-only change
+    }
   } catch (error) {
     console.error("[v0] Change username error:", error)
     return {
@@ -164,6 +142,78 @@ export async function disableAdmin2FA(userId: string) {
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to disable 2FA",
+    }
+  }
+}
+
+export async function updateSystemSettings(settings: {
+  site_name?: string
+  currency_symbol?: string
+  min_deposit?: string
+  global_markup?: string
+  referral_commission?: string
+}) {
+  try {
+    const supabase = createAdminClient()
+    
+    console.log("[v0] Updating system settings:", settings)
+
+    // Validate inputs
+    if (settings.min_deposit) {
+      const minDeposit = parseFloat(settings.min_deposit)
+      if (isNaN(minDeposit) || minDeposit < 0) {
+        return { success: false, error: "Minimum deposit must be a valid positive number" }
+      }
+    }
+
+    if (settings.global_markup) {
+      const markup = parseFloat(settings.global_markup)
+      if (isNaN(markup) || markup < 0) {
+        return { success: false, error: "Global markup must be a valid positive number" }
+      }
+    }
+
+    if (settings.referral_commission) {
+      const commission = parseFloat(settings.referral_commission)
+      if (isNaN(commission) || commission < 0 || commission > 100) {
+        return { success: false, error: "Referral commission must be between 0 and 100" }
+      }
+    }
+
+    // Update each setting in the system_settings table
+    const updates = []
+    
+    for (const [key, value] of Object.entries(settings)) {
+      if (value !== undefined && value !== null) {
+        updates.push(
+          supabase
+            .from("system_settings")
+            .upsert({ key, value: String(value) }, { onConflict: "key" })
+        )
+      }
+    }
+
+    // Execute all updates
+    const results = await Promise.all(updates)
+    
+    // Check for errors
+    const errors = results.filter(r => r.error)
+    if (errors.length > 0) {
+      console.error("[v0] System settings update errors:", errors)
+      return { 
+        success: false, 
+        error: errors[0].error?.message || "Failed to update some settings" 
+      }
+    }
+
+    console.log("[v0] System settings updated successfully")
+    revalidatePath("/admin-panel-2024/settings")
+    return { success: true, message: "System settings updated successfully" }
+  } catch (error) {
+    console.error("[v0] Update system settings error:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to update system settings",
     }
   }
 }

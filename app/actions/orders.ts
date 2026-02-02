@@ -58,6 +58,7 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
     // Apply coupon discount if provided
     let couponId: string | null = null
     let discountPercentage = 0
+    let discountAmount = 0
 
     if (couponCode) {
       const { data: coupon, error: couponError } = await supabase
@@ -88,17 +89,21 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
       }
 
       couponId = coupon.id
+      const priceBeforeDiscount = price
       
       // Calculate discount based on type
       if (coupon.discount_type === "percentage") {
         discountPercentage = Number(coupon.discount_value) || 0
-        price = price * (1 - discountPercentage / 100)
+        discountAmount = price * (discountPercentage / 100)
+        price = price - discountAmount
       } else {
         // Fixed discount
-        price = Math.max(0, price - Number(coupon.discount_value))
+        discountAmount = Math.min(price, Number(coupon.discount_value))
+        price = Math.max(0, price - discountAmount)
       }
 
-      console.log(`[v0] Coupon applied: ${coupon.discount_type} discount of ${coupon.discount_value}, new price: $${price.toFixed(2)}`)
+      console.log(`[v0] Coupon applied: ${coupon.discount_type} discount of ${coupon.discount_value}`)
+      console.log(`[v0] Price before discount: $${priceBeforeDiscount.toFixed(2)}, discount: $${discountAmount.toFixed(2)}, final price: $${price.toFixed(2)}`)
     }
 
     if (isBulkBuy && quantity < 10000) {
@@ -138,12 +143,28 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
     console.log("[v0] Order created with ID:", order.id, "- Now deducting balance...")
 
     // CRITICAL: Deduct balance FIRST before any other operations
+    const newTotalSpent = (userData.total_spent || 0) + price
+    const newTotalOrders = (userData.total_orders || 0) + 1
+    
+    // Check if user should be auto-upgraded to VIP (after $500 spent)
+    let newTier = userData.tier || 1
+    let newPriceMultiplier = userData.price_multiplier || 3.0
+    
+    if (newTotalSpent >= 500 && newTier === 1 && newPriceMultiplier >= 3.0) {
+      // Auto-upgrade to VIP tier
+      newTier = 4 // VIP tier
+      newPriceMultiplier = 2.8 // VIP pricing
+      console.log(`[v0] 🎉 Auto-upgrading user to VIP! Total spent: $${newTotalSpent.toFixed(2)}`)
+    }
+    
     const { error: balanceUpdateError } = await supabase
       .from("users")
       .update({
         balance: balanceAfter,
-        total_orders: (userData.total_orders || 0) + 1,
-        total_spent: (userData.total_spent || 0) + price,
+        total_orders: newTotalOrders,
+        total_spent: newTotalSpent,
+        tier: newTier,
+        price_multiplier: newPriceMultiplier,
       })
       .eq("id", user.id)
 
@@ -155,6 +176,11 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
     }
 
     console.log(`[v0] Balance deducted successfully: $${balanceBefore.toFixed(2)} → $${balanceAfter.toFixed(2)}`)
+    
+    // Notify user if they were upgraded
+    if (newTier > (userData.tier || 1)) {
+      console.log(`[v0] ✨ User upgraded from tier ${userData.tier} to tier ${newTier}`)
+    }
 
     // Record transaction
     console.log("[v0] Recording transaction...")
@@ -179,7 +205,7 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
         coupon_id: couponId,
         user_id: user.id,
         order_id: order.id,
-        discount_amount: (quantity / 1000) * finalServicePrice * (discountPercentage / 100),
+        discount_amount: discountAmount,
       })
 
       if (couponUsageError) {

@@ -11,10 +11,41 @@ import { Home, Package, HeadphonesIcon, Gift, Code, LogOut, Settings, Receipt, C
 // Tier configuration based on price_multiplier
 const getTierInfo = (priceMultiplier: number | undefined | null) => {
   const multiplier = priceMultiplier ?? 3.0
-  if (multiplier <= 1.5) return { name: "VIP Elite", color: "from-amber-500 to-yellow-400", textColor: "text-amber-600", bgColor: "bg-amber-100", icon: Crown }
-  if (multiplier <= 2) return { name: "Reseller", color: "from-purple-500 to-indigo-500", textColor: "text-purple-600", bgColor: "bg-purple-100", icon: Star }
-  if (multiplier <= 2.5) return { name: "Bulk Buyer", color: "from-blue-500 to-cyan-500", textColor: "text-blue-600", bgColor: "bg-blue-100", icon: Star }
-  return { name: "Basic User", color: "from-slate-400 to-slate-500", textColor: "text-slate-600", bgColor: "bg-slate-100", icon: null }
+  const normalMultiplier = 3.0
+  const discountPercent = ((normalMultiplier - multiplier) / normalMultiplier) * 100
+  
+  if (multiplier <= 2) return { 
+    name: "Reseller", 
+    color: "from-purple-500 to-indigo-500", 
+    textColor: "text-purple-600", 
+    bgColor: "bg-purple-100", 
+    icon: Star,
+    discount: discountPercent 
+  }
+  if (multiplier <= 2.5) return { 
+    name: "Bulk Buyer", 
+    color: "from-blue-500 to-cyan-500", 
+    textColor: "text-blue-600", 
+    bgColor: "bg-blue-100", 
+    icon: Star,
+    discount: discountPercent 
+  }
+  if (multiplier < 3) return { 
+    name: "VIP", 
+    color: "from-yellow-500 to-amber-400", 
+    textColor: "text-yellow-600", 
+    bgColor: "bg-yellow-100", 
+    icon: Crown,
+    discount: discountPercent 
+  }
+  return { 
+    name: "Basic User", 
+    color: "from-slate-400 to-slate-500", 
+    textColor: "text-slate-600", 
+    bgColor: "bg-slate-100", 
+    icon: null,
+    discount: 0 
+  }
 }
 
 const navigation = [
@@ -91,12 +122,17 @@ export function DashboardSidebar({ userName = "User", userBalance = 0, priceMult
             </div>
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <p className={`text-xs font-semibold uppercase tracking-wider ${tierInfo.textColor}`}>
                 {tierInfo.name}
               </p>
               {tierInfo.icon && (
                 <tierInfo.icon className={`w-3.5 h-3.5 ${tierInfo.textColor}`} />
+              )}
+              {tierInfo.discount > 0 && tierInfo.name !== "Basic User" && (
+                <span className="text-[9px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">
+                  {tierInfo.discount.toFixed(0)}% OFF
+                </span>
               )}
             </div>
             <p className="font-bold text-sm sm:text-base text-slate-900 dark:text-white truncate">{userName}</p>

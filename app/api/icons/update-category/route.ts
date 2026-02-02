@@ -1,5 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin'
-import { revalidateTag } from 'next/cache'
+import { revalidateTag, revalidatePath } from 'next/cache'
 
 export async function POST(request: Request) {
   try {
@@ -23,16 +23,26 @@ export async function POST(request: Request) {
     }
 
     // 2. Update the main category icon
-    await supabase
+    const { error: updateCategoryError } = await supabase
       .from('service_categories')
       .update({ icon: iconUrl })
       .eq('id', mainCategory.id)
 
+    if (updateCategoryError) {
+      console.error('[v0] Category update error:', updateCategoryError)
+      throw new Error('Failed to update category icon')
+    }
+
     // 3. Update all services under this category with the same icon
-    await supabase
+    const { error: updateServicesError } = await supabase
       .from('services')
       .update({ icon: iconUrl })
       .eq('category_id', mainCategory.id)
+
+    if (updateServicesError) {
+      console.error('[v0] Services update error:', updateServicesError)
+      // Don't throw - continue even if services update fails
+    }
 
     // 4. Also update any OTHER categories with the same name (in case there are duplicates)
     await supabase
@@ -40,10 +50,19 @@ export async function POST(request: Request) {
       .update({ icon: iconUrl })
       .eq('name', categoryName)
 
-    // Revalidate pages to show updated icons
+    // Revalidate all relevant pages
     revalidateTag('services')
     revalidateTag('categories')
     revalidateTag('icons')
+    
+    // Revalidate specific paths
+    revalidatePath('/admin-panel-2024/icon-manager')
+    revalidatePath('/admin-panel-2024/manage-icons')
+    revalidatePath('/admin-panel-2024/services')
+    revalidatePath('/dashboard')
+    revalidatePath('/dashboard/new-order')
+
+    console.log(`[v0] Successfully updated ${categoryName} icon`)
 
     return Response.json({
       success: true,

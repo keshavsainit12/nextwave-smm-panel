@@ -48,17 +48,23 @@ export default function ManageIconsPage() {
     setSubmitting(true)
     try {
       if (editingType === 'service') {
-        await updateServiceIcon(editingId!, editingUrl.trim())
+        const result = await updateServiceIcon(editingId!, editingUrl.trim())
+        toast.success(result.message || 'Service icon updated successfully!')
       } else {
-        await updateCategoryIcon(editingId!, editingUrl.trim())
+        const result = await updateCategoryIcon(editingId!, editingUrl.trim())
+        toast.success(result.message || 'Category icon updated successfully!')
       }
-      toast.success('Icon updated successfully!')
+      
+      // Clear editing state
       setEditingId(null)
       setEditingType(null)
       setEditingUrl('')
+      
+      // Refresh data to show updated icon
+      await loadData()
       router.refresh()
-      loadData()
     } catch (error: any) {
+      console.error('[v0] Error saving icon:', error)
       toast.error(error.message || 'Failed to update icon')
     } finally {
       setSubmitting(false)

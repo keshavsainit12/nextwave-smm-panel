@@ -27,7 +27,8 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
 
   // Memoize price calculations to ensure they update reactively
   const servicePrice = useMemo(() => Number(service.price || service.base_price || 0), [service])
-  const priceMultiplier = useMemo(() => service.price_multiplier || 3.0, [service])
+  // Use user's price_multiplier (attached from dashboard) or default to 3.0
+  const priceMultiplier = useMemo(() => Number(service.price_multiplier) || 3.0, [service.price_multiplier])
   const finalServicePrice = useMemo(() => servicePrice * priceMultiplier, [servicePrice, priceMultiplier])
   
   const totalPrice = useMemo(() => {
