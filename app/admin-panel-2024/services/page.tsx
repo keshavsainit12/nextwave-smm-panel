@@ -7,8 +7,15 @@ import { BulkPricingControl } from "@/components/admin/bulk-pricing-control"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Info } from "lucide-react"
 
+// Force dynamic rendering to prevent caching
+export const dynamic = 'force-dynamic'
+
 export default async function AdminServicesPage() {
   const supabase = await createClient()
+  
+  // Generate a timestamp to force fresh data
+  const timestamp = Date.now()
+  
   const [{ data: services }, { data: categories }, { data: providers }] = await Promise.all([
     supabase
       .from("services")
@@ -17,6 +24,18 @@ export default async function AdminServicesPage() {
     supabase.from("service_categories").select("*").order("display_order"),
     supabase.from("api_providers").select("id, name").eq("is_active", true),
   ])
+
+  // Debug: Log fetched data
+  console.log(`[AdminServicesPage] Timestamp: ${timestamp}`)
+  console.log(`[AdminServicesPage] Fetched ${services?.length || 0} services`)
+  if (services && services.length > 0) {
+    console.log(`[AdminServicesPage] Sample service:`, {
+      id: services[0].id,
+      name: services[0].name,
+      provider_price: services[0].provider_price,
+      base_price: services[0].base_price,
+    })
+  }
 
   return (
     <div className="space-y-3 sm:space-y-4 md:space-y-6">
@@ -41,7 +60,7 @@ export default async function AdminServicesPage() {
 
       <BulkPricingControl />
 
-      <Tabs defaultValue="all" className="w-full">
+      <Tabs defaultValue="all" className="w-full" key={timestamp}>
         <TabsList className="grid grid-cols-3 gap-1 w-full h-auto">
           <TabsTrigger value="all" className="text-xs sm:text-sm">
             All ({services?.length || 0})
@@ -61,7 +80,7 @@ export default async function AdminServicesPage() {
               <CardDescription className="text-xs sm:text-sm">Complete list of available services</CardDescription>
             </CardHeader>
             <CardContent className="p-3 sm:p-4 md:p-6 overflow-x-auto">
-              <ServiceList services={services || []} />
+              <ServiceList services={services || []} key={`all-${timestamp}`} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -73,7 +92,7 @@ export default async function AdminServicesPage() {
               <CardDescription className="text-xs sm:text-sm">Services available to users</CardDescription>
             </CardHeader>
             <CardContent className="p-3 sm:p-4 md:p-6 overflow-x-auto">
-              <ServiceList services={services?.filter((s) => s.is_active) || []} />
+              <ServiceList services={services?.filter((s) => s.is_active) || []} key={`active-${timestamp}`} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -85,7 +104,7 @@ export default async function AdminServicesPage() {
               <CardDescription className="text-xs sm:text-sm">Disabled services</CardDescription>
             </CardHeader>
             <CardContent className="p-3 sm:p-4 md:p-6 overflow-x-auto">
-              <ServiceList services={services?.filter((s) => !s.is_active) || []} />
+              <ServiceList services={services?.filter((s) => !s.is_active) || []} key={`inactive-${timestamp}`} />
             </CardContent>
           </Card>
         </TabsContent>

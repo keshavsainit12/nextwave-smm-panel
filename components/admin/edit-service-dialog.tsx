@@ -15,7 +15,7 @@ export function EditServiceDialog({ service, open, onClose }: any) {
   const [formData, setFormData] = useState({
     name: service.name,
     description: service.description || "",
-    price: service.price || service.base_price || 0,
+    price: service.base_price || 0,
     min_quantity: service.min_quantity,
     max_quantity: service.max_quantity,
   })

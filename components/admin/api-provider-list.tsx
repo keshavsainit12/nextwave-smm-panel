@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { useToast } from "@/hooks/use-toast"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { EditApiProviderDialog } from "./edit-api-provider-dialog"
 
 export function ApiProviderList({ providers }: { providers: ApiProvider[] }) {
   const router = useRouter()
@@ -137,6 +138,7 @@ export function ApiProviderList({ providers }: { providers: ApiProvider[] }) {
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
+                  <EditApiProviderDialog provider={provider} />
                   <Button
                     variant="ghost"
                     size="icon"

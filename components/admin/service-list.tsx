@@ -8,7 +8,7 @@ import { Edit, Trash2, Power, PowerOff, Search, Check, X, Loader2 } from "lucide
 import { deleteService, toggleServiceStatus, updateServicePrice } from "@/app/actions/services"
 import { useRouter } from "next/navigation"
 import { EditServiceDialog } from "./edit-service-dialog"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
 
 export function ServiceList({ services }: { services: any[] }) {
@@ -18,6 +18,19 @@ export function ServiceList({ services }: { services: any[] }) {
   const [searchTerm, setSearchTerm] = useState("")
   const [editingPrice, setEditingPrice] = useState<{ id: string; price: number } | null>(null)
   const [savingPrice, setSavingPrice] = useState(false)
+
+  // Debug: Log when services prop changes
+  useEffect(() => {
+    console.log(`[ServiceList] Received ${services.length} services`)
+    if (services.length > 0) {
+      console.log(`[ServiceList] Sample service:`, {
+        id: services[0].id,
+        name: services[0].name,
+        provider_price: services[0].provider_price,
+        base_price: services[0].base_price,
+      })
+    }
+  }, [services])
 
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this service?")) {

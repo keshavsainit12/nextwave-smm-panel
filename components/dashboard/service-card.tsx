@@ -10,7 +10,7 @@ import { ShoppingCart, RefreshCw, CheckCircle } from "lucide-react"
 export function ServiceCard({ service }: { service: any }) {
   const [orderDialogOpen, setOrderDialogOpen] = useState(false)
 
-  const displayPrice = Number(service.price || service.base_price || 0)
+  const displayPrice = Number(service.base_price || 0)
 
   return (
     <>

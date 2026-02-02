@@ -45,11 +45,14 @@ export async function deleteService(id: string) {
 export async function updateServicePrice(serviceId: string, newPrice: number) {
   const supabase = await createClient()
 
-  const { error } = await supabase.from("services").update({ price: newPrice }).eq("id", serviceId)
+  const { error } = await supabase.from("services").update({ base_price: newPrice }).eq("id", serviceId)
 
   if (error) throw error
 
+  // Revalidate paths where services are displayed
   revalidatePath("/admin-panel-2024/services")
+  revalidatePath("/dashboard", "layout")
+  
   return { success: true }
 }
 
@@ -68,36 +71,68 @@ export async function updateService(serviceId: string, data: any) {
   const supabase = await createClient()
 
   const updateData = { ...data }
-  if (updateData.base_price !== undefined) {
-    updateData.price = updateData.base_price
-    delete updateData.base_price
+  // Ensure price is mapped to base_price
+  if (updateData.price !== undefined) {
+    updateData.base_price = updateData.price
+    delete updateData.price
   }
 
   const { error } = await supabase.from("services").update(updateData).eq("id", serviceId)
 
   if (error) throw error
 
+  // Revalidate paths where services are displayed
   revalidatePath("/admin-panel-2024/services")
+  revalidatePath("/dashboard", "layout")
+  
   return { success: true }
 }
 
 export async function updateAllServicesPricing(percentage: number) {
   const supabase = await createClient()
 
-  const { data: services, error: fetchError } = await supabase.from("services").select("id, price, provider_price")
+  const { data: services, error: fetchError } = await supabase.from("services").select("id, base_price, provider_price")
 
-  if (fetchError) throw fetchError
-
-  let updated = 0
-  for (const service of services || []) {
-    const currentPrice = service.price || service.provider_price * 3
-    const newPrice = currentPrice * (1 + percentage / 100)
-    const { error } = await supabase.from("services").update({ price: newPrice }).eq("id", service.id)
-    if (!error) updated++
+  if (fetchError) {
+    console.error("[v0] Failed to fetch services:", fetchError)
+    throw fetchError
   }
 
+  if (!services || services.length === 0) {
+    console.warn("[v0] No services found to update")
+    return { success: true, updated: 0 }
+  }
+
+  console.log(`[v0] Updating ${services.length} services with ${percentage}% change`)
+
+  let updated = 0
+  const errors: string[] = []
+  
+  for (const service of services) {
+    const currentPrice = service.base_price || service.provider_price * 3
+    const newPrice = currentPrice * (1 + percentage / 100)
+    
+    const { error } = await supabase.from("services").update({ base_price: newPrice }).eq("id", service.id)
+    
+    if (error) {
+      console.error(`[v0] Failed to update service ${service.id}:`, error)
+      errors.push(service.id)
+    } else {
+      updated++
+    }
+  }
+
+  console.log(`[v0] Successfully updated ${updated}/${services.length} services`)
+  
+  if (errors.length > 0) {
+    console.error(`[v0] Failed to update ${errors.length} services:`, errors)
+  }
+
+  // Revalidate paths where services are displayed
   revalidatePath("/admin-panel-2024/services")
-  return { success: true, updated }
+  revalidatePath("/dashboard", "layout")
+  
+  return { success: true, updated, total: services.length, errors: errors.length }
 }
 
 export async function setAllServicesMultiplier(multiplier: number) {
@@ -126,18 +161,21 @@ export async function setAllServicesMultiplier(multiplier: number) {
 
     // Update all services in parallel
     const updatePromises = services.map(async (service) => {
-      const basePrice = service.provider_price || service.base_price || 0
-      if (basePrice <= 0) {
-        console.warn(`[v0] Skipping service ${service.id} - no valid base price`)
+      // IMPORTANT: Always use provider_price as base for multiplier calculation
+      // Do NOT fallback to base_price as that would compound the multiplier
+      const providerPrice = service.provider_price || 0
+      
+      if (providerPrice <= 0) {
+        console.warn(`[v0] Skipping service ${service.id} - no valid provider_price`)
         return
       }
 
-      const newPrice = Number((basePrice * multiplier).toFixed(4))
+      // Calculate new price: provider_price × multiplier
+      const newPrice = Number((providerPrice * multiplier).toFixed(4))
 
       const { error } = await supabase
         .from("services")
         .update({
-          price: newPrice,
           base_price: newPrice,
         })
         .eq("id", service.id)
@@ -147,7 +185,7 @@ export async function setAllServicesMultiplier(multiplier: number) {
         errors.push(service.id)
       } else {
         updated++
-        console.log(`[v0] ✓ Service ${service.id}: $${basePrice.toFixed(4)} × ${multiplier} = $${newPrice.toFixed(4)}`)
+        console.log(`[v0] ✓ Service ${service.id}: $${providerPrice.toFixed(4)} × ${multiplier} = $${newPrice.toFixed(4)}`)
       }
     })
 
@@ -159,8 +197,9 @@ export async function setAllServicesMultiplier(multiplier: number) {
       console.error(`[v0] Failed to update ${errors.length} services:`, errors)
     }
 
+    // Revalidate paths where services are displayed
     revalidatePath("/admin-panel-2024/services")
-    revalidatePath("/dashboard/new-order")
+    revalidatePath("/dashboard", "layout")
 
     return { success: true, updated, total: services.length, errors: errors.length }
   } catch (error) {

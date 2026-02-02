@@ -103,6 +103,7 @@ export function DesktopDashboard({
       if (firstService) {
         setSelectedService(firstService)
         setQuantity(firstService.min_quantity || 1000)
+        setIsBulkBuy(false) // Reset bulk pricing when switching category
       }
     }
   }
@@ -147,6 +148,7 @@ export function DesktopDashboard({
       if (firstService) {
         setSelectedService(firstService)
         setQuantity(firstService.min_quantity || 1000)
+        setIsBulkBuy(false) // Reset bulk pricing on initial load
       }
     }
   }, [categoriesWithServices, services, selectedCategory])
@@ -485,6 +487,7 @@ export function DesktopDashboard({
                       if (service) {
                         setSelectedService(service)
                         setQuantity(service.min_quantity || 1000)
+                        setIsBulkBuy(false) // Reset bulk pricing when changing service
                       }
                     }}
                   >
@@ -507,7 +510,7 @@ export function DesktopDashboard({
                                   }}
                                 />
                               )}
-                              <span>{service.name} - ${Number(service.price || service.base_price || 0).toFixed(2)}/1k</span>
+                              <span>{service.name} - ${Number(service.base_price || 0).toFixed(2)}/1k</span>
                             </div>
                           </SelectItem>
                         )

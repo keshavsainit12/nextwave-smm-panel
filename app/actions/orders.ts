@@ -194,29 +194,68 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
     }
 
     // Send to API provider
+    console.log("[v0] Checking API provider configuration...")
+    console.log("[v0] - Has provider:", !!service.provider)
+    console.log("[v0] - Provider is_active:", service.provider?.is_active)
+    console.log("[v0] - Has external_service_id:", !!service.external_service_id)
+    
     if (service.provider && service.provider.is_active && service.external_service_id) {
       try {
-        console.log("[v0] Sending order to external API provider...")
+        console.log("[v0] ✓ All conditions met - Sending order to external API provider...")
+        console.log("[v0] - Provider URL:", service.provider.api_url)
+        console.log("[v0] - External Service ID:", service.external_service_id)
+        console.log("[v0] - Order details: link=", link, "quantity=", quantity)
+        
         const apiClient = new SMMApiClient(service.provider.api_url, service.provider.api_key)
         const apiResponse = await apiClient.createOrder(Number.parseInt(service.external_service_id), link, quantity)
 
-        console.log("[v0] API order created with ID:", apiResponse.order)
+        console.log("[v0] ✓ API order created successfully with external ID:", apiResponse.order)
 
         const { error: apiUpdateError } = await supabase
           .from("orders")
           .update({
             external_order_id: String(apiResponse.order),
             status: "processing",
+            notes: `Order sent to external API. External Order ID: ${apiResponse.order}`,
           })
           .eq("id", order.id)
 
         if (apiUpdateError) {
-          console.warn("[v0] Failed to update order with external ID (non-critical):", apiUpdateError.message)
+          console.warn("[v0] Failed to update order with external ID:", apiUpdateError.message)
+        } else {
+          console.log("[v0] ✓ Order updated with external_order_id and set to processing")
         }
       } catch (error) {
-        console.error("[v0] Failed to send order to API (non-critical):", error)
+        console.error("[v0] ✗ FAILED to send order to external API:", error)
+        console.error("[v0] Error details:", error instanceof Error ? error.message : String(error))
+        
+        // Mark order with error status and save error details
+        await supabase
+          .from("orders")
+          .update({
+            notes: `Failed to send to external API: ${error instanceof Error ? error.message : String(error)}`,
+          })
+          .eq("id", order.id)
+        
         // Order stays in pending status if API fails - user still got charged and order is recorded
+        // Admin can manually retry or handle these orders
       }
+    } else {
+      // Log why the API call was not made
+      let reason = "API submission skipped: "
+      if (!service.provider) reason += "No provider configured. "
+      else if (!service.provider.is_active) reason += "Provider is not active. "
+      if (!service.external_service_id) reason += "No external_service_id mapped. "
+      
+      console.warn("[v0] ✗", reason)
+      
+      // Save the reason to order notes for admin visibility
+      await supabase
+        .from("orders")
+        .update({
+          notes: reason,
+        })
+        .eq("id", order.id)
     }
 
     revalidatePath("/dashboard")
