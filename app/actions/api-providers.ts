@@ -259,6 +259,8 @@ export async function updateApiProviderMultiplier(providerId: string, multiplier
     
     // 3. Update each service's selling price (provider_price × multiplier)
     let updated = 0
+    const errors: string[] = []
+    
     for (const service of services || []) {
       const providerPrice = Number(service.provider_price || 0)
       if (providerPrice > 0) {
@@ -268,13 +270,19 @@ export async function updateApiProviderMultiplier(providerId: string, multiplier
           .update({ base_price: newPrice })
           .eq("id", service.id)
         
-        if (!updateError) {
+        if (updateError) {
+          console.error(`[v0] Failed to update service ${service.id}:`, updateError)
+          errors.push(`Service ${service.id}: ${updateError.message}`)
+        } else {
           updated++
         }
       }
     }
     
     console.log(`[v0] Successfully updated ${updated} service prices`)
+    if (errors.length > 0) {
+      console.warn(`[v0] ${errors.length} service(s) failed to update:`, errors)
+    }
     
     revalidatePath("/admin-panel-2024/api-providers")
     revalidatePath("/admin-panel-2024/services")
