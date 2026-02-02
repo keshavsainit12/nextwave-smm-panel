@@ -41,6 +41,7 @@ export default async function SettingsPage() {
             id: user.id,
             email: user.email || "",
             full_name: userData.full_name || "",
+            currency: userData.currency || "USD",
           }}
         />
       </div>

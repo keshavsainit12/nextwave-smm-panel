@@ -136,6 +136,7 @@ export async function updateUserProfile(
   userId: string,
   data: {
     full_name?: string
+    currency?: string
   },
 ) {
   try {
@@ -143,11 +144,23 @@ export async function updateUserProfile(
 
     console.log("[v0] Updating user profile:", userId, data)
 
-    // Only allow updating full_name since other fields don't exist in schema
+    // Validate currency if provided
+    const ALLOWED_CURRENCIES = ['USD', 'EUR', 'GBP', 'INR', 'PKR', 'AED']
+    if (data.currency && !ALLOWED_CURRENCIES.includes(data.currency)) {
+      return { success: false, error: `Invalid currency. Allowed currencies: ${ALLOWED_CURRENCIES.join(', ')}` }
+    }
+
+    // Only allow updating full_name and currency
     const updateData: any = {}
     
     if (data.full_name !== undefined) {
       updateData.full_name = data.full_name
+    }
+    
+    if (data.currency !== undefined) {
+      updateData.currency = data.currency
+      updateData.currency_updated_at = new Date().toISOString()
+      console.log("[v0] Currency changed to:", data.currency)
     }
 
     if (Object.keys(updateData).length === 0) {
