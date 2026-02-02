@@ -159,6 +159,14 @@ export function MobileHighTrustDashboard({
     }
   }, [categoriesWithServices, services, selectedCategory])
 
+  // Auto-reset bulk mode when service or category changes
+  useEffect(() => {
+    if (isBulkBuy) {
+      setIsBulkBuy(false)
+      console.log("[v0] Bulk mode auto-reset due to service/category change")
+    }
+  }, [selectedService?.id, selectedCategory?.id])
+
   const handleQuantityChange = (newQuantity: number) => {
     const minQty = selectedService?.min_quantity || 100
     const maxQty = selectedService?.max_quantity || 1000000
@@ -435,9 +443,22 @@ export function MobileHighTrustDashboard({
                   </div>
                 </>
               ) : (
-                <div className="flex items-center gap-2 text-sm text-amber-700">
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>You're enjoying VIP benefits!</span>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-amber-700">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>You're enjoying VIP benefits!</span>
+                  </div>
+                  
+                  {/* Tier Discount Indicator */}
+                  <div className="flex justify-center mt-2">
+                    <div className="bg-white rounded-lg p-3 text-center border-2 border-amber-300 shadow-sm">
+                      <p className="text-amber-600 font-bold text-xl">
+                        {priceMultiplier ? ((3.0 - priceMultiplier) / 3.0 * 100).toFixed(0) : 50}%
+                      </p>
+                      <p className="text-slate-600 text-xs font-medium">Your Discount</p>
+                      <p className="text-slate-500 text-[10px] mt-0.5">(Save {priceMultiplier ? ((3.0 - priceMultiplier) / 3.0 * 100).toFixed(0) : 50}% off!)</p>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

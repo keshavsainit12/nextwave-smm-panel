@@ -3,6 +3,14 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 
+// Tier to price multiplier mapping
+const TIER_MULTIPLIERS: Record<number, number> = {
+  1: 3.0,  // Normal User
+  2: 2.5,  // Bulk Buyer
+  3: 2.0,  // Reseller
+  4: 1.5,  // VIP
+}
+
 export async function updateUser(
   userId: string,
   data: {
@@ -17,7 +25,16 @@ export async function updateUser(
 
     console.log("[v0] Updating user:", userId, data)
 
-    const { error } = await supabase.from("users").update(data).eq("id", userId)
+    // Prepare update data
+    const updateData: Record<string, any> = { ...data }
+    
+    // Auto-set price_multiplier based on tier
+    if (data.tier !== undefined) {
+      updateData.price_multiplier = TIER_MULTIPLIERS[data.tier] || 3.0
+      console.log("[v0] Setting price_multiplier:", updateData.price_multiplier, "for tier:", data.tier)
+    }
+
+    const { error } = await supabase.from("users").update(updateData).eq("id", userId)
 
     if (error) {
       console.error("[v0] Update user error:", error.message)
@@ -26,8 +43,9 @@ export async function updateUser(
 
     revalidatePath("/admin-panel-2024/users")
     revalidatePath("/admin-panel-2024")
+    revalidatePath("/dashboard")
 
-    console.log("[v0] User updated successfully")
+    console.log("[v0] User updated successfully with tier and multiplier")
     return { success: true }
   } catch (error: any) {
     console.error("[v0] Update user error:", error?.message)

@@ -107,6 +107,14 @@ export function DesktopDashboard({
     }
   }
 
+  // Auto-reset bulk mode when service or category changes
+  useEffect(() => {
+    if (isBulkBuy) {
+      setIsBulkBuy(false)
+      console.log("[v0] Bulk mode auto-reset due to service/category change")
+    }
+  }, [selectedService?.id, selectedCategory?.id])
+
   const totalPrice = useMemo(() => {
     if (!selectedService) return 0
     const servicePrice = Number(selectedService.price || selectedService.base_price || 0)
@@ -386,11 +394,24 @@ export function DesktopDashboard({
             </div>
           </div>
         ) : (
-          <div className="flex items-center gap-3 p-4 bg-amber-100 rounded-xl">
-            <Check className="w-6 h-6 text-amber-600" />
-            <div>
-              <p className="text-amber-800 font-bold">You're a VIP member!</p>
-              <p className="text-amber-700 text-sm">Enjoy exclusive discounts and priority support on all orders.</p>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-4 bg-amber-100 rounded-xl">
+              <Check className="w-6 h-6 text-amber-600" />
+              <div>
+                <p className="text-amber-800 font-bold">You're a VIP member!</p>
+                <p className="text-amber-700 text-sm">Enjoying exclusive benefits on all orders.</p>
+              </div>
+            </div>
+            
+            {/* Tier Discount Indicator */}
+            <div className="flex justify-center">
+              <div className="bg-white rounded-xl p-4 text-center border-2 border-amber-300 shadow-sm min-w-[160px]">
+                <p className="text-amber-600 font-bold text-2xl">
+                  {priceMultiplier ? ((3.0 - priceMultiplier) / 3.0 * 100).toFixed(0) : 50}%
+                </p>
+                <p className="text-slate-600 text-sm font-medium">Your Discount</p>
+                <p className="text-slate-500 text-xs mt-1">(You save {priceMultiplier ? ((3.0 - priceMultiplier) / 3.0 * 100).toFixed(0) : 50}% off!)</p>
+              </div>
             </div>
           </div>
         )}

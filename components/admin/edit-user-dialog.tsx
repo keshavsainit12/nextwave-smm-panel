@@ -43,14 +43,31 @@ export function EditUserDialog({ user }: EditUserDialogProps) {
     setLoading(true)
 
     try {
-      await updateUser(user.id, {
+      const result = await updateUser(user.id, {
         balance: Number(balance),
         tier: Number(tier),
         status,
         full_name: fullName || null,
       })
-      toast.success(`User ${user.email} updated successfully!`)
-      setOpen(false)
+      
+      if (result.success) {
+        const tierNum = Number(tier)
+        let successMsg = `User ${user.email} updated successfully!`
+        
+        // Show VIP-specific message
+        if (tierNum === 4) {
+          successMsg += " 🌟 VIP status activated with special pricing!"
+        } else if (tierNum === 3) {
+          successMsg += " 💼 Reseller pricing applied!"
+        } else if (tierNum === 2) {
+          successMsg += " 📦 Bulk buyer discount applied!"
+        }
+        
+        toast.success(successMsg)
+        setOpen(false)
+      } else {
+        toast.error(result.error || "Failed to update user")
+      }
     } catch (error) {
       toast.error("Failed to update user")
     } finally {

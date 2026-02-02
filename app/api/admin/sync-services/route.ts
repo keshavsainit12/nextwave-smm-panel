@@ -51,20 +51,44 @@ export async function POST(request: Request) {
     
     let services
     try {
+      console.log("[v0] Fetching services from provider:", provider.name, provider.api_url)
       services = await apiClient.getServices()
+      console.log("[v0] Received services from API, type:", typeof services, "isArray:", Array.isArray(services))
     } catch (apiError: any) {
-      console.error("[v0] Error fetching services from API:", apiError)
+      console.error("[v0] Error fetching services from API:", {
+        error: apiError.message,
+        response: apiError.response,
+        stack: apiError.stack,
+      })
       return NextResponse.json({ 
         error: "Failed to fetch services from provider",
-        details: apiError?.message
+        details: apiError?.message,
+        provider_name: provider.name,
+        provider_url: provider.api_url,
+        suggestion: "Check if API URL is correct and API key is valid. Try testing the provider connection first."
       }, { status: 500 })
     }
 
     if (!Array.isArray(services)) {
-      console.error("[v0] Services is not an array:", typeof services)
+      console.error("[v0] Services is not an array:", {
+        type: typeof services,
+        value: services,
+        provider: provider.name,
+        apiUrl: provider.api_url,
+      })
       return NextResponse.json({ 
         error: "Invalid response from provider - services should be an array",
-        received: typeof services
+        received: typeof services,
+        response_preview: typeof services === "string" 
+          ? services.substring(0, 500) 
+          : JSON.stringify(services).substring(0, 500),
+        provider_name: provider.name,
+        provider_url: provider.api_url,
+        suggestion: "The provider API returned an unexpected format. This may indicate:\n" +
+                    "1. Wrong API URL (should end with /api/v2 or similar)\n" +
+                    "2. Invalid API key causing error page response\n" +
+                    "3. Provider API format not compatible\n" +
+                    "Please test the provider connection first or contact provider support."
       }, { status: 400 })
     }
 
@@ -153,25 +177,43 @@ export async function POST(request: Request) {
         const providerPrice = Number.parseFloat(service.rate) || 0
         const sellingPrice = providerPrice > 0 ? providerPrice * multiplier : 0
 
+        // Build service data - only include fields that exist in original schema
         const serviceData = {
           name: service.name || "Unknown Service",
           category_id: categoryId,
           provider_id: providerId,
           external_service_id: String(service.service || service.id),
-          provider_price: providerPrice,
           base_price: sellingPrice,
           min_quantity: Number.parseInt(service.min) || 1,
           max_quantity: Number.parseInt(service.max) || 10000,
           description: service.description || service.name || "Service",
           is_active: true,
           has_refill: service.refill === true || service.refill === "true",
-          cancel: service.cancel === true || service.cancel === "true",
-          dripfeed: service.dripfeed === true || service.dripfeed === "true",
         }
 
-        const { error: upsertError } = await supabase.from("services").upsert(serviceData, {
-          onConflict: "external_service_id,provider_id",
-        })
+        // Check if service already exists
+        const { data: existingService } = await supabase
+          .from("services")
+          .select("id")
+          .eq("provider_id", providerId)
+          .eq("external_service_id", String(service.service || service.id))
+          .single()
+
+        let upsertError
+        if (existingService) {
+          // Update existing service
+          const { error } = await supabase
+            .from("services")
+            .update(serviceData)
+            .eq("id", existingService.id)
+          upsertError = error
+        } else {
+          // Insert new service
+          const { error } = await supabase
+            .from("services")
+            .insert(serviceData)
+          upsertError = error
+        }
 
         if (upsertError) {
           console.error(`[v0] Failed to sync service ${service.service}:`, upsertError)

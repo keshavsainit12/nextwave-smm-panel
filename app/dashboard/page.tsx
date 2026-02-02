@@ -51,9 +51,22 @@ export default async function DashboardPage() {
     if (servicesError) console.error("[v0] Services fetch error:", servicesError)
     if (categoriesError) console.error("[v0] Categories fetch error:", categoriesError)
 
-    const transformedServices = services?.map((service: any) => ({
-      ...service,
-    })) || []
+    const userMultiplier = userProfile?.price_multiplier || 3.0
+    
+    // Transform service prices based on user's multiplier
+    const transformedServices = services?.map((service: any) => {
+      const basePriceForNormal = Number(service.base_price || 0)
+      // base_price is stored for normal users (3x markup)
+      // Calculate provider cost, then apply user's multiplier
+      const providerCost = basePriceForNormal / 3.0
+      const userPrice = providerCost * userMultiplier
+      
+      return {
+        ...service,
+        base_price: userPrice,  // Override with user-specific price
+        original_base_price: basePriceForNormal,  // Keep original for reference
+      }
+    }) || []
 
     const firstName = userProfile?.full_name?.split(' ')[0] || 'User'
 

@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { SMMApiClient } from "@/lib/smm-api-client"
+import { ORDER_STATUSES, validateOrderStatus } from "@/lib/order-status"
 
 export async function placeOrder(serviceId: string, link: string, quantity: number, couponCode?: string, isBulkBuy = false) {
   try {
@@ -48,11 +49,15 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
 
     const baseMultiplier = userData.price_multiplier || 3.0
     const priceMultiplier = isBulkBuy ? 2.5 : baseMultiplier
-    const finalServicePrice = servicePrice * priceMultiplier
+    
+    // base_price is stored for normal users (3x markup)
+    // Calculate provider cost first, then apply user's multiplier
+    const providerPrice = servicePrice / 3.0
+    const finalServicePrice = providerPrice * priceMultiplier
     let price = (quantity / 1000) * finalServicePrice
 
     console.log(
-      `[v0] Order calculation: ${quantity} units × $${servicePrice}/1K × ${priceMultiplier}x (${isBulkBuy ? "BULK" : "REGULAR"}) = $${price.toFixed(4)}`,
+      `[v0] Order calculation: ${quantity} units × (${servicePrice}/3.0 = $${providerPrice.toFixed(4)}) × ${priceMultiplier}x (${isBulkBuy ? "BULK" : "REGULAR"}) = $${price.toFixed(4)}`,
     )
 
     // Apply coupon discount if provided
@@ -122,7 +127,7 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
         link,
         quantity,
         price,
-        status: "pending",
+        status: ORDER_STATUSES.PENDING, // Use constant to ensure valid status
         can_refill: service.has_refill || service.refill,
       })
       .select()
@@ -196,11 +201,39 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
     // Send to API provider
     if (service.provider && service.provider.is_active && service.external_service_id) {
       try {
-        console.log("[v0] Sending order to external API provider...")
-        const apiClient = new SMMApiClient(service.provider.api_url, service.provider.api_key)
-        const apiResponse = await apiClient.createOrder(Number.parseInt(service.external_service_id), link, quantity)
+        console.log("[v0] ===== SENDING ORDER TO PROVIDER =====")
+        console.log("[v0] Provider Details:", {
+          provider_id: service.provider.id,
+          provider_name: service.provider.name,
+          api_url: service.provider.api_url,
+          is_active: service.provider.is_active,
+          auth_mode: (service.provider as any).auth_mode || "key (default)",
+          masked_api_key: service.provider.api_key
+            ? `${service.provider.api_key.slice(0, 4)}...${service.provider.api_key.slice(-4)}`
+            : "MISSING",
+        })
+        console.log("[v0] Order Details:", {
+          order_id: order.id,
+          external_service_id: service.external_service_id,
+          link: link,
+          quantity: quantity,
+        })
 
-        console.log("[v0] API order created with ID:", apiResponse.order)
+        const apiClient = new SMMApiClient(service.provider.api_url, service.provider.api_key)
+        
+        // Determine auth mode from provider settings
+        const authMode = (service.provider as any).auth_mode === "bearer" ? "bearer" : "key"
+        console.log("[v0] Using auth mode:", authMode)
+        
+        const apiResponse = await apiClient.createOrder(
+          Number.parseInt(service.external_service_id),
+          link,
+          quantity,
+          { authMode },
+        )
+
+        console.log("[v0] ✅ SUCCESS! API order created with external ID:", apiResponse.order)
+        console.log("[v0] Full API Response:", apiResponse)
 
         const { error: apiUpdateError } = await supabase
           .from("orders")
@@ -212,11 +245,39 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
 
         if (apiUpdateError) {
           console.warn("[v0] Failed to update order with external ID (non-critical):", apiUpdateError.message)
+        } else {
+          console.log("[v0] ✅ Order updated in database with external_order_id:", apiResponse.order)
         }
-      } catch (error) {
-        console.error("[v0] Failed to send order to API (non-critical):", error)
+      } catch (error: any) {
+        // Log comprehensive error details for diagnostics
+        const errorResponse = error.response || {}
+        console.error("[v0] ❌ FAILED to send order to API provider")
+        console.error("[v0] Error Details:", {
+          order_id: order.id,
+          provider_id: service.provider.id,
+          provider_name: service.provider.name,
+          provider_api_url: service.provider.api_url,
+          masked_api_key: service.provider.api_key
+            ? `${service.provider.api_key.slice(0, 4)}...${service.provider.api_key.slice(-4)}`
+            : "none",
+          service_external_id: service.external_service_id,
+          auth_mode: (service.provider as any).auth_mode || "key",
+          error_message: error.message,
+          provider_http_status: errorResponse.status,
+          provider_response_body: errorResponse.body,
+        })
+        console.error("[v0] Full Error Stack:", error.stack)
+        console.error("[v0] ===================================")
         // Order stays in pending status if API fails - user still got charged and order is recorded
+        // Admin can use the resend utility to retry with updated credentials
       }
+    } else {
+      // Log why order is not being sent to provider
+      console.log("[v0] Order NOT sent to provider. Reason:", {
+        has_provider: !!service.provider,
+        provider_is_active: service.provider?.is_active,
+        has_external_service_id: !!service.external_service_id,
+      })
     }
 
     revalidatePath("/dashboard")
@@ -253,7 +314,10 @@ export async function syncOrderStatus(orderId: string) {
 
   try {
     const apiClient = new SMMApiClient(provider.api_url, provider.api_key)
-    const status = await apiClient.getOrderStatus(Number.parseInt(order.external_order_id))
+    const authMode = (provider as any).auth_mode === "bearer" ? "bearer" : "key"
+    const status = await apiClient.getOrderStatus(Number.parseInt(order.external_order_id), {
+      authMode,
+    })
 
     // Map API status to our status
     let newStatus = order.status
@@ -277,7 +341,18 @@ export async function syncOrderStatus(orderId: string) {
     revalidatePath("/admin-panel-2024/orders")
 
     return { success: true, status: newStatus }
-  } catch (error) {
+  } catch (error: any) {
+    const errorResponse = error.response || {}
+    console.error("[v0] Failed to sync order status:", {
+      order_id: orderId,
+      external_order_id: order.external_order_id,
+      provider_id: provider.id,
+      provider_api_url: provider.api_url,
+      masked_api_key: provider.api_key ? `${provider.api_key.slice(0, 4)}...${provider.api_key.slice(-4)}` : "none",
+      error_message: error.message,
+      provider_response_status: errorResponse.status,
+      provider_response_body: errorResponse.body,
+    })
     return { error: String(error) }
   }
 }
@@ -345,8 +420,11 @@ export async function cancelOrder(orderId: string) {
   const user = userResponse.data.user
 
   if (!user) {
+    console.error("[v0] Cancel order - Unauthorized access attempt")
     return { error: "Unauthorized" }
   }
+
+  console.log(`[v0] Starting cancel for order ${orderId} by user ${user.id}`)
 
   const orderResponseData = await supabase
     .from("orders")
@@ -363,54 +441,95 @@ export async function cancelOrder(orderId: string) {
   const order = orderResponseData.data
 
   if (!order) {
+    console.error(`[v0] Order ${orderId} not found for user ${user.id}`)
     return { error: "Order not found" }
   }
 
+  console.log(`[v0] Order found - status: ${order.status}, price: ${order.price}, external_id: ${order.external_order_id}`)
+
   if (order.status === "completed" || order.status === "canceled") {
+    console.warn(`[v0] Cannot cancel order ${orderId} - status is ${order.status}`)
     return { error: "Cannot cancel this order" }
   }
 
   if (!order.external_order_id || !order.service?.provider) {
     // Just mark as canceled if no external order
-    await supabase.from("orders").update({ status: "canceled" }).eq("id", orderId)
+    console.log(`[v0] Canceling order ${orderId} - no external order, marking as canceled`)
+    await supabase
+      .from("orders")
+      .update({ status: ORDER_STATUSES.CANCELED }) // Use constant
+      .eq("id", orderId)
     revalidatePath("/dashboard/orders")
-    return { success: true }
+    return { success: true, message: "Order canceled" }
   }
 
   const provider = order.service.provider
 
   try {
+    console.log(`[v0] Canceling order ${order.external_order_id} with provider ${provider.name}`)
     const apiClient = new SMMApiClient(provider.api_url, provider.api_key)
     await apiClient.cancelOrder(Number.parseInt(order.external_order_id))
+    console.log(`[v0] Provider cancellation successful`)
 
     // Update order and refund
     const refundAmount = order.price
+    console.log(`[v0] Refunding ${refundAmount} to user ${user.id}`)
+    
     const userDataResponse = await supabase.from("users").select("balance").eq("id", user.id).single()
     const userData = userDataResponse.data
 
-    if (userData) {
-      const newBalance = userData.balance + refundAmount
-
-      await supabase.from("users").update({ balance: newBalance }).eq("id", user.id)
-
-      await supabase.from("transactions").insert({
-        user_id: user.id,
-        order_id: orderId,
-        type: "refund",
-        amount: refundAmount,
-        balance_before: userData.balance,
-        balance_after: newBalance,
-        status: "completed",
-      })
+    if (!userData) {
+      console.error(`[v0] User data not found for ${user.id}`)
+      return { error: "User data not found" }
     }
 
-    await supabase.from("orders").update({ status: "canceled" }).eq("id", orderId)
+    const newBalance = userData.balance + refundAmount
+    console.log(`[v0] Balance update: ${userData.balance} → ${newBalance}`)
+
+    const { error: balanceError } = await supabase.from("users").update({ balance: newBalance }).eq("id", user.id)
+    
+    if (balanceError) {
+      console.error(`[v0] Failed to update balance:`, balanceError)
+      return { error: "Failed to update balance" }
+    }
+
+    console.log(`[v0] Creating refund transaction`)
+    const { error: transactionError } = await supabase.from("transactions").insert({
+      user_id: user.id,
+      order_id: orderId,
+      type: "refund",
+      amount: refundAmount,
+      balance_before: userData.balance,
+      balance_after: newBalance,
+      status: "completed",
+    })
+
+    if (transactionError) {
+      console.error(`[v0] Failed to create transaction:`, transactionError)
+      // Continue anyway - balance was updated
+    } else {
+      console.log(`[v0] Transaction created successfully`)
+    }
+
+    console.log(`[v0] Updating order ${orderId} status to canceled`)
+    const { error: orderError } = await supabase
+      .from("orders")
+      .update({ status: ORDER_STATUSES.CANCELED }) // Use constant
+      .eq("id", orderId)
+
+    if (orderError) {
+      console.error(`[v0] Failed to update order status:`, orderError)
+      return { error: "Failed to update order status" }
+    }
+
+    console.log(`[v0] Order ${orderId} successfully canceled and refunded ${refundAmount}`)
 
     revalidatePath("/dashboard/orders")
     revalidatePath("/dashboard")
 
     return { success: true, message: "Order canceled and refunded" }
   } catch (error) {
+    console.error(`[v0] Error canceling order ${orderId}:`, error)
     return { error: String(error) }
   }
 }

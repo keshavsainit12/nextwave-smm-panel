@@ -220,19 +220,34 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
 
     const balanceBefore = userData.balance || 0
 
+    // Convert XAF to USD for storage (1 XAF = 1/620 USD)
+    const XAF_TO_USD_RATE = 620
+    const amountInUSD = params.amount / XAF_TO_USD_RATE
+    
+    console.log("[v0] Currency conversion:", {
+      amountXAF: params.amount,
+      rate: XAF_TO_USD_RATE,
+      amountUSD: amountInUSD.toFixed(4),
+    })
+
     // Create transaction record - with payment_id field for webhook to find it later
     const { data: transaction, error: txError } = await supabase
       .from("transactions")
       .insert({
         user_id: params.userId,
-        amount: params.amount,
+        amount: amountInUSD, // Store in USD
         type: "deposit",
         payment_method: "instant_xaf",
         status: "pending",
-        notes: `XAF Payment - ${params.userName}`,
+        notes: `XAF ${params.amount} Payment (${amountInUSD.toFixed(2)} USD) - ${params.userName}`,
         balance_before: balanceBefore,
-        balance_after: balanceBefore + params.amount,
+        balance_after: balanceBefore + amountInUSD, // Add USD amount
         payment_id: "", // Will be set after AccountPe API call
+        // Store original XAF amount in metadata for reference
+        metadata: {
+          original_amount_xaf: params.amount,
+          exchange_rate: XAF_TO_USD_RATE,
+        },
       })
       .select()
       .single()
