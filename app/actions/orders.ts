@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { SMMApiClient } from "@/lib/smm-api-client"
+import { ORDER_STATUSES, validateOrderStatus } from "@/lib/order-status"
 
 export async function placeOrder(serviceId: string, link: string, quantity: number, couponCode?: string, isBulkBuy = false) {
   try {
@@ -126,7 +127,7 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
         link,
         quantity,
         price,
-        status: "pending",
+        status: ORDER_STATUSES.PENDING, // Use constant to ensure valid status
         can_refill: service.has_refill || service.refill,
       })
       .select()
@@ -446,7 +447,11 @@ export async function cancelOrder(orderId: string) {
 
   if (!order.external_order_id || !order.service?.provider) {
     // Just mark as canceled if no external order
-    await supabase.from("orders").update({ status: "canceled" }).eq("id", orderId)
+    console.log(`[v0] Canceling order ${orderId} - no external order`)
+    await supabase
+      .from("orders")
+      .update({ status: ORDER_STATUSES.CANCELED }) // Use constant
+      .eq("id", orderId)
     revalidatePath("/dashboard/orders")
     return { success: true }
   }
@@ -478,7 +483,11 @@ export async function cancelOrder(orderId: string) {
       })
     }
 
-    await supabase.from("orders").update({ status: "canceled" }).eq("id", orderId)
+    console.log(`[v0] Updating order ${orderId} status to canceled`)
+    await supabase
+      .from("orders")
+      .update({ status: ORDER_STATUSES.CANCELED }) // Use constant
+      .eq("id", orderId)
 
     revalidatePath("/dashboard/orders")
     revalidatePath("/dashboard")

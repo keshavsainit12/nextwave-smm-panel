@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { SMMApiClient } from "@/lib/smm-api-client"
+import { mapProviderStatus, validateOrderStatus } from "@/lib/order-status"
 
 export async function GET(request: Request) {
   try {
@@ -51,29 +52,35 @@ export async function GET(request: Request) {
           authMode,
         })
 
-        // Map API status to our status
+        // Map API status to our status using safe helper
         const providerStatus = status.status
-        let newStatus: string | null = null
+        console.log(`[CRON] Order ${order.id} - Provider status: "${providerStatus}"`)
         
-        if (providerStatus === "Completed") newStatus = "completed"
-        else if (providerStatus === "Partial") newStatus = "partial"
-        else if (providerStatus === "In progress" || providerStatus === "Processing") newStatus = "processing"
-        else if (providerStatus === "Canceled" || providerStatus === "Cancelled") newStatus = "canceled"
-        else if (providerStatus === "Refunded" || providerStatus === "Refund") newStatus = "refunded"
-        else if (providerStatus === "Refunding") newStatus = "refunding"
-        else if (providerStatus === "Pending") newStatus = "pending"
-        else {
+        const newStatus = mapProviderStatus(providerStatus)
+        
+        if (!newStatus) {
           // Unknown status from provider - keep current status and log warning
           console.warn(`[CRON] Unknown provider status "${providerStatus}" for order ${order.id}, keeping current status: ${order.status}`)
-          newStatus = null
+          continue
         }
         
-        // Skip update if no valid mapping found or status unchanged
-        if (!newStatus || newStatus === order.status) {
+        // Skip update if status unchanged
+        if (newStatus === order.status) {
+          console.log(`[CRON] Order ${order.id} status unchanged: ${order.status}`)
+          continue
+        }
+
+        // Validate the new status before updating (extra safety)
+        try {
+          validateOrderStatus(newStatus)
+        } catch (validationError) {
+          console.error(`[CRON] Status validation failed for order ${order.id}:`, validationError)
+          errorCount++
           continue
         }
 
         // Update order if status changed
+        console.log(`[CRON] Updating order ${order.id}: ${order.status} → ${newStatus}`)
         await supabase
           .from("orders")
           .update({
