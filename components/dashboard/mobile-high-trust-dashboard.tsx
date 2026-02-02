@@ -165,9 +165,10 @@ export function MobileHighTrustDashboard({
 
   // Reset bulk buy when service changes to prevent incorrect discount
   useEffect(() => {
-    if (isBulkBuy && selectedService) {
+    if (isBulkBuy) {
       setIsBulkBuy(false)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedService?.id])
 
   const handleQuantityChange = (newQuantity: number) => {
