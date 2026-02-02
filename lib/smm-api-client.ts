@@ -186,7 +186,50 @@ export class SMMApiClient {
 
   // Get list of all services from the API
   async getServices(options?: RequestOptions): Promise<SMMService[]> {
-    return this.makeRequest({ action: "services" }, options)
+    const response = await this.makeRequest({ action: "services" }, options)
+    
+    // Validate response is an array
+    if (!Array.isArray(response)) {
+      console.error("[SMM-API] getServices received non-array response:", {
+        type: typeof response,
+        value: response,
+      })
+      
+      // If it's a string that looks like JSON, try to parse it
+      if (typeof response === "string") {
+        try {
+          const parsed = JSON.parse(response)
+          if (Array.isArray(parsed)) {
+            console.log("[SMM-API] Successfully parsed string response to array")
+            return parsed
+          }
+          
+          // Check if it's wrapped in an object like {services: [...]}
+          if (parsed && typeof parsed === "object" && Array.isArray(parsed.services)) {
+            console.log("[SMM-API] Found services array in object wrapper")
+            return parsed.services
+          }
+        } catch (e) {
+          console.error("[SMM-API] Failed to parse string response as JSON:", e)
+        }
+        
+        throw new Error(
+          `Invalid response from provider: expected array, got string. Response: ${response.substring(0, 200)}...`
+        )
+      }
+      
+      // Check if response is an object with services property
+      if (response && typeof response === "object" && Array.isArray((response as any).services)) {
+        console.log("[SMM-API] Found services in response object")
+        return (response as any).services
+      }
+      
+      throw new Error(
+        `Invalid response from provider: expected array, got ${typeof response}. Response: ${JSON.stringify(response).substring(0, 200)}...`
+      )
+    }
+    
+    return response
   }
 
   // Place a new order
