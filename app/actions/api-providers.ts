@@ -12,12 +12,29 @@ export async function addApiProvider(formData: FormData) {
     const api_url = formData.get("api_url") as string
     const api_key = formData.get("api_key") as string
 
+    if (!name || !api_url || !api_key) {
+      return { error: "Missing required fields: name, api_url, or api_key" }
+    }
+
+    console.log("[v0] Testing API connection for:", name, api_url)
+
     const client = new SMMApiClient(api_url, api_key)
-    const isValid = await client.testConnection()
+    
+    let isValid = false
+    try {
+      isValid = await client.testConnection()
+    } catch (testError: any) {
+      console.error("[v0] API connection test failed:", testError)
+      return { 
+        error: `Failed to connect to API: ${testError?.message || "Connection failed"}. Please check URL and API key.` 
+      }
+    }
 
     if (!isValid) {
       return { error: "Failed to connect to API. Please check URL and API key." }
     }
+
+    console.log("[v0] API connection successful, adding to database")
 
     // Add provider to database
     const { data, error } = await supabase
@@ -26,19 +43,23 @@ export async function addApiProvider(formData: FormData) {
         name,
         api_url,
         api_key,
-        priority: Number(formData.get("priority")),
+        priority: Number(formData.get("priority")) || 1,
         is_active: formData.get("is_active") === "on",
       })
       .select("id")
       .single()
 
     if (error) {
+      console.error("[v0] Database error adding provider:", error)
       return { error: `Database error: ${error.message}` }
     }
 
+    console.log("[v0] Provider added successfully:", data.id)
+
     revalidatePath("/admin-panel-2024/api-providers")
     return { success: true, providerId: data.id }
-  } catch (error) {
+  } catch (error: any) {
+    console.error("[v0] Exception in addApiProvider:", error)
     return { error: error instanceof Error ? error.message : "Failed to add provider" }
   }
 }

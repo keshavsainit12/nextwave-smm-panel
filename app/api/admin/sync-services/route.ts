@@ -166,12 +166,33 @@ export async function POST(request: Request) {
           is_active: true,
           has_refill: service.refill === true || service.refill === "true",
           cancel: service.cancel === true || service.cancel === "true",
+          can_cancel: service.cancel === true || service.cancel === "true",
           dripfeed: service.dripfeed === true || service.dripfeed === "true",
         }
 
-        const { error: upsertError } = await supabase.from("services").upsert(serviceData, {
-          onConflict: "external_service_id,provider_id",
-        })
+        // Check if service already exists
+        const { data: existingService } = await supabase
+          .from("services")
+          .select("id")
+          .eq("provider_id", providerId)
+          .eq("external_service_id", String(service.service || service.id))
+          .single()
+
+        let upsertError
+        if (existingService) {
+          // Update existing service
+          const { error } = await supabase
+            .from("services")
+            .update(serviceData)
+            .eq("id", existingService.id)
+          upsertError = error
+        } else {
+          // Insert new service
+          const { error } = await supabase
+            .from("services")
+            .insert(serviceData)
+          upsertError = error
+        }
 
         if (upsertError) {
           console.error(`[v0] Failed to sync service ${service.service}:`, upsertError)
