@@ -178,7 +178,7 @@ export async function POST(request: Request) {
         const sellingPrice = providerPrice > 0 ? providerPrice * multiplier : 0
 
         // Build service data - only include fields that exist in original schema
-        const serviceData: any = {
+        const serviceData = {
           name: service.name || "Unknown Service",
           category_id: categoryId,
           provider_id: providerId,
