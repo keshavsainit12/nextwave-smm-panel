@@ -16,6 +16,20 @@ import { useToast } from "@/hooks/use-toast"
 export function OrderDialog({ service, open, onClose }: { service: any; open: boolean; onClose: () => void }) {
   const [link, setLink] = useState("")
   const [quantity, setQuantity] = useState(service.min_quantity || 100)
+  
+  // Debug: Log service data when dialog opens
+  useEffect(() => {
+    if (open) {
+      console.log("[v0] OrderDialog opened with service:", {
+        id: service.id,
+        name: service.name,
+        price: service.price,
+        base_price: service.base_price,
+        min_quantity: service.min_quantity,
+        price_multiplier: service.price_multiplier,
+      })
+    }
+  }, [open, service])
   const [couponCode, setCouponCode] = useState("")
   const [couponDiscount, setCouponDiscount] = useState(0)
   const [couponError, setCouponError] = useState<string | null>(null)
@@ -25,15 +39,43 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
   const router = useRouter()
   const { toast } = useToast()
 
+  // Determine if bulk pricing is applicable
+  // Bulk pricing: available only if service min_quantity > 10 AND quantity >= 10000
+  const minQuantityForBulk = (service.min_quantity || 100) > 10 ? 10000 : Infinity
+  const isBulkEligible = quantity >= 10000 && (service.min_quantity || 100) > 10
+  
+  // Debug bulk pricing
+  useEffect(() => {
+    console.log("[v0] Bulk pricing calculation:", {
+      quantity,
+      min_quantity: service.min_quantity,
+      isBulkEligible,
+      minQuantityForBulk,
+      check1: quantity >= 10000,
+      check2: (service.min_quantity || 100) > 10,
+    })
+  }, [quantity, isBulkEligible, service.min_quantity])
+  
   // Memoize price calculations to ensure they update reactively
   const servicePrice = useMemo(() => Number(service.price || service.base_price || 0), [service])
-  const priceMultiplier = useMemo(() => service.price_multiplier || 3.0, [service])
+  const priceMultiplier = useMemo(() => {
+    // Bulk pricing: 2.5x if eligible, otherwise use user's multiplier (or default 3.0)
+    return isBulkEligible ? 2.5 : (service.price_multiplier || 3.0)
+  }, [service, isBulkEligible])
   const finalServicePrice = useMemo(() => servicePrice * priceMultiplier, [servicePrice, priceMultiplier])
   
   const totalPrice = useMemo(() => {
     const price = ((quantity / 1000) * finalServicePrice)
+    console.log("[v0] Price calculation:", {
+      quantity,
+      finalServicePrice,
+      servicePrice,
+      priceMultiplier,
+      isBulkEligible,
+      totalPrice: price.toFixed(2),
+    })
     return price.toFixed(2)
-  }, [quantity, finalServicePrice])
+  }, [quantity, finalServicePrice, servicePrice, priceMultiplier, isBulkEligible])
   
   const discountedTotal = useMemo(() => {
     const total = Number(totalPrice)
@@ -52,7 +94,7 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
       setCouponError(null)
       setError(null)
     }
-  }, [open, service.min_quantity])
+  }, [open, service.id, service.min_quantity])
 
   const handleValidateCoupon = async () => {
     if (!couponCode.trim()) {
@@ -138,7 +180,14 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
         throw new Error(`Minimum quantity is ${service.min_quantity || 100}`)
       }
 
-      const result = await placeOrder(service.id, link, quantity, couponCode || undefined)
+      console.log("[v0] Submitting order with bulk flag:", {
+        serviceId: service.id,
+        quantity,
+        isBulkEligible,
+        totalPrice: discountedTotal,
+      })
+
+      const result = await placeOrder(service.id, link, quantity, couponCode || undefined, isBulkEligible)
 
       if (result.error) {
         throw new Error(result.error)
@@ -293,15 +342,37 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
             </p>
           </div>
 
+          {/* Bulk Pricing Info */}
+          {isBulkEligible && (
+            <Alert className="border-green-200/50 bg-green-50">
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-sm text-green-700">
+                ✓ <strong>Bulk Pricing Active!</strong> You get 2.5x multiplier (instead of {(service.price_multiplier || 3.0).toFixed(1)}x) on this order
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {(service.min_quantity || 100) <= 10 && (
+            <Alert className="border-amber-200/50 bg-amber-50">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-sm text-amber-700">
+                ℹ️ Bulk pricing not available for services with min quantity ≤ 10
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Price Breakdown Card */}
-          <div key={`price-${couponDiscount}-${quantity}`} className="rounded-xl border border-blue-200/50 bg-gradient-to-br from-blue-50 to-blue-50/50 p-4 space-y-3">
+          <div key={`price-${couponDiscount}-${quantity}-${isBulkEligible}`} className="rounded-xl border border-blue-200/50 bg-gradient-to-br from-blue-50 to-blue-50/50 p-4 space-y-3">
             <div className="flex items-center justify-between text-sm">
               <span className="text-slate-600">Base Price per 1000:</span>
               <span className="font-semibold text-slate-900">${servicePrice.toFixed(2)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-600">Final Price per 1000:</span>
-              <span className="font-semibold text-blue-600">${finalServicePrice.toFixed(2)}</span>
+              <span className="text-slate-600">
+                Final Price per 1000:
+                {isBulkEligible && <span className="ml-2 text-green-600 font-bold">(Bulk: 2.5x)</span>}
+              </span>
+              <span className={`font-semibold ${isBulkEligible ? 'text-green-600' : 'text-blue-600'}`}>${finalServicePrice.toFixed(2)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-slate-600">Quantity:</span>
