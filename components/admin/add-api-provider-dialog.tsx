@@ -36,6 +36,8 @@ export function AddApiProviderDialog() {
     try {
       const formData = new FormData(e.currentTarget)
 
+      console.log('[v0] Submitting API provider form')
+      
       toast({
         title: "Testing Connection",
         description: "Verifying API credentials...",
@@ -44,18 +46,23 @@ export function AddApiProviderDialog() {
       const result = await addApiProvider(formData)
 
       if (result.error) {
+        console.error('[v0] Add provider failed:', result.error)
         throw new Error(result.error)
       }
 
+      console.log('[v0] Provider added successfully:', result.providerId)
+      
       toast({
-        title: "Provider Added",
-        description: "API Provider added successfully.",
+        title: "Provider Added ✓",
+        description: `API Provider "${formData.get("name")}" added successfully.`,
       })
 
       if (autoSync && result.providerId) {
+        console.log('[v0] Starting auto-sync with multiplier:', multiplier)
+        
         toast({
           title: "Syncing Services",
-          description: `Importing services with ${multiplier}x pricing...`,
+          description: `Importing services with ${multiplier}x pricing... This may take a minute.`,
         })
 
         const syncResponse = await fetch("/api/admin/sync-services", {
@@ -67,17 +74,25 @@ export function AddApiProviderDialog() {
           }),
         })
 
+        if (!syncResponse.ok) {
+          const errorText = await syncResponse.text()
+          console.error('[v0] Sync response not ok:', syncResponse.status, errorText)
+          throw new Error(`Sync failed: ${syncResponse.status}`)
+        }
+
         const syncResult = await syncResponse.json()
+        console.log('[v0] Sync result:', syncResult)
 
         if (syncResult.success) {
           toast({
-            title: "Sync Complete",
-            description: syncResult.message,
+            title: "Sync Complete ✓",
+            description: syncResult.message + (syncResult.errorDetails ? ` (Some errors: ${syncResult.errorDetails})` : ''),
           })
         } else {
+          console.error('[v0] Sync failed:', syncResult)
           toast({
-            title: "Sync Warning",
-            description: syncResult.error || "Services may need manual sync",
+            title: "Sync Failed",
+            description: syncResult.error || syncResult.details || "Services may need manual sync",
             variant: "destructive",
           })
         }
@@ -86,6 +101,7 @@ export function AddApiProviderDialog() {
       setOpen(false)
       router.refresh()
     } catch (error) {
+      console.error('[v0] Form submission error:', error)
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to add provider",
