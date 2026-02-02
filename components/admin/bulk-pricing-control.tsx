@@ -57,9 +57,15 @@ export function BulkPricingControl() {
       const result = await setAllServicesMultiplier(multiplier)
       console.log(`[v0] Multiplier update result:`, result)
 
-      toast.success(
-        `Set ${result.updated} services to ${multiplier}x provider price (${((multiplier - 1) * 100).toFixed(0)}% profit)`,
-      )
+      if (result.errors && result.errors > 0) {
+        toast.warning(
+          `Set ${result.updated} of ${result.total} services to ${multiplier}x. ${result.errors} failed.`,
+        )
+      } else {
+        toast.success(
+          `Set ${result.updated} services to ${multiplier}x provider price (${((multiplier - 1) * 100).toFixed(0)}% profit)`,
+        )
+      }
 
       // Wait a bit before refresh to ensure database updates propagate
       await new Promise((resolve) => setTimeout(resolve, 500))

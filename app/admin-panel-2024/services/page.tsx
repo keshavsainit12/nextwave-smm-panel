@@ -7,6 +7,10 @@ import { BulkPricingControl } from "@/components/admin/bulk-pricing-control"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Info } from "lucide-react"
 
+// Force dynamic rendering to prevent caching
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function AdminServicesPage() {
   const supabase = await createClient()
   const [{ data: services }, { data: categories }, { data: providers }] = await Promise.all([
