@@ -49,10 +49,9 @@ export async function updateServicePrice(serviceId: string, newPrice: number) {
 
   if (error) throw error
 
-  // Revalidate all paths where services are displayed
+  // Revalidate paths where services are displayed
   revalidatePath("/admin-panel-2024/services")
   revalidatePath("/dashboard", "layout")
-  revalidatePath("/api/v1/services")
   
   return { success: true }
 }
@@ -82,10 +81,9 @@ export async function updateService(serviceId: string, data: any) {
 
   if (error) throw error
 
-  // Revalidate all paths where services are displayed
+  // Revalidate paths where services are displayed
   revalidatePath("/admin-panel-2024/services")
   revalidatePath("/dashboard", "layout")
-  revalidatePath("/api/v1/services")
   
   return { success: true }
 }
@@ -130,10 +128,9 @@ export async function updateAllServicesPricing(percentage: number) {
     console.error(`[v0] Failed to update ${errors.length} services:`, errors)
   }
 
-  // Revalidate all paths where services are displayed
+  // Revalidate paths where services are displayed
   revalidatePath("/admin-panel-2024/services")
   revalidatePath("/dashboard", "layout")
-  revalidatePath("/api/v1/services")
   
   return { success: true, updated, total: services.length, errors: errors.length }
 }
@@ -196,10 +193,9 @@ export async function setAllServicesMultiplier(multiplier: number) {
       console.error(`[v0] Failed to update ${errors.length} services:`, errors)
     }
 
-    // Revalidate all paths where services are displayed
+    // Revalidate paths where services are displayed
     revalidatePath("/admin-panel-2024/services")
     revalidatePath("/dashboard", "layout")
-    revalidatePath("/api/v1/services")
 
     return { success: true, updated, total: services.length, errors: errors.length }
   } catch (error) {
