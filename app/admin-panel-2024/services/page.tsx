@@ -25,6 +25,18 @@ export default async function AdminServicesPage() {
     supabase.from("api_providers").select("id, name").eq("is_active", true),
   ])
 
+  // Debug: Log fetched data
+  console.log(`[AdminServicesPage] Timestamp: ${timestamp}`)
+  console.log(`[AdminServicesPage] Fetched ${services?.length || 0} services`)
+  if (services && services.length > 0) {
+    console.log(`[AdminServicesPage] Sample service:`, {
+      id: services[0].id,
+      name: services[0].name,
+      provider_price: services[0].provider_price,
+      base_price: services[0].base_price,
+    })
+  }
+
   return (
     <div className="space-y-3 sm:space-y-4 md:space-y-6">
       {/* Header */}

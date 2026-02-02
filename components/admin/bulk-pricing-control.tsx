@@ -45,12 +45,14 @@ export function BulkPricingControl() {
       setRefreshing(true)
       toast.info("Refreshing service list...")
       
-      // Wait a bit before refresh to ensure database updates propagate
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      // Wait longer before refresh to ensure database updates propagate
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+      
+      // Force a complete refresh
       router.refresh()
       
-      // Keep refreshing state for a moment to show the update
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      // Keep refreshing state visible to show the update
+      await new Promise((resolve) => setTimeout(resolve, 1500))
     } catch (error) {
       console.error("[v0] Pricing update error:", error)
       toast.error(error instanceof Error ? error.message : "Failed to update pricing")
@@ -83,12 +85,14 @@ export function BulkPricingControl() {
       setRefreshing(true)
       toast.info("Refreshing service list...")
       
-      // Wait a bit before refresh to ensure database updates propagate
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      // Wait longer before refresh to ensure database updates propagate
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+      
+      // Force a complete refresh
       router.refresh()
       
-      // Keep refreshing state for a moment to show the update
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      // Keep refreshing state visible to show the update
+      await new Promise((resolve) => setTimeout(resolve, 1500))
     } catch (error) {
       console.error("[v0] Multiplier update error:", error)
       toast.error(error instanceof Error ? error.message : "Failed to set multiplier")
