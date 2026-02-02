@@ -1,5 +1,4 @@
 import type React from "react"
-import { Suspense } from "react"
 import type { Metadata } from "next"
 import { Inter, JetBrains_Mono, Poppins } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
