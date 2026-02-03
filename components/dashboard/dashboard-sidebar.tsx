@@ -6,7 +6,8 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
-import { Home, Package, HeadphonesIcon, Gift, Code, LogOut, Settings, Receipt, Crown, Star } from "lucide-react"
+import { Home, Package, HeadphonesIcon, Gift, Code, LogOut, Settings, Receipt, Crown, Star, Wallet } from "lucide-react"
+import { useCurrency } from "@/lib/currency-context"
 
 // Tier configuration based on price_multiplier
 const getTierInfo = (priceMultiplier: number | undefined | null) => {
@@ -31,6 +32,7 @@ export function DashboardSidebar({ userName = "User", userBalance = 0, priceMult
   const tierInfo = getTierInfo(priceMultiplier)
   const pathname = usePathname()
   const router = useRouter()
+  const { displayAmount } = useCurrency()
 
   const getCartoonAvatar = (name: string) => {
     const char = name.charAt(0).toUpperCase()
@@ -101,6 +103,26 @@ export function DashboardSidebar({ userName = "User", userBalance = 0, priceMult
             </div>
             <p className="font-bold text-sm sm:text-base text-slate-900 dark:text-white truncate">{userName}</p>
           </div>
+        </div>
+      </div>
+
+      {/* Wallet Balance */}
+      <div className="px-4 sm:px-6 py-3 border-b border-slate-200/50 dark:border-slate-800/50 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-slate-800 dark:to-slate-700">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-white dark:bg-slate-800 rounded-lg">
+              <Wallet className="w-4 h-4 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">Wallet Balance</p>
+              <p className="text-lg font-bold text-slate-900 dark:text-white">{displayAmount(userBalance)}</p>
+            </div>
+          </div>
+          <Link href="/dashboard/deposit">
+            <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 h-auto">
+              Add Funds
+            </Button>
+          </Link>
         </div>
       </div>
 

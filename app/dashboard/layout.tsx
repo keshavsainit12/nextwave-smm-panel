@@ -4,6 +4,8 @@ import { redirect } from "next/navigation"
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { MobileBottomNav } from "@/components/dashboard/mobile-bottom-nav"
+import { CurrencyProvider } from "@/lib/currency-context"
+import { getCurrency } from "@/lib/currency"
 
 
 export default async function DashboardLayout({
@@ -36,9 +38,25 @@ redirect("/auth/login")
     redirect("/auth/login")
   }
 
+  // Get system currency settings
+  const { data: currencySettings } = await supabase
+    .from("system_settings")
+    .select("value")
+    .eq("key", "currency")
+    .single()
+
+  const { data: currencySymbolSettings } = await supabase
+    .from("system_settings")
+    .select("value")
+    .eq("key", "currency_symbol")
+    .single()
+
+  const currency = currencySettings?.value || "USD"
+  const currencySymbol = currencySymbolSettings?.value || getCurrency(currency).symbol
+
 
 return (
-<>
+<CurrencyProvider currency={currency} currencySymbol={currencySymbol}>
 <div className="flex flex-col md:flex-row h-screen bg-slate-50/50 md:overflow-hidden">
 {/* Sidebar */}
 <div className="hidden md:flex md:w-56 lg:w-64 flex-shrink-0 md:border-r md:border-gray-200 md:dark:border-gray-800">
@@ -75,6 +93,6 @@ return (
 
 {/* Mobile Nav */}
 <MobileBottomNav />
-</>
+</CurrencyProvider>
 )
 }
