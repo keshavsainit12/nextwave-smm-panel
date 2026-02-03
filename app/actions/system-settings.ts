@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 
 export async function updateSystemSettings(data: {
@@ -13,15 +14,9 @@ export async function updateSystemSettings(data: {
 }) {
   try {
     console.log("[v0] updateSystemSettings called")
+    
+    // First verify user authentication with regular client
     const supabase = await createClient()
-
-    if (!supabase) {
-      console.error("[v0] Failed to create Supabase client")
-      return { success: false, error: "Failed to initialize database connection" }
-    }
-
-    // Check if user is authenticated
-    console.log("[v0] Checking authentication...")
     const {
       data: { user },
       error: authError,
@@ -29,21 +24,17 @@ export async function updateSystemSettings(data: {
 
     console.log("[v0] Auth check result:", { hasUser: !!user, authError: authError?.message })
 
-    if (authError) {
-      console.error("[v0] Auth error:", authError)
-      return { success: false, error: `Authentication error: ${authError.message}` }
-    }
-
-    if (!user) {
+    if (authError || !user) {
       console.warn("[v0] No authenticated user found")
       return { success: false, error: "Unauthorized - Please log in" }
     }
 
     console.log("[v0] User authenticated:", user.id)
 
-    // Check if user is admin
+    // Check if user is admin using admin client (bypasses RLS)
     console.log("[v0] Checking admin role for user:", user.id)
-    const { data: userData, error: userError } = await supabase
+    const adminClient = createAdminClient()
+    const { data: userData, error: userError } = await adminClient
       .from("users")
       .select("role")
       .eq("id", user.id)
@@ -63,7 +54,7 @@ export async function updateSystemSettings(data: {
 
     console.log("[v0] Admin role verified for user:", user.id)
 
-    // Update each setting
+    // Update each setting using admin client (bypasses RLS)
     const settings = [
       { key: "site_name", value: data.site_name },
       { key: "currency", value: data.currency },
@@ -74,7 +65,7 @@ export async function updateSystemSettings(data: {
     ]
 
     for (const setting of settings) {
-      const { error } = await supabase
+      const { error } = await adminClient
         .from("system_settings")
         .upsert(
           { key: setting.key, value: setting.value },
