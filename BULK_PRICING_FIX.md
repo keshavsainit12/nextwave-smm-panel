@@ -12,13 +12,13 @@ When changing services or increasing quantity, the bulk pricing discount was not
 ## Fix Applied
 
 ### 1. Added Bulk Pricing Logic in Order Dialog
-```typescript
+\`\`\`typescript
 // Bulk pricing is ONLY available if:
 // 1. Service's minimum quantity > 10 (e.g., 100, 500, etc.)
 // 2. User orders >= 10,000 units
 const minQuantityForBulk = (service.min_quantity || 100) > 10 ? 10000 : Infinity
 const isBulkEligible = quantity >= 10000 && (service.min_quantity || 100) > 10
-```
+\`\`\`
 
 **This means:**
 - Service with min_quantity=10 → NO bulk pricing (even at 10k units)
@@ -26,27 +26,27 @@ const isBulkEligible = quantity >= 10000 && (service.min_quantity || 100) > 10
 - Service with min_quantity=500 → YES bulk pricing (when quantity ≥ 10k)
 
 ### 2. Dynamic Price Multiplier
-```typescript
+\`\`\`typescript
 const priceMultiplier = useMemo(() => {
   // Use 2.5x multiplier if bulk eligible, otherwise use normal multiplier
   return isBulkEligible ? 2.5 : (service.price_multiplier || 3.0)
 }, [service, isBulkEligible])
-```
+\`\`\`
 
 ### 3. Proper Service Change Handling
-```typescript
+\`\`\`typescript
 useEffect(() => {
   if (open) {
     setQuantity(service.min_quantity || 100)  // Reset to new service's min qty
     // ... other resets
   }
 }, [open, service.id, service.min_quantity])  // Now watches service.id
-```
+\`\`\`
 
 ### 4. Pass Bulk Flag to Backend
-```typescript
+\`\`\`typescript
 const result = await placeOrder(service.id, link, quantity, couponCode || undefined, isBulkEligible)
-```
+\`\`\`
 
 ### 5. Visual Indicators
 - Green alert when bulk pricing is active (2.5x multiplier)

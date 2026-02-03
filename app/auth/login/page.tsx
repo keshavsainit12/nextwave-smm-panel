@@ -56,16 +56,12 @@ function LoginContent() {
     const supabase = createClient()
 
     try {
-      const callbackUrl = `${window.location.origin}/auth/callback`
+      const callbackUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback`
       
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: callbackUrl,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          }
         },
       })
       

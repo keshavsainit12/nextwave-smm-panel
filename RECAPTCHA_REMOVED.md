@@ -26,17 +26,17 @@
 ## Login Flow - Now Completely Clean
 
 ### Email/Password Login
-```
+\`\`\`
 User enters email & password
 ↓
 Direct Supabase authentication (NO reCAPTCHA)
 ↓
 Success → Dashboard
 Error → Show error message
-```
+\`\`\`
 
 ### Google OAuth Login
-```
+\`\`\`
 User clicks "Sign in with Google"
 ↓
 Direct Supabase OAuth (NO reCAPTCHA)
@@ -45,7 +45,7 @@ Google redirect
 ↓
 Success → Dashboard
 Error → Show error message
-```
+\`\`\`
 
 ## What This Means
 

@@ -2,15 +2,15 @@
 
 ## Problem Identified
 Dashboard was showing white screen due to a database schema mismatch error:
-```
+\`\`\`
 Could not find a relationship between 'users' and 'user_tiers' in the schema cache
-```
+\`\`\`
 
 The dashboard layout was trying to join with a non-existent foreign key relationship.
 
 ## Root Cause
 The file `/app/dashboard/layout.tsx` was attempting to fetch:
-```javascript
+\`\`\`javascript
 const { data: userProfile } = await supabase
   .from("users")
   .select(`
@@ -20,7 +20,7 @@ const { data: userProfile } = await supabase
       price_multiplier
     )
   `)
-```
+\`\`\`
 
 But the `user_tiers` relationship doesn't exist in the Supabase schema.
 
@@ -30,7 +30,7 @@ Changed the dashboard layout to fetch `users` table directly without the foreign
 ### File: `/app/dashboard/layout.tsx`
 
 **Before:**
-```javascript
+\`\`\`javascript
 const { data: userProfile } = await supabase
   .from("users")
   .select(`
@@ -42,10 +42,10 @@ const { data: userProfile } = await supabase
   `)
   .eq("id", user.id)
   .single()
-```
+\`\`\`
 
 **After:**
-```javascript
+\`\`\`javascript
 const { data: userProfile, error: profileError } = await supabase
   .from("users")
   .select("*")
@@ -56,7 +56,7 @@ if (profileError) {
   console.error("[v0] Dashboard layout - user profile error:", profileError)
   redirect("/auth/login")
 }
-```
+\`\`\`
 
 ### Updated Props
 - Changed `priceMultiplier={userProfile?.user_tiers?.price_multiplier}` 
