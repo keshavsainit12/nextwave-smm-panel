@@ -28,6 +28,12 @@ export function BulkPricingControl() {
       const finalPercentage = increase ? Math.abs(percentage) : -Math.abs(percentage)
       const result = await updateAllServicesPricing(finalPercentage)
       
+      // Check if result exists and handle accordingly
+      if (!result) {
+        toast.error("Failed to update pricing - no response from server")
+        return
+      }
+      
       if (result.error) {
         toast.error(result.error)
       } else if (result.updated === 0) {
@@ -36,13 +42,23 @@ export function BulkPricingControl() {
         toast.success(
           `Successfully ${increase ? 'increased' : 'decreased'} prices for ${result.updated} service${result.updated === 1 ? '' : 's'} by ${percentage}%`
         )
+        
+        // Force aggressive refresh for instant updates
+        router.refresh()
+        
+        // Additional refresh after a brief delay to ensure database sync
+        setTimeout(() => {
+          router.refresh()
+        }, 500)
+        
+        // Hard reload after 1 second to ensure all data is fresh
+        setTimeout(() => {
+          window.location.reload()
+        }, 1000)
       }
-      
-      // Refresh to show updated prices in real-time
-      router.refresh()
     } catch (error) {
       console.error("[v0] Pricing update error:", error)
-      toast.error("Failed to update pricing. Please try again.")
+      toast.error(`Failed to update pricing: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setLoading(false)
     }
@@ -53,7 +69,7 @@ export function BulkPricingControl() {
       <CardHeader>
         <CardTitle>Bulk Pricing Control</CardTitle>
         <CardDescription>
-          Adjust all service prices by percentage. Changes apply to admin panel and user dashboard in real-time.
+          Adjust all service prices by percentage. Changes apply instantly to admin panel and all user dashboards in real-time.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

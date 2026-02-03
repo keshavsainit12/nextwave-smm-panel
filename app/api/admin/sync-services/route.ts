@@ -175,7 +175,9 @@ export async function POST(request: Request) {
         }
 
         const providerPrice = Number.parseFloat(service.rate) || 0
-        const sellingPrice = providerPrice > 0 ? providerPrice * multiplier : 0
+        // Always set base_price to 3x provider price for normal users (tier 1)
+        // VIP/Reseller users get their personal multiplier applied in the frontend
+        const basePriceFor3x = providerPrice > 0 ? providerPrice * 3.0 : 0
 
         // Build service data - only include fields that exist in original schema
         const serviceData = {
@@ -183,7 +185,8 @@ export async function POST(request: Request) {
           category_id: categoryId,
           provider_id: providerId,
           external_service_id: String(service.service || service.id),
-          base_price: sellingPrice,
+          provider_price: providerPrice, // Store raw provider cost
+          base_price: basePriceFor3x,    // Store 3x markup for normal users
           min_quantity: Number.parseInt(service.min) || 1,
           max_quantity: Number.parseInt(service.max) || 10000,
           description: service.description || service.name || "Service",

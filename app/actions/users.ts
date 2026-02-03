@@ -136,6 +136,7 @@ export async function updateUserProfile(
   userId: string,
   data: {
     full_name?: string
+    currency?: string
   },
 ) {
   try {
@@ -143,11 +144,23 @@ export async function updateUserProfile(
 
     console.log("[v0] Updating user profile:", userId, data)
 
-    // Only allow updating full_name since other fields don't exist in schema
+    // Validate currency if provided
+    const ALLOWED_CURRENCIES = ['USD', 'EUR', 'GBP', 'INR', 'PKR', 'AED']
+    if (data.currency && !ALLOWED_CURRENCIES.includes(data.currency)) {
+      return { success: false, error: `Invalid currency. Allowed currencies: ${ALLOWED_CURRENCIES.join(', ')}` }
+    }
+
+    // Only allow updating full_name and currency
     const updateData: any = {}
     
     if (data.full_name !== undefined) {
       updateData.full_name = data.full_name
+    }
+    
+    if (data.currency !== undefined) {
+      updateData.currency = data.currency
+      updateData.currency_updated_at = new Date().toISOString()
+      console.log("[v0] Currency changed to:", data.currency)
     }
 
     if (Object.keys(updateData).length === 0) {
@@ -157,7 +170,16 @@ export async function updateUserProfile(
     const { error } = await supabase.from("users").update(updateData).eq("id", userId)
 
     if (error) {
-      console.error("[v0] Update profile error:", error.message)
+      console.error("[v0] Update profile error:", error.message, error)
+      
+      // Check for specific error types - column not found
+      if (error.message.includes("column") && (error.message.includes("does not exist") || error.message.includes("schema cache"))) {
+        return { 
+          success: false, 
+          error: "Database migration required: The 'currency' column is missing from the users table. Please run this SQL in Supabase:\n\nALTER TABLE users ADD COLUMN IF NOT EXISTS currency TEXT DEFAULT 'USD';\nALTER TABLE users ADD COLUMN IF NOT EXISTS currency_updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();\n\nOr run the complete script: scripts/008_add_user_currency.sql" 
+        }
+      }
+      
       return { success: false, error: error.message || "Failed to update profile" }
     }
 

@@ -45,6 +45,18 @@ export const CURRENCIES: Record<string, Currency> = {
     symbol: "₹",
     exchangeRate: 83, // 1 USD = 83 INR (approximate)
   },
+  PKR: {
+    code: "PKR",
+    name: "Pakistani Rupee",
+    symbol: "₨",
+    exchangeRate: 278, // 1 USD = 278 PKR (approximate)
+  },
+  AED: {
+    code: "AED",
+    name: "UAE Dirham",
+    symbol: "د.إ",
+    exchangeRate: 3.67, // 1 USD = 3.67 AED (approximate)
+  },
   NGN: {
     code: "NGN",
     name: "Nigerian Naira",
@@ -96,8 +108,8 @@ export function convertToUsd(amount: number, sourceCurrency: string): number {
 export function formatCurrency(amount: number, currencyCode: string, decimals: number = 2): string {
   const currency = CURRENCIES[currencyCode] || CURRENCIES.USD
   
-  // For XAF and similar currencies with large numbers, show 0 decimals
-  const decimalPlaces = currencyCode === "XAF" || currencyCode === "NGN" || currencyCode === "INR" ? 0 : decimals
+  // For currencies with large numbers, show 0 decimals
+  const decimalPlaces = currencyCode === "XAF" || currencyCode === "NGN" || currencyCode === "INR" || currencyCode === "PKR" ? 0 : decimals
   
   const formattedAmount = amount.toFixed(decimalPlaces)
   

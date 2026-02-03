@@ -8,14 +8,17 @@ export async function addService(formData: FormData) {
 
   const providerId = formData.get("provider_id") as string
   const finalProviderId = providerId === "none" ? null : providerId
+  const basePrice = Number(formData.get("base_price"))
+  // Calculate provider_price from base_price (assume base_price is 3x markup)
+  const providerPrice = basePrice / 3.0
 
   const { error } = await supabase.from("services").insert({
     name: formData.get("name") as string,
     description: formData.get("description") as string,
     category_id: formData.get("category_id") as string,
     provider_id: finalProviderId,
-    base_price: Number(formData.get("base_price")),
-    provider_price: Number(formData.get("base_price")),
+    base_price: basePrice,
+    provider_price: providerPrice, // Store calculated provider cost
     min_quantity: Number(formData.get("min_quantity")),
     max_quantity: Number(formData.get("max_quantity")),
     has_refill: formData.get("has_refill") === "on",
@@ -45,11 +48,21 @@ export async function deleteService(id: string) {
 export async function updateServicePrice(serviceId: string, newPrice: number) {
   const supabase = await createClient()
 
-  const { error } = await supabase.from("services").update({ price: newPrice }).eq("id", serviceId)
+  const { error } = await supabase.from("services").update({ 
+    base_price: newPrice // Only update base_price (price column doesn't exist)
+  }).eq("id", serviceId)
 
-  if (error) throw error
+  if (error) {
+    console.error("[v0] Update service price error:", error)
+    throw new Error(error.message || "Failed to update price")
+  }
 
+  // Revalidate all paths for instant updates
   revalidatePath("/admin-panel-2024/services")
+  revalidatePath("/admin-panel-2024")
+  revalidatePath("/dashboard")
+  revalidatePath("/dashboard/new-order")
+  
   return { success: true }
 }
 
@@ -67,13 +80,8 @@ export async function toggleServiceStatus(serviceId: string, isActive: boolean) 
 export async function updateService(serviceId: string, data: any) {
   const supabase = await createClient()
 
-  const updateData = { ...data }
-  if (updateData.base_price !== undefined) {
-    updateData.price = updateData.base_price
-    delete updateData.base_price
-  }
-
-  const { error } = await supabase.from("services").update(updateData).eq("id", serviceId)
+  // Don't transform base_price to price - just use base_price as-is
+  const { error } = await supabase.from("services").update(data).eq("id", serviceId)
 
   if (error) throw error
 
@@ -84,20 +92,76 @@ export async function updateService(serviceId: string, data: any) {
 export async function updateAllServicesPricing(percentage: number) {
   const supabase = await createClient()
 
-  const { data: services, error: fetchError } = await supabase.from("services").select("id, price, provider_price")
+  console.log(`[v0] Fetching services for ${percentage}% price adjustment`)
 
-  if (fetchError) throw fetchError
+  // Only fetch base_price and provider_price (price column doesn't exist)
+  const { data: services, error: fetchError } = await supabase.from("services").select("id, base_price, provider_price")
 
-  let updated = 0
-  for (const service of services || []) {
-    const currentPrice = service.price || service.provider_price * 3
-    const newPrice = currentPrice * (1 + percentage / 100)
-    const { error } = await supabase.from("services").update({ price: newPrice }).eq("id", service.id)
-    if (!error) updated++
+  if (fetchError) {
+    console.error("[v0] Fetch services error:", fetchError)
+    return { success: false, error: fetchError.message, updated: 0 }
   }
 
+  if (!services || services.length === 0) {
+    console.warn("[v0] No services found to update")
+    return { success: false, error: "No services found", updated: 0 }
+  }
+
+  console.log(`[v0] Found ${services.length} services to update`)
+
+  let updated = 0
+  let skipped = 0
+  const errors: string[] = []
+
+  for (const service of services) {
+    // Get current price from base_price or calculate from provider_price
+    const currentPrice = service.base_price || (service.provider_price ? service.provider_price * 3 : null)
+    
+    if (!currentPrice || currentPrice <= 0) {
+      console.warn(`[v0] Skipping service ${service.id} - no valid price (base_price: ${service.base_price}, provider_price: ${service.provider_price})`)
+      skipped++
+      continue
+    }
+
+    const newPrice = Number((currentPrice * (1 + percentage / 100)).toFixed(4))
+    
+    console.log(`[v0] Service ${service.id}: $${currentPrice.toFixed(4)} → $${newPrice.toFixed(4)} (${percentage > 0 ? '+' : ''}${percentage}%)`)
+
+    // Only update base_price (price column doesn't exist)
+    const { error } = await supabase
+      .from("services")
+      .update({ 
+        base_price: newPrice
+      })
+      .eq("id", service.id)
+
+    if (error) {
+      console.error(`[v0] Failed to update service ${service.id}:`, error)
+      errors.push(`Service ${service.id}: ${error.message}`)
+    } else {
+      updated++
+    }
+  }
+
+  console.log(`[v0] Price update complete: ${updated} updated, ${skipped} skipped, ${errors.length} errors`)
+
+  // Revalidate all paths that display service prices - for instant updates
   revalidatePath("/admin-panel-2024/services")
-  return { success: true, updated }
+  revalidatePath("/admin-panel-2024")
+  revalidatePath("/dashboard")
+  revalidatePath("/dashboard/new-order")
+  revalidatePath("/", "layout") // Revalidate root layout to ensure all nested routes refresh
+
+  if (errors.length > 0) {
+    return { 
+      success: updated > 0, 
+      updated, 
+      skipped,
+      error: `Updated ${updated} services, ${errors.length} failed: ${errors.slice(0, 3).join(', ')}${errors.length > 3 ? '...' : ''}` 
+    }
+  }
+
+  return { success: true, updated, skipped }
 }
 
 export async function setAllServicesMultiplier(multiplier: number) {
@@ -134,10 +198,10 @@ export async function setAllServicesMultiplier(multiplier: number) {
 
       const newPrice = Number((basePrice * multiplier).toFixed(4))
 
+      // Only update base_price (price column doesn't exist)
       const { error } = await supabase
         .from("services")
         .update({
-          price: newPrice,
           base_price: newPrice,
         })
         .eq("id", service.id)
@@ -159,8 +223,12 @@ export async function setAllServicesMultiplier(multiplier: number) {
       console.error(`[v0] Failed to update ${errors.length} services:`, errors)
     }
 
+    // Revalidate all paths for instant updates
     revalidatePath("/admin-panel-2024/services")
+    revalidatePath("/admin-panel-2024")
+    revalidatePath("/dashboard")
     revalidatePath("/dashboard/new-order")
+    revalidatePath("/", "layout")
 
     return { success: true, updated, total: services.length, errors: errors.length }
   } catch (error) {

@@ -12,7 +12,7 @@ export default async function AdminServicesPage() {
   const [{ data: services }, { data: categories }, { data: providers }] = await Promise.all([
     supabase
       .from("services")
-      .select("*, service_categories(name), api_providers(name)")
+      .select("*, service_categories(name), api_providers(name), provider_price, base_price")
       .order("created_at", { ascending: false }),
     supabase.from("service_categories").select("*").order("display_order"),
     supabase.from("api_providers").select("id, name").eq("is_active", true),

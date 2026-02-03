@@ -10,7 +10,13 @@ import { Loader2 } from "lucide-react"
 import { CURRENCIES, getSupportedCurrencies } from "@/lib/currency"
 import { updateSystemSettings } from "@/app/actions/system-settings"
 
-export function SystemSettingsForm({ settings }: { settings: Record<string, string> }) {
+export function SystemSettingsForm({ 
+  settings, 
+  userId 
+}: { 
+  settings: Record<string, string>
+  userId?: string
+}) {
   const [loading, setLoading] = useState(false)
   const [currency, setCurrency] = useState(settings.currency || "USD")
 
@@ -29,7 +35,8 @@ export function SystemSettingsForm({ settings }: { settings: Record<string, stri
         referral_commission: formData.get("referral_commission") as string,
       }
 
-      const result = await updateSystemSettings(data)
+      // Pass userId to server action
+      const result = await updateSystemSettings(data, userId)
 
       if (result.success) {
         toast.success("Settings updated successfully! 🎉", {

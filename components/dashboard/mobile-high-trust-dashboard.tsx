@@ -10,6 +10,7 @@ import Link from "next/link"
 import { MobileServiceCarousel } from "./mobile-service-carousel"
 import { DashboardFooter } from "./dashboard-footer"
 import { CouponPasteCard } from "./coupon-paste-card"
+import { displayAmount, getCurrency } from "@/lib/currency"
 import {
   Wallet,
   ShoppingCart,
@@ -57,6 +58,7 @@ export function MobileHighTrustDashboard({
   totalSpent,
   recentOrders,
   priceMultiplier,
+  userCurrency = 'USD',
 }: {
   services: any[]
   categories: any[]
@@ -66,8 +68,10 @@ export function MobileHighTrustDashboard({
   totalSpent: number
   recentOrders: any[]
   priceMultiplier?: number
+  userCurrency?: string
 }) {
   const tierInfo = getTierInfo(priceMultiplier)
+  const currencyInfo = getCurrency(userCurrency)
   const [selectedCategory, setSelectedCategory] = useState<any>(null)
   const [selectedService, setSelectedService] = useState<any>(null)
   const [link, setLink] = useState("")
@@ -217,7 +221,7 @@ export function MobileHighTrustDashboard({
     if (userBalance < totalPrice) {
       toast({
         title: "Insufficient Balance",
-        description: `You need $${totalPrice.toFixed(2)}. Please add funds.`,
+        description: `You need ${displayAmount(totalPrice, userCurrency)}. Please add funds.`,
         variant: "destructive",
       })
       return
@@ -335,7 +339,7 @@ export function MobileHighTrustDashboard({
                     <Info className="w-3.5 h-3.5" />
                   </p>
                   <p className="text-white text-3xl font-bold leading-tight tracking-tight mt-1">
-                    ${userBalance.toFixed(2)}
+                    {displayAmount(userBalance, userCurrency)}
                   </p>
                 </div>
                 <div className="bg-white/20 px-3 py-1.5 rounded-full backdrop-blur-sm">
@@ -381,7 +385,7 @@ export function MobileHighTrustDashboard({
                 <p className="text-xs font-medium uppercase tracking-wider">Lifetime Spent</p>
               </div>
               <div className="flex items-end justify-between mt-1">
-                <p className="text-slate-900 text-2xl font-bold leading-none">${totalSpent.toFixed(2)}</p>
+                <p className="text-slate-900 text-2xl font-bold leading-none">{displayAmount(totalSpent, userCurrency)}</p>
                 <p className="text-emerald-600 text-sm font-bold flex items-center bg-emerald-50 px-1.5 py-0.5 rounded">
                   12%
                 </p>
@@ -423,7 +427,7 @@ export function MobileHighTrustDashboard({
                         style={{ width: `${Math.min((totalSpent / 500) * 100, 100)}%` }}
                       />
                     </div>
-                    <p className="text-xs text-slate-500">Spend ${Math.max(0, 500 - totalSpent).toFixed(0)} more to unlock VIP</p>
+                    <p className="text-xs text-slate-500">Spend {displayAmount(Math.max(0, 500 - totalSpent), userCurrency, 0)} more to unlock VIP</p>
                   </div>
                   
                   {/* VIP Benefits Preview */}
@@ -593,7 +597,7 @@ export function MobileHighTrustDashboard({
                                     }}
                                   />
                                 )}
-                                <span className="truncate">{service.name} - ${Number(service.price || service.base_price || 0).toFixed(2)}/1k</span>
+                                <span className="truncate">{service.name} - {displayAmount(Number(service.price || service.base_price || 0), userCurrency)}/1k</span>
                               </div>
                             </SelectItem>
                           )
@@ -606,7 +610,7 @@ export function MobileHighTrustDashboard({
                           <span>Min: {selectedService.min_quantity}</span>
                           <span>Max: {selectedService.max_quantity?.toLocaleString()}</span>
                           <span className="font-bold text-blue-600">
-                            ${Number(selectedService.price || selectedService.base_price || 0).toFixed(4)}/1k
+                            {displayAmount(Number(selectedService.price || selectedService.base_price || 0), userCurrency, 4)}/1k
                           </span>
                         </div>
                       </div>
@@ -643,7 +647,7 @@ export function MobileHighTrustDashboard({
                     <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
                       <Sparkles className="w-4 h-4 text-emerald-600" />
                       <div className="flex-1">
-                        <p className="text-xs font-bold text-emerald-700">You're saving ${savings.toFixed(2)}!</p>
+                        <p className="text-xs font-bold text-emerald-700">You're saving {displayAmount(savings, userCurrency)}!</p>
                         <p className="text-[10px] text-slate-500 font-medium">Bulk pricing: 2.5x vs Regular: 3x</p>
                       </div>
                     </div>
@@ -734,7 +738,7 @@ export function MobileHighTrustDashboard({
                       <CreditCard className="w-5 h-5 text-blue-600" />
                       <span className="text-slate-900 text-sm font-semibold">Total Charge</span>
                     </div>
-                    <span className="text-xl font-bold text-blue-600">${totalPrice.toFixed(2)}</span>
+                    <span className="text-xl font-bold text-blue-600">{displayAmount(totalPrice, userCurrency)}</span>
                   </div>
 
                   <button
@@ -777,7 +781,7 @@ export function MobileHighTrustDashboard({
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-bold text-slate-900">${(order.price || 0).toFixed(2)}</p>
+                      <p className="text-sm font-bold text-slate-900">{displayAmount(order.price || 0, userCurrency)}</p>
                       <span
                         className={`text-xs font-semibold rounded-full px-2 py-0.5 inline-block mt-1 ${
                           order.status === "completed"

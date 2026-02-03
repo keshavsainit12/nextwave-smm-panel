@@ -26,7 +26,14 @@ export function EditServiceDialog({ service, open, onClose }: any) {
   const handleSubmit = async () => {
     setLoading(true)
     try {
-      await updateService(service.id, formData)
+      // Send base_price to database (not 'price')
+      await updateService(service.id, {
+        name: formData.name,
+        description: formData.description,
+        base_price: formData.price, // Map 'price' field to 'base_price' for database
+        min_quantity: formData.min_quantity,
+        max_quantity: formData.max_quantity,
+      })
       toast({ title: "Success", description: "Service updated successfully" })
       onClose()
       router.refresh()
