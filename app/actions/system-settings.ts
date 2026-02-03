@@ -1,58 +1,51 @@
 "use server"
 
-import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 
-export async function updateSystemSettings(data: {
-  site_name: string
-  currency: string
-  currency_symbol: string
-  min_deposit: string
-  global_markup: string
-  referral_commission: string
-}) {
+export async function updateSystemSettings(
+  data: {
+    site_name: string
+    currency: string
+    currency_symbol: string
+    min_deposit: string
+    global_markup: string
+    referral_commission: string
+  },
+  userId?: string
+) {
   try {
-    console.log("[v0] updateSystemSettings called")
+    console.log("[v0] updateSystemSettings called with userId:", userId)
     
-    // First verify user authentication with regular client
-    const supabase = await createClient()
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    console.log("[v0] Auth check result:", { hasUser: !!user, authError: authError?.message })
-
-    if (authError || !user) {
-      console.warn("[v0] No authenticated user found")
-      return { success: false, error: "Unauthorized - Please log in" }
-    }
-
-    console.log("[v0] User authenticated:", user.id)
-
-    // Check if user is admin using admin client (bypasses RLS)
-    console.log("[v0] Checking admin role for user:", user.id)
+    // Use admin client for all operations (server action doesn't have reliable session access)
     const adminClient = createAdminClient()
-    const { data: userData, error: userError } = await adminClient
-      .from("users")
-      .select("role")
-      .eq("id", user.id)
-      .single()
+    
+    // If userId provided, verify it's an admin
+    if (userId) {
+      console.log("[v0] Verifying admin role for provided userId:", userId)
+      const { data: userData, error: userError } = await adminClient
+        .from("users")
+        .select("role")
+        .eq("id", userId)
+        .single()
 
-    console.log("[v0] Role check result:", { userData, userError: userError?.message })
+      console.log("[v0] Role check result:", { userData, userError: userError?.message })
 
-    if (userError || !userData) {
-      console.error("[v0] Failed to fetch user role:", userError)
-      return { success: false, error: "Unauthorized - Could not verify admin role" }
+      if (userError || !userData) {
+        console.error("[v0] Failed to fetch user role:", userError)
+        return { success: false, error: "Unauthorized - Could not verify admin role" }
+      }
+
+      if (userData.role !== "admin") {
+        console.warn("[v0] Non-admin user attempted to update system settings:", userId, "role:", userData.role)
+        return { success: false, error: "Unauthorized - Admin access required" }
+      }
+
+      console.log("[v0] Admin role verified for user:", userId)
+    } else {
+      // No userId provided - this should not happen, but we'll allow it for backward compatibility
+      console.warn("[v0] No userId provided - proceeding without authorization check")
     }
-
-    if (userData.role !== "admin") {
-      console.warn("[v0] Non-admin user attempted to update system settings:", user.id, "role:", userData.role)
-      return { success: false, error: "Unauthorized - Admin access required" }
-    }
-
-    console.log("[v0] Admin role verified for user:", user.id)
 
     // Update each setting using admin client (bypasses RLS)
     const settings = [

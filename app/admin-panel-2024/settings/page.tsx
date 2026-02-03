@@ -48,7 +48,7 @@ export default async function AdminSettingsPage() {
               <CardDescription>Core system configuration</CardDescription>
             </CardHeader>
             <CardContent>
-              <SystemSettingsForm settings={settingsMap || {}} />
+              <SystemSettingsForm settings={settingsMap || {}} userId={user?.id} />
             </CardContent>
           </Card>
         </TabsContent>
