@@ -52,7 +52,7 @@ redirect("/auth/login")
     .single()
 
   const currency = currencySettings?.value || "USD"
-  const currencySymbol = currencySymbolSettings?.value || getCurrency(currency).symbol
+  const currencySymbol = currencySymbolSettings?.value || getCurrency(currency)?.symbol || "$"
 
 
 return (
