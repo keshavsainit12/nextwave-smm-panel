@@ -25,23 +25,38 @@ export async function updateSystemSettings(
       console.log("[v0] Verifying admin role for provided userId:", userId)
       const { data: userData, error: userError } = await adminClient
         .from("users")
-        .select("role")
+        .select("role, email")
         .eq("id", userId)
         .single()
 
-      console.log("[v0] Role check result:", { userData, userError: userError?.message })
+      console.log("[v0] Role check result:", { 
+        userData, 
+        userError: userError?.message,
+        roleValue: userData?.role,
+        roleType: typeof userData?.role
+      })
 
       if (userError || !userData) {
         console.error("[v0] Failed to fetch user role:", userError)
-        return { success: false, error: "Unauthorized - Could not verify admin role" }
+        return { 
+          success: false, 
+          error: `Unauthorized - Could not verify admin role. User not found in database. Please run: UPDATE users SET role = 'admin' WHERE id = '${userId}';` 
+        }
       }
 
-      if (userData.role !== "admin") {
+      // Check role (case-insensitive)
+      const userRole = userData.role?.toLowerCase()
+      console.log("[v0] User role (lowercase):", userRole, "for email:", userData.email)
+      
+      if (userRole !== "admin") {
         console.warn("[v0] Non-admin user attempted to update system settings:", userId, "role:", userData.role)
-        return { success: false, error: "Unauthorized - Admin access required" }
+        return { 
+          success: false, 
+          error: `Unauthorized - Admin access required. Your role is: '${userData.role}'. To fix this, run in Supabase SQL Editor:\n\nUPDATE users SET role = 'admin' WHERE id = '${userId}';\n\nThen refresh and try again.` 
+        }
       }
 
-      console.log("[v0] Admin role verified for user:", userId)
+      console.log("[v0] Admin role verified for user:", userId, "email:", userData.email)
     } else {
       // No userId provided - this should not happen, but we'll allow it for backward compatibility
       console.warn("[v0] No userId provided - proceeding without authorization check")
