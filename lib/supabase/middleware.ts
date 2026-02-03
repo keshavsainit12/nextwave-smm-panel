@@ -70,6 +70,34 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url)
     }
 
+    // Check role-based access for admin panel routes
+    if (request.nextUrl.pathname.startsWith("/admin-panel-2024")) {
+      if (!user) {
+        // Not logged in, redirect to login
+        const url = request.nextUrl.clone()
+        url.pathname = "/auth/login"
+        return NextResponse.redirect(url)
+      }
+
+      // User is logged in, check if they have admin role
+      const { data: userData } = await supabase
+        .from("users")
+        .select("role")
+        .eq("id", user.id)
+        .single()
+
+      if (!userData || userData.role !== "admin") {
+        // Not an admin, redirect to user dashboard
+        console.log("[v0] Non-admin user attempting to access admin panel, redirecting to dashboard")
+        const url = request.nextUrl.clone()
+        url.pathname = "/dashboard"
+        return NextResponse.redirect(url)
+      }
+
+      // User is admin, allow access
+      console.log("[v0] Admin user accessing admin panel")
+    }
+
     return supabaseResponse
   } catch (error) {
     // Handle abort errors gracefully - don't log them as they're expected
