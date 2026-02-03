@@ -100,6 +100,45 @@ export async function approveDeposit(depositId: string) {
       return { success: false, error: "Invalid deposit amount" }
     }
 
+    // NEW: Check if amount needs currency conversion
+    // Users might deposit in local currency (XAF) but database stores USD
+    const XAF_TO_USD_RATE = 620 // 1 USD = 620 XAF (approximate)
+    
+    let amountInUSD = amount
+    let conversionApplied = false
+
+    // If the deposit amount appears to be in XAF (very large numbers for crypto), convert it
+    // Crypto deposits in USD are typically < $100, XAF deposits would be > 10,000
+    if (amount > 100) {
+      // Check if there's a related transaction or payment indication this is XAF
+      const { data: relatedTx } = await adminSupabase
+        .from("transactions")
+        .select("metadata, payment_method, notes")
+        .eq("user_id", userId)
+        .or(`amount.eq.${amount},notes.ilike.%${amount}%`)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      // Check for XAF indicators
+      const isXAF = relatedTx?.metadata?.original_amount_xaf ||
+                    relatedTx?.payment_method === "instant_xaf" ||
+                    (relatedTx?.notes && relatedTx.notes.includes("XAF"))
+
+      if (isXAF) {
+        // This is XAF, convert to USD
+        amountInUSD = amount / XAF_TO_USD_RATE
+        conversionApplied = true
+        console.log("[v0] Currency conversion applied:", {
+          originalAmount: amount,
+          currency: "XAF",
+          convertedAmount: amountInUSD.toFixed(4),
+          rate: XAF_TO_USD_RATE,
+          depositId: cleanId
+        })
+      }
+    }
+
     // Get current user balance
     const { data: userData, error: userError } = await adminSupabase
       .from("users")
@@ -112,7 +151,16 @@ export async function approveDeposit(depositId: string) {
     }
 
     const balanceBefore = Number(userData.balance) || 0
-    const balanceAfter = balanceBefore + amount
+    const balanceAfter = balanceBefore + amountInUSD
+
+    console.log("[v0] Deposit approval - balance update:", {
+      userId,
+      originalDepositAmount: amount,
+      amountCreditingUSD: amountInUSD,
+      conversionApplied,
+      balanceBefore,
+      balanceAfter,
+    })
 
     // Update user balance FIRST (critical)
     const { error: balanceError } = await adminSupabase
