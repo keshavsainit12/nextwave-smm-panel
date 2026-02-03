@@ -22,6 +22,20 @@ export default async function AdminSettingsPage() {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // Also fetch user email from database to ensure we have the latest
+  let userEmail = user?.email || ""
+  if (user?.id) {
+    const { data: userData } = await supabase
+      .from("users")
+      .select("email")
+      .eq("id", user.id)
+      .single()
+    
+    if (userData?.email) {
+      userEmail = userData.email
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -37,7 +51,15 @@ export default async function AdminSettingsPage() {
 
         {/* Account Settings Tab */}
         <TabsContent value="account" className="space-y-6">
-          {user && <AdminSettingsForm userId={user.id} userEmail={user.email || ""} />}
+          {user ? (
+            <AdminSettingsForm userId={user.id} userEmail={userEmail} />
+          ) : (
+            <Card>
+              <CardContent className="py-8">
+                <p className="text-center text-muted-foreground">Please log in to view account settings</p>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* System Settings Tab */}
