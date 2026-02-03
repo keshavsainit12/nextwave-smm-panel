@@ -9,6 +9,7 @@ import Link from "next/link"
 import { ServiceCards } from "./service-cards-section"
 import { DashboardFooter } from "./dashboard-footer"
 import { CouponPasteCard } from "./coupon-paste-card"
+import { displayAmount, getCurrency } from "@/lib/currency"
 import {
   Info,
   Star,
@@ -49,6 +50,7 @@ export function DesktopDashboard({
   totalSpent,
   recentOrders,
   priceMultiplier,
+  userCurrency = 'USD',
 }: {
   services: any[]
   categories: any[]
@@ -58,8 +60,10 @@ export function DesktopDashboard({
   totalSpent: number
   recentOrders: any[]
   priceMultiplier?: number
+  userCurrency?: string
 }) {
   const tierInfo = getTierInfo(priceMultiplier)
+  const currencyInfo = getCurrency(userCurrency)
   const [selectedCategory, setSelectedCategory] = useState<any>(null)
   const [selectedService, setSelectedService] = useState<any>(null)
   const [link, setLink] = useState("")
@@ -209,7 +213,7 @@ export function DesktopDashboard({
     if (userBalance < totalPrice) {
       toast({
         title: "Insufficient Balance",
-        description: `You need $${totalPrice.toFixed(2)}. Please add funds.`,
+        description: `You need ${displayAmount(totalPrice, userCurrency)}. Please add funds.`,
         variant: "destructive",
       })
       return
@@ -286,7 +290,7 @@ export function DesktopDashboard({
               </div>
             </div>
             <h2 className="text-4xl md:text-5xl font-extrabold mb-6 md:mb-8 tracking-tight">
-              ${(userBalance || 0).toFixed(2)}
+              {displayAmount(userBalance || 0, userCurrency)}
             </h2>
             <div className="flex gap-3">
               <Link href="/dashboard/deposit" className="flex-1">
@@ -324,7 +328,7 @@ export function DesktopDashboard({
               Lifetime Spent
             </div>
             <div className="flex items-end justify-between">
-              <span className="text-2xl md:text-3xl font-bold">${(totalSpent || 0).toFixed(2)}</span>
+              <span className="text-2xl md:text-3xl font-bold">{displayAmount(totalSpent || 0, userCurrency)}</span>
               <span className="bg-green-100 text-green-600 text-xs md:text-sm font-bold px-2 py-1 rounded-lg">
                 Total
               </span>
@@ -373,7 +377,7 @@ export function DesktopDashboard({
                 />
               </div>
               <p className="text-sm text-slate-500">
-                Spend <span className="font-bold text-amber-600">${Math.max(0, 500 - totalSpent).toFixed(0)}</span> more to unlock VIP benefits
+                Spend <span className="font-bold text-amber-600">{displayAmount(Math.max(0, 500 - totalSpent), userCurrency, 0)}</span> more to unlock VIP benefits
               </p>
             </div>
             
@@ -528,7 +532,7 @@ export function DesktopDashboard({
                                   }}
                                 />
                               )}
-                              <span>{service.name} - ${Number(service.price || service.base_price || 0).toFixed(2)}/1k</span>
+                              <span>{service.name} - {displayAmount(Number(service.price || service.base_price || 0), userCurrency)}/1k</span>
                             </div>
                           </SelectItem>
                         )
@@ -641,7 +645,7 @@ export function DesktopDashboard({
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-slate-700">Total Price</label>
                     <div className="bg-blue-50 border-2 border-blue-200 rounded-xl py-3 md:py-3.5 px-4 flex items-center justify-between">
-                      <span className="text-xl md:text-2xl font-extrabold text-blue-700">${totalPrice.toFixed(2)}</span>
+                      <span className="text-xl md:text-2xl font-extrabold text-blue-700">{displayAmount(totalPrice, userCurrency)}</span>
                       {isBulkBuy && (
                         <span className="bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">
                           -16%
@@ -725,7 +729,7 @@ export function DesktopDashboard({
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-slate-500">{(order.quantity || 0).toLocaleString()} units</span>
                     <span className="font-bold text-slate-900">
-                      ${(order.total_price || order.price || 0).toFixed(2)}
+                      {displayAmount(order.total_price || order.price || 0, userCurrency)}
                     </span>
                   </div>
                 </div>
