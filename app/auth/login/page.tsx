@@ -31,37 +31,14 @@ function LoginContent() {
     setError(null)
 
     try {
-      const { error, data } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
       if (error) throw error
 
-      // Fetch user role from database (minimal query for speed)
-      if (data?.user) {
-        const { data: userData, error: roleError } = await supabase
-          .from("users")
-          .select("role")
-          .eq("id", data.user.id)
-          .single()
-
-        console.log("[v0] Login - User ID:", data.user.id)
-        console.log("[v0] Login - Role Query Result:", userData)
-        console.log("[v0] Login - Role Query Error:", roleError)
-
-        const role = userData?.role || "user"
-        console.log("[v0] Login - Final Role:", role)
-        
-        if (role === "admin") {
-          console.log("[v0] Login - Redirecting to admin panel")
-          router.push("/admin-panel-2024")
-        } else {
-          console.log("[v0] Login - Redirecting to dashboard")
-          router.push("/dashboard")
-        }
-      } else {
-        router.push("/dashboard")
-      }
+      // Fast redirect - no extra queries
+      router.push("/dashboard")
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred")
       setIsLoading(false)
