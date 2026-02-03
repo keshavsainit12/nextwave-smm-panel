@@ -37,12 +37,26 @@ function LoginContent() {
       })
       if (error) throw error
 
-      // Get current session and check user role from metadata
+      // Fetch user role from database (minimal query for speed)
       if (data?.user) {
-        const role = data.user.user_metadata?.role || "user"
+        const { data: userData, error: roleError } = await supabase
+          .from("users")
+          .select("role")
+          .eq("id", data.user.id)
+          .single()
+
+        console.log("[v0] Login - User ID:", data.user.id)
+        console.log("[v0] Login - Role Query Result:", userData)
+        console.log("[v0] Login - Role Query Error:", roleError)
+
+        const role = userData?.role || "user"
+        console.log("[v0] Login - Final Role:", role)
+        
         if (role === "admin") {
+          console.log("[v0] Login - Redirecting to admin panel")
           router.push("/admin-panel-2024")
         } else {
+          console.log("[v0] Login - Redirecting to dashboard")
           router.push("/dashboard")
         }
       } else {
