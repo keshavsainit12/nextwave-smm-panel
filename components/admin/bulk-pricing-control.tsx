@@ -28,6 +28,12 @@ export function BulkPricingControl() {
       const finalPercentage = increase ? Math.abs(percentage) : -Math.abs(percentage)
       const result = await updateAllServicesPricing(finalPercentage)
       
+      // Check if result exists and handle accordingly
+      if (!result) {
+        toast.error("Failed to update pricing - no response from server")
+        return
+      }
+      
       if (result.error) {
         toast.error(result.error)
       } else if (result.updated === 0) {
@@ -44,10 +50,15 @@ export function BulkPricingControl() {
         setTimeout(() => {
           router.refresh()
         }, 500)
+        
+        // Hard reload after 1 second to ensure all data is fresh
+        setTimeout(() => {
+          window.location.reload()
+        }, 1000)
       }
     } catch (error) {
       console.error("[v0] Pricing update error:", error)
-      toast.error("Failed to update pricing. Please try again.")
+      toast.error(`Failed to update pricing: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setLoading(false)
     }

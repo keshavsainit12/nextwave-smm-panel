@@ -109,9 +109,10 @@ export function ServiceList({ services }: { services: any[] }) {
           <TableBody>
             {filteredServices.map((service) => {
               const sellingPrice = Number(service.base_price || 0)
-              // Calculate estimated provider cost from selling price
-              // Note: Uses standard 3x multiplier since provider_price column not in base schema
-              const providerPrice = sellingPrice > 0 ? sellingPrice / DEFAULT_PRICE_MULTIPLIER : 0
+              // Use actual provider_price from database if available, otherwise estimate
+              const providerPrice = service.provider_price 
+                ? Number(service.provider_price)
+                : (sellingPrice > 0 ? sellingPrice / DEFAULT_PRICE_MULTIPLIER : 0)
               const profit = providerPrice > 0 ? (((sellingPrice - providerPrice) / providerPrice) * 100).toFixed(0) : 0
 
               return (

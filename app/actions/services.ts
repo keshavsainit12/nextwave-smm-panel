@@ -52,13 +52,17 @@ export async function updateServicePrice(serviceId: string, newPrice: number) {
     base_price: newPrice // Only update base_price (price column doesn't exist)
   }).eq("id", serviceId)
 
-  if (error) throw error
+  if (error) {
+    console.error("[v0] Update service price error:", error)
+    throw new Error(error.message || "Failed to update price")
+  }
 
   // Revalidate all paths for instant updates
   revalidatePath("/admin-panel-2024/services")
   revalidatePath("/admin-panel-2024")
   revalidatePath("/dashboard")
   revalidatePath("/dashboard/new-order")
+  
   return { success: true }
 }
 
