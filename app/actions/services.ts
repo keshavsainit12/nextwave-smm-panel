@@ -49,8 +49,7 @@ export async function updateServicePrice(serviceId: string, newPrice: number) {
   const supabase = await createClient()
 
   const { error } = await supabase.from("services").update({ 
-    price: newPrice,
-    base_price: newPrice // Keep both fields in sync
+    base_price: newPrice // Only update base_price (price column doesn't exist)
   }).eq("id", serviceId)
 
   if (error) throw error
@@ -77,13 +76,8 @@ export async function toggleServiceStatus(serviceId: string, isActive: boolean) 
 export async function updateService(serviceId: string, data: any) {
   const supabase = await createClient()
 
-  const updateData = { ...data }
-  if (updateData.base_price !== undefined) {
-    updateData.price = updateData.base_price
-    delete updateData.base_price
-  }
-
-  const { error } = await supabase.from("services").update(updateData).eq("id", serviceId)
+  // Don't transform base_price to price - just use base_price as-is
+  const { error } = await supabase.from("services").update(data).eq("id", serviceId)
 
   if (error) throw error
 
@@ -96,7 +90,8 @@ export async function updateAllServicesPricing(percentage: number) {
 
   console.log(`[v0] Fetching services for ${percentage}% price adjustment`)
 
-  const { data: services, error: fetchError } = await supabase.from("services").select("id, price, base_price, provider_price")
+  // Only fetch base_price and provider_price (price column doesn't exist)
+  const { data: services, error: fetchError } = await supabase.from("services").select("id, base_price, provider_price")
 
   if (fetchError) {
     console.error("[v0] Fetch services error:", fetchError)
@@ -115,11 +110,11 @@ export async function updateAllServicesPricing(percentage: number) {
   const errors: string[] = []
 
   for (const service of services) {
-    // Get current price with fallback chain
-    const currentPrice = service.price || service.base_price || (service.provider_price ? service.provider_price * 3 : null)
+    // Get current price from base_price or calculate from provider_price
+    const currentPrice = service.base_price || (service.provider_price ? service.provider_price * 3 : null)
     
     if (!currentPrice || currentPrice <= 0) {
-      console.warn(`[v0] Skipping service ${service.id} - no valid price (price: ${service.price}, base_price: ${service.base_price}, provider_price: ${service.provider_price})`)
+      console.warn(`[v0] Skipping service ${service.id} - no valid price (base_price: ${service.base_price}, provider_price: ${service.provider_price})`)
       skipped++
       continue
     }
@@ -128,11 +123,11 @@ export async function updateAllServicesPricing(percentage: number) {
     
     console.log(`[v0] Service ${service.id}: $${currentPrice.toFixed(4)} → $${newPrice.toFixed(4)} (${percentage > 0 ? '+' : ''}${percentage}%)`)
 
+    // Only update base_price (price column doesn't exist)
     const { error } = await supabase
       .from("services")
       .update({ 
-        price: newPrice,
-        base_price: newPrice // Also update base_price to keep them in sync
+        base_price: newPrice
       })
       .eq("id", service.id)
 
@@ -199,10 +194,10 @@ export async function setAllServicesMultiplier(multiplier: number) {
 
       const newPrice = Number((basePrice * multiplier).toFixed(4))
 
+      // Only update base_price (price column doesn't exist)
       const { error } = await supabase
         .from("services")
         .update({
-          price: newPrice,
           base_price: newPrice,
         })
         .eq("id", service.id)
