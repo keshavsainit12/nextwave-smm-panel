@@ -14,13 +14,30 @@ export async function updateSystemSettings(data: {
   try {
     const supabase = await createClient()
 
-    // Check if user is admin
+    // Check if user is authenticated
     const {
       data: { user },
     } = await supabase.auth.getUser()
 
     if (!user) {
-      return { success: false, error: "Unauthorized" }
+      return { success: false, error: "Unauthorized - Please log in" }
+    }
+
+    // Check if user is admin
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("role")
+      .eq("id", user.id)
+      .single()
+
+    if (userError || !userData) {
+      console.error("[v0] Failed to fetch user role:", userError)
+      return { success: false, error: "Unauthorized - Could not verify admin role" }
+    }
+
+    if (userData.role !== "admin") {
+      console.warn("[v0] Non-admin user attempted to update system settings:", user.id)
+      return { success: false, error: "Unauthorized - Admin access required" }
     }
 
     // Update each setting

@@ -170,7 +170,16 @@ export async function updateUserProfile(
     const { error } = await supabase.from("users").update(updateData).eq("id", userId)
 
     if (error) {
-      console.error("[v0] Update profile error:", error.message)
+      console.error("[v0] Update profile error:", error.message, error)
+      
+      // Check for specific error types
+      if (error.message.includes("column") && error.message.includes("does not exist")) {
+        return { 
+          success: false, 
+          error: "Database schema error: The currency column does not exist in the users table. Please run the database migration script: scripts/008_add_user_currency.sql" 
+        }
+      }
+      
       return { success: false, error: error.message || "Failed to update profile" }
     }
 
