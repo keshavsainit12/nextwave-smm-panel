@@ -48,11 +48,18 @@ export async function deleteService(id: string) {
 export async function updateServicePrice(serviceId: string, newPrice: number) {
   const supabase = await createClient()
 
-  const { error } = await supabase.from("services").update({ price: newPrice }).eq("id", serviceId)
+  const { error } = await supabase.from("services").update({ 
+    price: newPrice,
+    base_price: newPrice // Keep both fields in sync
+  }).eq("id", serviceId)
 
   if (error) throw error
 
+  // Revalidate all paths for instant updates
   revalidatePath("/admin-panel-2024/services")
+  revalidatePath("/admin-panel-2024")
+  revalidatePath("/dashboard")
+  revalidatePath("/dashboard/new-order")
   return { success: true }
 }
 
@@ -139,8 +146,12 @@ export async function updateAllServicesPricing(percentage: number) {
 
   console.log(`[v0] Price update complete: ${updated} updated, ${skipped} skipped, ${errors.length} errors`)
 
+  // Revalidate all paths that display service prices - for instant updates
   revalidatePath("/admin-panel-2024/services")
+  revalidatePath("/admin-panel-2024")
+  revalidatePath("/dashboard")
   revalidatePath("/dashboard/new-order")
+  revalidatePath("/", "layout") // Revalidate root layout to ensure all nested routes refresh
 
   if (errors.length > 0) {
     return { 
@@ -213,8 +224,12 @@ export async function setAllServicesMultiplier(multiplier: number) {
       console.error(`[v0] Failed to update ${errors.length} services:`, errors)
     }
 
+    // Revalidate all paths for instant updates
     revalidatePath("/admin-panel-2024/services")
+    revalidatePath("/admin-panel-2024")
+    revalidatePath("/dashboard")
     revalidatePath("/dashboard/new-order")
+    revalidatePath("/", "layout")
 
     return { success: true, updated, total: services.length, errors: errors.length }
   } catch (error) {

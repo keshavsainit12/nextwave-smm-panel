@@ -36,10 +36,15 @@ export function BulkPricingControl() {
         toast.success(
           `Successfully ${increase ? 'increased' : 'decreased'} prices for ${result.updated} service${result.updated === 1 ? '' : 's'} by ${percentage}%`
         )
+        
+        // Force aggressive refresh for instant updates
+        router.refresh()
+        
+        // Additional refresh after a brief delay to ensure database sync
+        setTimeout(() => {
+          router.refresh()
+        }, 500)
       }
-      
-      // Refresh to show updated prices in real-time
-      router.refresh()
     } catch (error) {
       console.error("[v0] Pricing update error:", error)
       toast.error("Failed to update pricing. Please try again.")
@@ -53,7 +58,7 @@ export function BulkPricingControl() {
       <CardHeader>
         <CardTitle>Bulk Pricing Control</CardTitle>
         <CardDescription>
-          Adjust all service prices by percentage. Changes apply to admin panel and user dashboard in real-time.
+          Adjust all service prices by percentage. Changes apply instantly to admin panel and all user dashboards in real-time.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
