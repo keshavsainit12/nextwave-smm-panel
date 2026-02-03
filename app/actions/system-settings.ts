@@ -12,23 +12,44 @@ export async function updateSystemSettings(data: {
   referral_commission: string
 }) {
   try {
+    console.log("[v0] updateSystemSettings called")
     const supabase = await createClient()
 
+    if (!supabase) {
+      console.error("[v0] Failed to create Supabase client")
+      return { success: false, error: "Failed to initialize database connection" }
+    }
+
     // Check if user is authenticated
+    console.log("[v0] Checking authentication...")
     const {
       data: { user },
+      error: authError,
     } = await supabase.auth.getUser()
 
+    console.log("[v0] Auth check result:", { hasUser: !!user, authError: authError?.message })
+
+    if (authError) {
+      console.error("[v0] Auth error:", authError)
+      return { success: false, error: `Authentication error: ${authError.message}` }
+    }
+
     if (!user) {
+      console.warn("[v0] No authenticated user found")
       return { success: false, error: "Unauthorized - Please log in" }
     }
 
+    console.log("[v0] User authenticated:", user.id)
+
     // Check if user is admin
+    console.log("[v0] Checking admin role for user:", user.id)
     const { data: userData, error: userError } = await supabase
       .from("users")
       .select("role")
       .eq("id", user.id)
       .single()
+
+    console.log("[v0] Role check result:", { userData, userError: userError?.message })
 
     if (userError || !userData) {
       console.error("[v0] Failed to fetch user role:", userError)
@@ -36,9 +57,11 @@ export async function updateSystemSettings(data: {
     }
 
     if (userData.role !== "admin") {
-      console.warn("[v0] Non-admin user attempted to update system settings:", user.id)
+      console.warn("[v0] Non-admin user attempted to update system settings:", user.id, "role:", userData.role)
       return { success: false, error: "Unauthorized - Admin access required" }
     }
+
+    console.log("[v0] Admin role verified for user:", user.id)
 
     // Update each setting
     const settings = [

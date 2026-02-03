@@ -172,11 +172,11 @@ export async function updateUserProfile(
     if (error) {
       console.error("[v0] Update profile error:", error.message, error)
       
-      // Check for specific error types
-      if (error.message.includes("column") && error.message.includes("does not exist")) {
+      // Check for specific error types - column not found
+      if (error.message.includes("column") && (error.message.includes("does not exist") || error.message.includes("schema cache"))) {
         return { 
           success: false, 
-          error: "Database schema error: The currency column does not exist in the users table. Please run the database migration script: scripts/008_add_user_currency.sql" 
+          error: "Database migration required: The 'currency' column is missing from the users table. Please run this SQL in Supabase:\n\nALTER TABLE users ADD COLUMN IF NOT EXISTS currency TEXT DEFAULT 'USD';\nALTER TABLE users ADD COLUMN IF NOT EXISTS currency_updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();\n\nOr run the complete script: scripts/008_add_user_currency.sql" 
         }
       }
       
