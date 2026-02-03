@@ -7,27 +7,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { AlertCircle, CheckCircle, AlertTriangle } from 'lucide-react'
+import { AlertCircle, CheckCircle } from 'lucide-react'
 import { updateUserProfile, updateUserPassword } from '@/app/actions/users'
 
 interface UserData {
   id: string
   email: string
   full_name: string
-  currency?: string
 }
 
 export default function UserSettingsForm({ userData }: { userData: UserData }) {
   const router = useRouter()
   const [formData, setFormData] = useState({
     full_name: userData.full_name || '',
-    currency: userData.currency || 'USD',
   })
   const [changedFields, setChangedFields] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
-  const [showCurrencyWarning, setShowCurrencyWarning] = useState(false)
 
   useEffect(() => {
     // Use userId from props directly to avoid session issues
@@ -40,28 +37,11 @@ export default function UserSettingsForm({ userData }: { userData: UserData }) {
     setChangedFields(prev => new Set(prev).add(name))
   }
 
-  const handleCurrencyChange = (value: string) => {
-    setFormData(prev => ({ ...prev, currency: value }))
-    setChangedFields(prev => new Set(prev).add('currency'))
-    setShowCurrencyWarning(true)
-  }
-
   const handleSaveProfile = async () => {
     if (!userId) return
     if (changedFields.size === 0) {
       setMessage({ type: 'error', text: 'No changes to save' })
       return
-    }
-
-    // Show confirmation for currency changes
-    if (changedFields.has('currency') && showCurrencyWarning) {
-      const confirmed = window.confirm(
-        'Changing your currency will affect how prices are displayed throughout the app. All amounts are stored in USD and converted to your selected currency. Continue?'
-      )
-      if (!confirmed) {
-        return
-      }
-      setShowCurrencyWarning(false)
     }
 
     setLoading(true)
@@ -70,7 +50,7 @@ export default function UserSettingsForm({ userData }: { userData: UserData }) {
     try {
       const updates: any = {}
       changedFields.forEach(field => {
-        if (field === 'full_name' || field === 'currency') {
+        if (field === 'full_name') {
           updates[field] = formData[field]
         }
       })
@@ -82,11 +62,6 @@ export default function UserSettingsForm({ userData }: { userData: UserData }) {
       if (result.success) {
         setMessage({ type: 'success', text: 'Profile updated successfully!' })
         setChangedFields(new Set())
-        setShowCurrencyWarning(false)
-        // Refresh the page to apply currency changes
-        if (updates.currency) {
-          setTimeout(() => router.refresh(), 1000)
-        }
       } else {
         setMessage({ type: 'error', text: result.error || 'Failed to update profile' })
       }
@@ -157,33 +132,6 @@ export default function UserSettingsForm({ userData }: { userData: UserData }) {
                 placeholder="Enter your full name"
               />
               <p className="text-xs text-gray-500">Your full name for display</p>
-            </div>
-
-            {/* Currency Selector */}
-            <div className="space-y-2">
-              <Label htmlFor="currency" className="text-sm font-medium">Preferred Currency</Label>
-              <Select value={formData.currency} onValueChange={handleCurrencyChange}>
-                <SelectTrigger id="currency" className="w-full">
-                  <SelectValue placeholder="Select currency" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="USD">USD - US Dollar ($)</SelectItem>
-                  <SelectItem value="EUR">EUR - Euro (€)</SelectItem>
-                  <SelectItem value="GBP">GBP - British Pound (£)</SelectItem>
-                  <SelectItem value="INR">INR - Indian Rupee (₹)</SelectItem>
-                  <SelectItem value="PKR">PKR - Pakistani Rupee (₨)</SelectItem>
-                  <SelectItem value="AED">AED - UAE Dirham (د.إ)</SelectItem>
-                </SelectContent>
-              </Select>
-              {changedFields.has('currency') && showCurrencyWarning && (
-                <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-md">
-                  <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                  <p className="text-xs text-amber-900">
-                    Changing currency will affect all price displays. All amounts are stored in USD and converted for display.
-                  </p>
-                </div>
-              )}
-              <p className="text-xs text-gray-500">Select your preferred currency for viewing prices</p>
             </div>
 
             <Button

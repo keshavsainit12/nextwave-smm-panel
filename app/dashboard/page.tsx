@@ -16,8 +16,8 @@ export default async function DashboardPage() {
   }
 
   try {
-    const [{ data: userProfile, error: profileError }, { data: orders, error: ordersError }, { data: services, error: servicesError }, { data: categories, error: categoriesError }] = await Promise.all([
-      supabase.from("users").select("balance, total_orders, total_spent, full_name, price_multiplier, currency").eq("id", user.id).single(),
+    const [{ data: userProfile, error: profileError }, { data: orders, error: ordersError }, { data: services, error: servicesError }, { data: categories, error: categoriesError }, { data: systemSettings, error: settingsError }] = await Promise.all([
+      supabase.from("users").select("balance, total_orders, total_spent, full_name, price_multiplier").eq("id", user.id).single(),
       supabase
         .from("orders")
         .select("id, user_id, service_id, quantity, price, status, created_at")
@@ -32,6 +32,10 @@ export default async function DashboardPage() {
         .from("service_categories")
         .select("*")
         .order("name"),
+      supabase
+        .from("system_settings")
+        .select("key, value")
+        .in("key", ["currency", "currency_symbol"]),
     ])
 
     if (profileError && profileError.code !== "PGRST116") {
@@ -50,6 +54,7 @@ export default async function DashboardPage() {
     if (ordersError) console.error("[v0] Orders fetch error:", ordersError)
     if (servicesError) console.error("[v0] Services fetch error:", servicesError)
     if (categoriesError) console.error("[v0] Categories fetch error:", categoriesError)
+    if (settingsError) console.error("[v0] Settings fetch error:", settingsError)
 
     const userMultiplier = userProfile?.price_multiplier || 3.0
     
@@ -69,7 +74,13 @@ export default async function DashboardPage() {
     }) || []
 
     const firstName = userProfile?.full_name?.split(' ')[0] || 'User'
-    const userCurrency = userProfile?.currency || 'USD'
+    
+    // Get system-wide currency (set by admin, applies to ALL users)
+    const settingsMap = systemSettings?.reduce((acc: Record<string, string>, setting: any) => {
+      acc[setting.key] = setting.value
+      return acc
+    }, {}) || {}
+    const systemCurrency = settingsMap.currency || 'USD'
 
     return (
       <div className="min-h-screen">
@@ -83,7 +94,7 @@ export default async function DashboardPage() {
             totalSpent={userProfile?.total_spent || 0}
             recentOrders={orders || []}
             priceMultiplier={userProfile?.price_multiplier}
-            userCurrency={userCurrency}
+            userCurrency={systemCurrency}
           />
         </div>
 
@@ -97,7 +108,7 @@ export default async function DashboardPage() {
             totalSpent={userProfile?.total_spent || 0}
             recentOrders={orders || []}
             priceMultiplier={userProfile?.price_multiplier}
-            userCurrency={userCurrency}
+            userCurrency={systemCurrency}
           />
         </div>
       </div>
