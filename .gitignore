@@ -5,6 +5,7 @@
 
 # lock files - project uses pnpm
 package-lock.json
+yarn.lock
 
 # next.js
 /.next/
