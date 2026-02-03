@@ -31,16 +31,20 @@ function LoginContent() {
     setError(null)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error, data } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
       if (error) throw error
 
-      const { data: userData } = await supabase.from("users").select("role").eq("email", email).single()
-
-      if (userData?.role === "admin") {
-        router.push("/admin-panel-2024")
+      // Get current session and check user role from metadata
+      if (data?.user) {
+        const role = data.user.user_metadata?.role || "user"
+        if (role === "admin") {
+          router.push("/admin-panel-2024")
+        } else {
+          router.push("/dashboard")
+        }
       } else {
         router.push("/dashboard")
       }
