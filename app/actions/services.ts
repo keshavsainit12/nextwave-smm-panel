@@ -45,11 +45,19 @@ export async function deleteService(id: string) {
 export async function updateServicePrice(serviceId: string, newPrice: number) {
   const supabase = await createClient()
 
+  console.log('[UpdatePrice] Updating service:', serviceId, 'to price:', newPrice)
+
   const { error } = await supabase.from("services").update({ base_price: newPrice }).eq("id", serviceId)
 
-  if (error) throw error
+  if (error) {
+    console.error('[UpdatePrice] Error:', error)
+    throw error
+  }
 
+  console.log('[UpdatePrice] Success')
   revalidatePath("/admin-panel-2024/services")
+  revalidatePath("/dashboard")
+  revalidatePath("/dashboard/new-order")
   return { success: true }
 }
 
@@ -67,14 +75,25 @@ export async function toggleServiceStatus(serviceId: string, isActive: boolean) 
 export async function updateService(serviceId: string, data: any) {
   const supabase = await createClient()
 
+  // Convert 'price' field to 'base_price' for database
   const updateData = { ...data }
-  // Keep base_price as is - no need to convert to 'price'
+  if ('price' in updateData) {
+    updateData.base_price = updateData.price
+    delete updateData.price
+  }
+  
+  console.log('[UpdateService] Updating service:', serviceId, 'with data:', updateData)
   
   const { error } = await supabase.from("services").update(updateData).eq("id", serviceId)
 
-  if (error) throw error
+  if (error) {
+    console.error('[UpdateService] Error:', error)
+    throw error
+  }
 
+  console.log('[UpdateService] Success')
   revalidatePath("/admin-panel-2024/services")
+  revalidatePath("/dashboard")
   return { success: true }
 }
 
