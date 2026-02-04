@@ -51,7 +51,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 z-30">
         <h1 className="text-xl font-bold text-slate-900 dark:text-white">Admin</h1>
-        <MobileAdminMenu />
+        <MobileAdminMenu userEmail={user.email || userProfile.email} />
       </div>
 
       <div className="flex flex-1 pt-16 lg:pt-0 lg:overflow-hidden">

@@ -96,10 +96,9 @@ function SidebarContent({ pathname, handleLogout, onClose, userEmail }: { pathna
   )
 }
 
-export function AdminSidebar({ userEmail }: { userEmail?: string }) {
+export function AdminSidebar({ userEmail, isMobile, onClose }: { userEmail?: string; isMobile?: boolean; onClose?: () => void }) {
   const pathname = usePathname()
   const router = useRouter()
-  const [open, setOpen] = useState(false)
 
   const handleLogout = async () => {
     try {
@@ -114,12 +113,15 @@ export function AdminSidebar({ userEmail }: { userEmail?: string }) {
     }
   }
 
+  // For mobile view (inside Sheet), render only the content
+  if (isMobile) {
+    return <SidebarContent pathname={pathname} handleLogout={handleLogout} onClose={onClose} userEmail={userEmail} />
+  }
+
+  // For desktop view, render with container
   return (
-    <>
-      {/* Desktop Sidebar - visible on lg and larger screens */}
-      <div className="hidden lg:flex w-64 h-screen flex-col border-r bg-white/70 backdrop-blur-lg shadow-xl sticky top-0">
-        <SidebarContent pathname={pathname} handleLogout={handleLogout} userEmail={userEmail} />
-      </div>
-    </>
+    <div className="w-64 h-screen flex flex-col border-r bg-white/70 backdrop-blur-lg shadow-xl sticky top-0">
+      <SidebarContent pathname={pathname} handleLogout={handleLogout} userEmail={userEmail} />
+    </div>
   )
 }
