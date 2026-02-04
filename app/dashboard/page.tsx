@@ -3,6 +3,10 @@ import { redirect } from "next/navigation"
 import { MobileHighTrustDashboard } from "@/components/dashboard/mobile-high-trust-dashboard"
 import { DesktopDashboard } from "@/components/dashboard/desktop-dashboard"
 
+// Disable caching to ensure users always see fresh service prices
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function DashboardPage() {
   const supabase = await createClient()
 
