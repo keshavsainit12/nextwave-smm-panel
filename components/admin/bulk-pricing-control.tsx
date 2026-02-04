@@ -46,9 +46,9 @@ export function BulkPricingControl() {
           `Successfully ${increase ? 'increased' : 'decreased'} prices for ${result.updated} service${result.updated === 1 ? '' : 's'} by ${percentage}%`
         )
       }
-      
-      console.log(`[BulkPricingUI] Refreshing router...`)
-      router.refresh()
+
+      console.log(`[BulkPricingUI] Reloading page to show updated prices...`)
+      window.location.reload()
       console.log(`[BulkPricingUI] ====== END: Complete ======`)
     } catch (error) {
       console.error("[BulkPricingUI] ====== EXCEPTION caught ======")
