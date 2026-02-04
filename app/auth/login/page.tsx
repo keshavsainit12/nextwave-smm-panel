@@ -37,13 +37,8 @@ function LoginContent() {
       })
       if (error) throw error
 
-      const { data: userData } = await supabase.from("users").select("role").eq("email", email).single()
-
-      if (userData?.role === "admin") {
-        router.push("/admin-panel-2024")
-      } else {
-        router.push("/dashboard")
-      }
+      // Fast redirect - no extra queries
+      router.push("/dashboard")
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred")
       setIsLoading(false)
@@ -56,16 +51,12 @@ function LoginContent() {
     const supabase = createClient()
 
     try {
-      const callbackUrl = `${window.location.origin}/auth/callback`
+      const callbackUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback`
       
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: callbackUrl,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          }
         },
       })
       

@@ -17,12 +17,12 @@
 - ✅ **Admin Panel**: Full management dashboard for providers/coupons/users
 
 ### 📊 Recent Debug Logs Show
-```
+\`\`\`
 [v0] Services API - categories: ["TikTok - Recommended", "SEO For SMM Panel", ...]
 ✓ Services loading: 200+ services across multiple categories
 ✓ Database connections: Stable and responsive
 ✓ API endpoints: All returning proper data
-```
+\`\`\`
 
 ---
 

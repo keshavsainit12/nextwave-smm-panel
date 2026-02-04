@@ -15,7 +15,7 @@
 3. Click "Order"
 4. Set quantity to 10,000 (or higher)
 5. **Watch Console Output - should see:**
-   ```
+   \`\`\`
    [v0] Bulk pricing calculation: {
      quantity: 10000,
      min_quantity: 100,
@@ -27,7 +27,7 @@
      priceMultiplier: 2.5,  ← Should be 2.5
      ...
    }
-   ```
+   \`\`\`
 6. **UI Check:**
    - Should see GREEN alert: "Bulk Pricing Active! 2.5x multiplier"
    - Price should show "(Bulk: 2.5x)" label
@@ -38,14 +38,14 @@
 3. Click "Order"
 4. Set quantity to 10,000
 5. **Watch Console Output - should see:**
-   ```
+   \`\`\`
    [v0] Bulk pricing calculation: {
      quantity: 10000,
      min_quantity: 10,
      isBulkEligible: false,  ← Should be FALSE
      ...
    }
-   ```
+   \`\`\`
 6. **UI Check:**
    - Should see AMBER alert: "Bulk pricing not available for services with min quantity ≤ 10"
    - NO green "Bulk Pricing Active" alert
@@ -59,20 +59,20 @@
 
 ### Step 3: When Placing Order
 After clicking "Place Order Now", console should show:
-```
+\`\`\`
 [v0] Submitting order with bulk flag: {
   serviceId: "...",
   quantity: 10000,
   isBulkEligible: true,  ← This must be true for bulk to work
   totalPrice: "..."
 }
-```
+\`\`\`
 
 ### Backend Confirmation
 After order is placed, check the **Vercel Logs** or server logs for:
-```
+\`\`\`
 [v0] Order calculation: 10000 units × $0.5/1K × 2.5x (BULK) = $12.5
-```
+\`\`\`
 
 If you see `3x (REGULAR)` instead, bulk flag didn't reach backend!
 
@@ -118,13 +118,13 @@ When reporting bulk pricing issue, please provide:
 4. **Expected Result** (what should have happened)
 
 Example:
-```
+\`\`\`
 Service: Instagram Likes (min_quantity: 100)
 Quantity: 10,000
 Expected: Green alert + 2.5x multiplier = $XX
 Actual: No alert + still 3x multiplier = $YY
 Console shows: [paste logs here]
-```
+\`\`\`
 
 ---
 

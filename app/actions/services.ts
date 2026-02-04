@@ -45,11 +45,17 @@ export async function deleteService(id: string) {
 export async function updateServicePrice(serviceId: string, newPrice: number) {
   const supabase = await createClient()
 
-  const { error } = await supabase.from("services").update({ price: newPrice }).eq("id", serviceId)
+  // Update both price and base_price to keep them in sync
+  const { error } = await supabase.from("services").update({ 
+    price: newPrice,
+    base_price: newPrice
+  }).eq("id", serviceId)
 
   if (error) throw error
 
   revalidatePath("/admin-panel-2024/services")
+  revalidatePath("/dashboard")
+  revalidatePath("/dashboard/new-order")
   return { success: true }
 }
 
@@ -67,17 +73,22 @@ export async function toggleServiceStatus(serviceId: string, isActive: boolean) 
 export async function updateService(serviceId: string, data: any) {
   const supabase = await createClient()
 
-  const updateData = { ...data }
-  if (updateData.base_price !== undefined) {
-    updateData.price = updateData.base_price
-    delete updateData.base_price
-  }
+  const updateData: any = {}
+  
+  if (data.name !== undefined) updateData.name = data.name
+  if (data.description !== undefined) updateData.description = data.description
+  if (data.price !== undefined) updateData.price = Number(data.price)
+  if (data.min_quantity !== undefined) updateData.min_quantity = Number(data.min_quantity)
+  if (data.max_quantity !== undefined) updateData.max_quantity = Number(data.max_quantity)
 
   const { error } = await supabase.from("services").update(updateData).eq("id", serviceId)
 
-  if (error) throw error
+  if (error) {
+    throw error
+  }
 
   revalidatePath("/admin-panel-2024/services")
+  revalidatePath("/dashboard")
   return { success: true }
 }
 

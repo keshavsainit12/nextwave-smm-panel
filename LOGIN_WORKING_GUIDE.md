@@ -39,7 +39,7 @@
 
 All API endpoints should work without errors:
 
-```bash
+\`\`\`bash
 # Check services API
 curl https://your-domain/api/v1/services
 
@@ -50,7 +50,7 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 # Check order API (needs API key)
 curl -H "Authorization: Bearer YOUR_API_KEY" \
   https://your-domain/api/v1/order?order_id=123
-```
+\`\`\`
 
 ## Environment Variables
 
@@ -83,11 +83,11 @@ These **ARE still required**:
 
 If needed, verify user exists:
 
-```sql
+\`\`\`sql
 SELECT id, email, api_key, balance 
 FROM users 
 WHERE email = 'test@example.com';
-```
+\`\`\`
 
 ## Performance
 
