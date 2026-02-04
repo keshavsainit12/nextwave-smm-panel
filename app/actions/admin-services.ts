@@ -187,7 +187,6 @@ export async function setAllServicesMultiplier(multiplier: number) {
       const { error } = await supabase
         .from("services")
         .update({
-          price: newPrice,
           base_price: newPrice,
         })
         .eq("id", service.id)
@@ -238,7 +237,7 @@ export async function setVIPPricing(userId: string, serviceId: string, customPri
 export async function updateUserTier(userId: string, tierId: number, customMultiplier?: number) {
   const supabase = createAdminClient()
 
-  const updateData: any = { tier: tierId }
+  const updateData: { tier: number; price_multiplier?: number } = { tier: tierId }
   if (customMultiplier) {
     updateData.price_multiplier = customMultiplier
   }
