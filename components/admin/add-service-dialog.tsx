@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus } from "lucide-react"
-import { addService } from "@/app/actions/admin-services"
+import { addService } from "@/app/actions/services"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 

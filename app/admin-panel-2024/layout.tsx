@@ -1,22 +1,35 @@
 import type React from "react"
-import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { AdminSidebar } from "@/components/admin/admin-sidebar"
 import { MobileAdminMenu } from "@/components/admin/mobile-admin-menu"
 import { CurrencyProvider } from "@/lib/currency-context"
 import { getCurrency } from "@/lib/currency"
-import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@/lib/supabase/server"
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const cookieStore = await cookies()
-  const adminSession = cookieStore.get("admin_session")
+  const supabase = await createClient()
+  
+  // Check Supabase authentication
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
-  if (!adminSession || adminSession.value !== "authenticated") {
-    redirect("/admin-login")
+  if (!user) {
+    redirect("/auth/login")
+  }
+
+  // Get user profile and check if admin
+  const { data: userProfile } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", user.id)
+    .single()
+
+  if (!userProfile || userProfile.role !== 'admin') {
+    redirect("/dashboard")
   }
 
   // Get system currency settings
-  const supabase = createAdminClient()
   const { data: currencySettings } = await supabase
     .from("system_settings")
     .select("value")
@@ -44,7 +57,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <div className="flex flex-1 pt-16 lg:pt-0 lg:overflow-hidden">
         {/* Sidebar - Hidden on mobile, visible on lg */}
         <aside className="hidden lg:flex lg:w-64 flex-shrink-0 border-r border-slate-200 dark:border-slate-800 overflow-y-auto">
-          <AdminSidebar />
+          <AdminSidebar userEmail={user.email || userProfile.email} />
         </aside>
 
         {/* Main Content Area */}

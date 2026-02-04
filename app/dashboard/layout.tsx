@@ -38,10 +38,7 @@ redirect("/auth/login")
     redirect("/auth/login")
   }
 
-  // Auto-redirect admins to admin panel
-  if (userProfile?.role === 'admin') {
-    redirect("/admin-panel-2024")
-  }
+  // Note: Removed auto-redirect for admins - they can access both dashboard and admin panel
 
   // Get system currency settings
   const { data: currencySettings } = await supabase
