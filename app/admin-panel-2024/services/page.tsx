@@ -3,7 +3,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ServiceList } from "@/components/admin/service-list"
 import { AddServiceDialog } from "@/components/admin/add-service-dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BulkPricingControl } from "@/components/admin/bulk-pricing-control"
 import { SimpleBulkPricing } from "@/components/admin/simple-bulk-pricing"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Info } from "lucide-react"
@@ -45,8 +44,6 @@ export default async function AdminServicesPage() {
       </Alert>
 
       <SimpleBulkPricing />
-      
-      <BulkPricingControl />
 
       <Tabs defaultValue="all" className="w-full">
         <TabsList className="grid grid-cols-3 gap-1 w-full h-auto">
@@ -68,7 +65,7 @@ export default async function AdminServicesPage() {
               <CardDescription className="text-xs sm:text-sm">Complete list of available services</CardDescription>
             </CardHeader>
             <CardContent className="p-3 sm:p-4 md:p-6 overflow-x-auto">
-              <ServiceList services={services || []} />
+              <ServiceList key={Date.now()} services={services || []} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -80,7 +77,7 @@ export default async function AdminServicesPage() {
               <CardDescription className="text-xs sm:text-sm">Services available to users</CardDescription>
             </CardHeader>
             <CardContent className="p-3 sm:p-4 md:p-6 overflow-x-auto">
-              <ServiceList services={services?.filter((s) => s.is_active) || []} />
+              <ServiceList key={Date.now()} services={services?.filter((s) => s.is_active) || []} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -92,7 +89,7 @@ export default async function AdminServicesPage() {
               <CardDescription className="text-xs sm:text-sm">Disabled services</CardDescription>
             </CardHeader>
             <CardContent className="p-3 sm:p-4 md:p-6 overflow-x-auto">
-              <ServiceList services={services?.filter((s) => !s.is_active) || []} />
+              <ServiceList key={Date.now()} services={services?.filter((s) => !s.is_active) || []} />
             </CardContent>
           </Card>
         </TabsContent>
