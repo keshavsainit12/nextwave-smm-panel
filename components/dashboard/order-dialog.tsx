@@ -17,19 +17,7 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
   const [link, setLink] = useState("")
   const [quantity, setQuantity] = useState(service.min_quantity || 100)
   
-  // Debug: Log service data when dialog opens
-  useEffect(() => {
-    if (open) {
-      console.log("[v0] OrderDialog opened with service:", {
-        id: service.id,
-        name: service.name,
-        price: service.price,
-        base_price: service.base_price,
-        min_quantity: service.min_quantity,
-        price_multiplier: service.price_multiplier,
-      })
-    }
-  }, [open, service])
+
   const [couponCode, setCouponCode] = useState("")
   const [couponDiscount, setCouponDiscount] = useState(0)
   const [couponError, setCouponError] = useState<string | null>(null)
@@ -44,17 +32,7 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
   const minQuantityForBulk = (service.min_quantity || 100) > 10 ? 10000 : Infinity
   const isBulkEligible = quantity >= 10000 && (service.min_quantity || 100) > 10
   
-  // Debug bulk pricing
-  useEffect(() => {
-    console.log("[v0] Bulk pricing calculation:", {
-      quantity,
-      min_quantity: service.min_quantity,
-      isBulkEligible,
-      minQuantityForBulk,
-      check1: quantity >= 10000,
-      check2: (service.min_quantity || 100) > 10,
-    })
-  }, [quantity, isBulkEligible, service.min_quantity])
+
   
   // Memoize price calculations to ensure they update reactively
   const servicePrice = useMemo(() => Number(service.price || service.base_price || 0), [service])
@@ -66,14 +44,6 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
   
   const totalPrice = useMemo(() => {
     const price = ((quantity / 1000) * finalServicePrice)
-    console.log("[v0] Price calculation:", {
-      quantity,
-      finalServicePrice,
-      servicePrice,
-      priceMultiplier,
-      isBulkEligible,
-      totalPrice: price.toFixed(2),
-    })
     return price.toFixed(2)
   }, [quantity, finalServicePrice, servicePrice, priceMultiplier, isBulkEligible])
   
