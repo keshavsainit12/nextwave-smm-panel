@@ -10,6 +10,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { toast } from "react-toastify"
+import { createClient } from "@/lib/supabase/client"
 import {
   LayoutDashboard,
   Bitcoin,
@@ -102,8 +103,6 @@ export function AdminSidebar({ userEmail }: { userEmail?: string }) {
 
   const handleLogout = async () => {
     try {
-      // Use Supabase logout instead of cookie logout
-      const { createClient } = await import("@/lib/supabase/client")
       const supabase = createClient()
       await supabase.auth.signOut()
       
