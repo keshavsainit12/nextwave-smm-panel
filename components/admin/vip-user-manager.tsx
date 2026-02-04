@@ -15,7 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { updateUserTier } from "@/app/actions/services"
+import { updateUserTier } from "@/app/actions/admin-services"
 import { toast } from "sonner"
 import { Crown, Users } from "lucide-react"
 
