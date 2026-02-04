@@ -25,36 +25,48 @@ export function SimpleBulkPricing() {
     }
     
     setLoading(true)
+    console.log(`[SimpleBulkUI] ===== USER ACTION =====`)
+    console.log(`[SimpleBulkUI] Action: ${isIncrease ? 'INCREASE' : 'DECREASE'}`)
+    console.log(`[SimpleBulkUI] Percentage: ${percentValue}%`)
     
     try {
       const finalPercentage = isIncrease ? percentValue : -percentValue
-      console.log(`[SimpleBulkUI] Adjusting by ${finalPercentage}%`)
+      console.log(`[SimpleBulkUI] Final percentage to apply: ${finalPercentage}%`)
+      console.log(`[SimpleBulkUI] Calling simpleBulkPricing function...`)
       
       const result = await simpleBulkPricing(finalPercentage)
       
-      console.log(`[SimpleBulkUI] Result:`, result)
+      console.log(`[SimpleBulkUI] ===== RESULT RECEIVED =====`)
+      console.log(`[SimpleBulkUI] Result object:`, JSON.stringify(result, null, 2))
+      console.log(`[SimpleBulkUI] Success:`, result.success)
+      console.log(`[SimpleBulkUI] Updated:`, result.updated)
+      console.log(`[SimpleBulkUI] Total:`, result.total)
       
       if (result.success) {
         const action = isIncrease ? "increased" : "decreased"
         const absPercentage = Math.abs(finalPercentage)
-        toast.success(
-          `Successfully ${action} prices for ${result.updated}/${result.total} services by ${absPercentage}%`,
-          { duration: 3000 }
-        )
+        const message = `Successfully ${action} prices for ${result.updated}/${result.total} services by ${absPercentage}%`
+        console.log(`[SimpleBulkUI] ✅ SUCCESS:`, message)
+        toast.success(message, { duration: 3000 })
         
         // Wait to show message, then reload
-        console.log(`[SimpleBulkUI] Waiting before reload...`)
+        console.log(`[SimpleBulkUI] Waiting 2 seconds before reload...`)
         setTimeout(() => {
-          console.log(`[SimpleBulkUI] Reloading page...`)
+          console.log(`[SimpleBulkUI] Now reloading page...`)
           window.location.reload()
         }, 2000)
       } else {
-        toast.error(result.error || "Failed to update prices")
+        const errorMsg = result.error || "Failed to update prices"
+        console.error(`[SimpleBulkUI] ❌ FAILURE:`, errorMsg)
+        toast.error(errorMsg, { duration: 5000 })
         setLoading(false)
       }
     } catch (error) {
+      console.error(`[SimpleBulkUI] ❌❌❌ EXCEPTION IN UI ❌❌❌`)
       console.error(`[SimpleBulkUI] Error:`, error)
-      toast.error("An error occurred")
+      console.error(`[SimpleBulkUI] Error type:`, typeof error)
+      console.error(`[SimpleBulkUI] Error message:`, error instanceof Error ? error.message : String(error))
+      toast.error("An unexpected error occurred. Check console for details.", { duration: 5000 })
       setLoading(false)
     }
   }
