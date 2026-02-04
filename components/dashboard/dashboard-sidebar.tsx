@@ -34,9 +34,13 @@ export function DashboardSidebar({ userName = "User", userBalance = 0, priceMult
   const router = useRouter()
   const { displayAmount } = useCurrency()
   
-  // Add admin panel link if user is admin
+  // Add admin panel link if user is admin (after Dashboard, before My Orders)
   const navigationWithAdmin = userRole === 'admin' 
-    ? [...navigation.slice(0, 1), { name: "Admin Panel", href: "/admin-panel-2024", icon: Shield }, ...navigation.slice(1)]
+    ? [
+        navigation[0], // Dashboard
+        { name: "Admin Panel", href: "/admin-panel-2024", icon: Shield },
+        ...navigation.slice(1) // Rest of navigation
+      ]
     : navigation
 
   const getCartoonAvatar = (name: string) => {
