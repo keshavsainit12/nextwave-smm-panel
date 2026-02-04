@@ -230,7 +230,7 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
       amountUSD: amountInUSD.toFixed(4),
     })
 
-    // Create transaction record - with payment_id field for webhook to find it later
+    // Create transaction record - payment_id will be set after AccountPe API call
     const { data: transaction, error: txError } = await supabase
       .from("transactions")
       .insert({
@@ -239,15 +239,9 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
         type: "deposit",
         payment_method: "instant_xaf",
         status: "pending",
-        notes: `XAF ${params.amount} Payment (${amountInUSD.toFixed(2)} USD) - ${params.userName}`,
+        notes: `XAF ${params.amount} (${amountInUSD.toFixed(2)} USD at rate 1/${XAF_TO_USD_RATE}) - ${params.userName}`,
         balance_before: balanceBefore,
         balance_after: balanceBefore + amountInUSD, // Add USD amount
-        payment_id: "", // Will be set after AccountPe API call
-        // Store original XAF amount in metadata for reference
-        metadata: {
-          original_amount_xaf: params.amount,
-          exchange_rate: XAF_TO_USD_RATE,
-        },
       })
       .select()
       .single()
