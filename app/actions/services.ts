@@ -98,8 +98,11 @@ export async function updateService(serviceId: string, data: any) {
 }
 
 export async function updateAllServicesPricing(percentage: number) {
+  console.log(`[BulkPricing] ====== START: Bulk pricing adjustment by ${percentage}% ======`)
   try {
     const supabase = await createClient()
+    console.log(`[BulkPricing] Supabase client created`)
+    
     const DEFAULT_PRICE_MULTIPLIER = 3 // Default multiplier for normal users
 
     console.log(`[BulkPricing] Fetching all services for ${percentage}% price adjustment`)
@@ -110,14 +113,16 @@ export async function updateAllServicesPricing(percentage: number) {
 
     if (fetchError) {
       console.error("[BulkPricing] Fetch services error:", fetchError)
-      return { success: false, error: "Failed to fetch services", updated: 0 }
+      console.error("[BulkPricing] Error details:", JSON.stringify(fetchError, null, 2))
+      return { success: false, error: `Failed to fetch services: ${fetchError.message}`, updated: 0 }
     }
 
     if (!services || services.length === 0) {
       console.log("[BulkPricing] No services found to update")
-      return { success: false, error: "No services found", updated: 0 }
+      return { success: false, error: "No services found in database", updated: 0 }
     }
 
+    console.log(`[BulkPricing] Found ${services.length} services to update`)
     console.log(`[BulkPricing] Updating ${services.length} services with ${percentage}% adjustment`)
 
     let updated = 0
@@ -129,15 +134,18 @@ export async function updateAllServicesPricing(percentage: number) {
       
       console.log(`[BulkPricing] Service ${service.id}: ${currentPrice.toFixed(4)} → ${newPrice.toFixed(4)} (${percentage > 0 ? '+' : ''}${percentage}%)`)
       
-      const { error } = await supabase
+      const { error, data } = await supabase
         .from("services")
         .update({ base_price: newPrice })
         .eq("id", service.id)
+        .select()
       
       if (error) {
         console.error(`[BulkPricing] Failed to update service ${service.id}:`, error)
+        console.error(`[BulkPricing] Error details:`, JSON.stringify(error, null, 2))
         failedServiceIds.push(service.id)
       } else {
+        console.log(`[BulkPricing] Successfully updated service ${service.id}`)
         updated++
       }
     }
@@ -149,18 +157,24 @@ export async function updateAllServicesPricing(percentage: number) {
     }
 
     // Revalidate all relevant paths so changes show up immediately
+    console.log(`[BulkPricing] Revalidating paths...`)
     revalidatePath("/admin-panel-2024/services")
     revalidatePath("/dashboard")
     revalidatePath("/dashboard/new-order")
     revalidatePath("/")
+    console.log(`[BulkPricing] Paths revalidated`)
 
     if (updated === 0) {
-      return { success: false, error: "Failed to update any services", updated: 0 }
+      console.log(`[BulkPricing] No services were updated - returning error`)
+      return { success: false, error: "Failed to update any services - check console for details", updated: 0 }
     }
 
+    console.log(`[BulkPricing] ====== END: Returning success with ${updated} updates ======`)
     return { success: true, updated, total: services.length }
   } catch (error) {
-    console.error("[BulkPricing] Update pricing error:", error)
+    console.error("[BulkPricing] ====== EXCEPTION: Update pricing error ======")
+    console.error("[BulkPricing] Exception:", error)
+    console.error("[BulkPricing] Exception stack:", error instanceof Error ? error.stack : 'No stack trace')
     return { 
       success: false, 
       error: error instanceof Error ? error.message : "Failed to update pricing",

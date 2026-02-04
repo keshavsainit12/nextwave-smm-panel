@@ -23,25 +23,37 @@ export function BulkPricingControl() {
 
     setLoading(true)
     try {
-      console.log(`[v0] Adjusting all service prices by ${percentage}% (${increase ? 'increase' : 'decrease'})`)
+      console.log(`[BulkPricingUI] ====== START: Button clicked ======`)
+      console.log(`[BulkPricingUI] Adjusting all service prices by ${percentage}% (${increase ? 'increase' : 'decrease'})`)
       
       const finalPercentage = increase ? Math.abs(percentage) : -Math.abs(percentage)
+      console.log(`[BulkPricingUI] Final percentage to apply: ${finalPercentage}%`)
+      console.log(`[BulkPricingUI] Calling updateAllServicesPricing...`)
+      
       const result = await updateAllServicesPricing(finalPercentage)
       
+      console.log(`[BulkPricingUI] Result received:`, JSON.stringify(result, null, 2))
+      
       if (result.error) {
+        console.error(`[BulkPricingUI] Error in result:`, result.error)
         toast.error(result.error)
       } else if (result.updated === 0) {
+        console.warn(`[BulkPricingUI] No services updated`)
         toast.warning("No services were updated. Please check if services exist.")
       } else {
+        console.log(`[BulkPricingUI] Success! ${result.updated} services updated`)
         toast.success(
           `Successfully ${increase ? 'increased' : 'decreased'} prices for ${result.updated} service${result.updated === 1 ? '' : 's'} by ${percentage}%`
         )
       }
       
-      // Refresh to show updated prices in real-time
+      console.log(`[BulkPricingUI] Refreshing router...`)
       router.refresh()
+      console.log(`[BulkPricingUI] ====== END: Complete ======`)
     } catch (error) {
-      console.error("[v0] Pricing update error:", error)
+      console.error("[BulkPricingUI] ====== EXCEPTION caught ======")
+      console.error("[BulkPricingUI] Pricing update error:", error)
+      console.error("[BulkPricingUI] Error stack:", error instanceof Error ? error.stack : 'No stack')
       toast.error("Failed to update pricing. Please try again.")
     } finally {
       setLoading(false)
