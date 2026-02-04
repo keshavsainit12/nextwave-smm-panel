@@ -45,11 +45,17 @@ export async function deleteService(id: string) {
 export async function updateServicePrice(serviceId: string, newPrice: number) {
   const supabase = await createClient()
 
-  const { error } = await supabase.from("services").update({ price: newPrice }).eq("id", serviceId)
+  // Update both price and base_price to keep them in sync
+  const { error } = await supabase.from("services").update({ 
+    price: newPrice,
+    base_price: newPrice
+  }).eq("id", serviceId)
 
   if (error) throw error
 
   revalidatePath("/admin-panel-2024/services")
+  revalidatePath("/dashboard")
+  revalidatePath("/dashboard/new-order")
   return { success: true }
 }
 
@@ -72,10 +78,18 @@ export async function updateService(serviceId: string, data: any) {
   // Map the fields properly
   if (data.name !== undefined) updateData.name = data.name
   if (data.description !== undefined) updateData.description = data.description
-  if (data.price !== undefined) updateData.price = Number(data.price)
+  if (data.price !== undefined) {
+    const priceValue = Number(data.price)
+    updateData.price = priceValue
+    updateData.base_price = priceValue // Keep both in sync for admin list display
+  }
   if (data.min_quantity !== undefined) updateData.min_quantity = Number(data.min_quantity)
   if (data.max_quantity !== undefined) updateData.max_quantity = Number(data.max_quantity)
-  if (data.base_price !== undefined) updateData.base_price = Number(data.base_price)
+  if (data.base_price !== undefined) {
+    const basePriceValue = Number(data.base_price)
+    updateData.base_price = basePriceValue
+    updateData.price = basePriceValue // Keep both in sync
+  }
 
   const { error } = await supabase.from("services").update(updateData).eq("id", serviceId)
 
