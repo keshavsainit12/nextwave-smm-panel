@@ -4,6 +4,7 @@ import { ServiceList } from "@/components/admin/service-list"
 import { AddServiceDialog } from "@/components/admin/add-service-dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BulkPricingControl } from "@/components/admin/bulk-pricing-control"
+import { SimpleBulkPricing } from "@/components/admin/simple-bulk-pricing"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Info } from "lucide-react"
 
@@ -43,6 +44,8 @@ export default async function AdminServicesPage() {
         </AlertDescription>
       </Alert>
 
+      <SimpleBulkPricing />
+      
       <BulkPricingControl />
 
       <Tabs defaultValue="all" className="w-full">
