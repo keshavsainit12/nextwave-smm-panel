@@ -123,17 +123,3 @@ export function AdminSidebar({ userEmail }: { userEmail?: string }) {
     </>
   )
 }
-        <div className="flex items-center gap-3 py-4 px-6 border-b">
-          <Avatar className="h-10 w-10 bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-            A
-          </Avatar>
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold text-slate-900 dark:text-white">Admin</span>
-            <span className="text-xs text-slate-500 dark:text-slate-400">Super Admin</span>
-          </div>
-        </div>
-        <SidebarContent pathname={pathname} handleLogout={handleLogout} />
-      </div>
-    </>
-  )
-}
