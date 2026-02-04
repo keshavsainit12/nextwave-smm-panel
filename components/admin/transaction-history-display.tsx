@@ -166,7 +166,7 @@ export function TransactionHistoryDisplay({
                 <TableRow>
                   <TableHead>User</TableHead>
                   <TableHead>Payment Method</TableHead>
-                  <TableHead>Amount (USD)</TableHead>
+                  <TableHead>Amount</TableHead>
                   <TableHead>Details</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Date</TableHead>
@@ -212,7 +212,7 @@ export function TransactionHistoryDisplay({
                       <TableCell className="font-medium">{payment.users?.full_name || payment.users?.email}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="bg-yellow-50">
-                          Instant Payment (XAF)
+                          Instant Payment
                         </Badge>
                       </TableCell>
                       <TableCell className="font-semibold text-green-600">
