@@ -1,10 +1,10 @@
 "use server"
 
-import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 
 export async function addService(formData: FormData) {
-  const supabase = createAdminClient()
+  const supabase = await createClient()
 
   const providerId = formData.get("provider_id") as string
   const finalProviderId = providerId === "none" ? null : providerId
@@ -33,7 +33,7 @@ export async function addService(formData: FormData) {
 }
 
 export async function deleteService(id: string) {
-  const supabase = createAdminClient()
+  const supabase = await createClient()
 
   const { error } = await supabase.from("services").delete().eq("id", id)
 
@@ -43,7 +43,7 @@ export async function deleteService(id: string) {
 }
 
 export async function updateServicePrice(serviceId: string, newPrice: number) {
-  const supabase = createAdminClient()
+  const supabase = await createClient()
 
   const { error } = await supabase.from("services").update({ base_price: newPrice }).eq("id", serviceId)
 
@@ -54,7 +54,7 @@ export async function updateServicePrice(serviceId: string, newPrice: number) {
 }
 
 export async function toggleServiceStatus(serviceId: string, isActive: boolean) {
-  const supabase = createAdminClient()
+  const supabase = await createClient()
 
   const { error } = await supabase.from("services").update({ is_active: isActive }).eq("id", serviceId)
 
@@ -65,7 +65,7 @@ export async function toggleServiceStatus(serviceId: string, isActive: boolean) 
 }
 
 export async function updateService(serviceId: string, data: any) {
-  const supabase = createAdminClient()
+  const supabase = await createClient()
 
   const updateData = { ...data }
   // Keep base_price as is - no need to convert to 'price'
@@ -80,7 +80,7 @@ export async function updateService(serviceId: string, data: any) {
 
 export async function updateAllServicesPricing(percentage: number) {
   try {
-    const supabase = createAdminClient()
+    const supabase = await createClient()
     const DEFAULT_PRICE_MULTIPLIER = 3 // Default multiplier for normal users
 
     console.log(`[BulkPricing] Fetching all services for ${percentage}% price adjustment`)
@@ -152,7 +152,7 @@ export async function updateAllServicesPricing(percentage: number) {
 
 export async function setAllServicesMultiplier(multiplier: number) {
   try {
-    const supabase = createAdminClient()
+    const supabase = await createClient()
 
     console.log(`[v0] Fetching all services for ${multiplier}x multiplier update`)
 
@@ -220,7 +220,7 @@ export async function setAllServicesMultiplier(multiplier: number) {
 }
 
 export async function setVIPPricing(userId: string, serviceId: string, customPrice: number) {
-  const supabase = createAdminClient()
+  const supabase = await createClient()
 
   const { error } = await supabase.from("vip_service_pricing").upsert({
     user_id: userId,
@@ -236,7 +236,7 @@ export async function setVIPPricing(userId: string, serviceId: string, customPri
 }
 
 export async function updateUserTier(userId: string, tierId: number, customMultiplier?: number) {
-  const supabase = createAdminClient()
+  const supabase = await createClient()
 
   const updateData: any = { tier: tierId }
   if (customMultiplier) {
