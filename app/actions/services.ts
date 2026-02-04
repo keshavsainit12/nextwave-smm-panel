@@ -79,22 +79,74 @@ export async function updateService(serviceId: string, data: any) {
 }
 
 export async function updateAllServicesPricing(percentage: number) {
-  const supabase = await createClient()
+  try {
+    const supabase = await createClient()
 
-  const { data: services, error: fetchError } = await supabase.from("services").select("id, base_price, provider_price")
+    console.log(`[v0] Fetching all services for ${percentage}% price adjustment`)
+    
+    const { data: services, error: fetchError } = await supabase
+      .from("services")
+      .select("id, base_price, provider_price")
 
-  if (fetchError) throw fetchError
+    if (fetchError) {
+      console.error("[v0] Fetch services error:", fetchError)
+      return { success: false, error: "Failed to fetch services", updated: 0 }
+    }
 
-  let updated = 0
-  for (const service of services || []) {
-    const currentPrice = service.base_price || service.provider_price * 3
-    const newPrice = currentPrice * (1 + percentage / 100)
-    const { error } = await supabase.from("services").update({ base_price: newPrice }).eq("id", service.id)
-    if (!error) updated++
+    if (!services || services.length === 0) {
+      console.log("[v0] No services found to update")
+      return { success: false, error: "No services found", updated: 0 }
+    }
+
+    console.log(`[v0] Updating ${services.length} services with ${percentage}% adjustment`)
+
+    let updated = 0
+    const errors: string[] = []
+
+    for (const service of services) {
+      const currentPrice = service.base_price || service.provider_price * 3
+      const newPrice = currentPrice * (1 + percentage / 100)
+      
+      console.log(`[v0] Service ${service.id}: ${currentPrice.toFixed(4)} → ${newPrice.toFixed(4)} (${percentage > 0 ? '+' : ''}${percentage}%)`)
+      
+      const { error } = await supabase
+        .from("services")
+        .update({ base_price: newPrice })
+        .eq("id", service.id)
+      
+      if (error) {
+        console.error(`[v0] Failed to update service ${service.id}:`, error)
+        errors.push(service.id)
+      } else {
+        updated++
+      }
+    }
+
+    console.log(`[v0] Successfully updated ${updated}/${services.length} services`)
+
+    if (errors.length > 0) {
+      console.error(`[v0] Failed to update ${errors.length} services:`, errors)
+    }
+
+    // Revalidate all relevant paths so changes show up immediately
+    revalidatePath("/admin-panel-2024/services")
+    revalidatePath("/dashboard")
+    revalidatePath("/dashboard/new-order")
+    revalidatePath("/")
+
+    if (updated === 0) {
+      return { success: false, error: "Failed to update any services", updated: 0 }
+    }
+
+    return { success: true, updated, total: services.length }
+  } catch (error) {
+    console.error("[v0] Update pricing error:", error)
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Failed to update pricing",
+      updated: 0 
+    }
   }
-
-  revalidatePath("/admin-panel-2024/services")
-  return { success: true, updated }
 }
 
 export async function setAllServicesMultiplier(multiplier: number) {
