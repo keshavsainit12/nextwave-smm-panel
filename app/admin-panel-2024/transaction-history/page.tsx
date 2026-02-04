@@ -24,7 +24,7 @@ export default async function AdminTransactionHistoryPage() {
     // Fetch all orders - ONLY COMPLETED ONES
     const { data: ordersData, error: ordersError } = await supabase
       .from("orders")
-      .select("*, services(name, category, provider_price), users(email, full_name, balance)")
+      .select("*, services(name, category_id, provider_price), users(email, full_name, balance)")
       .eq("status", "completed")
       .order("created_at", { ascending: false })
       .limit(100)
