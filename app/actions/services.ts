@@ -45,7 +45,7 @@ export async function deleteService(id: string) {
 export async function updateServicePrice(serviceId: string, newPrice: number) {
   const supabase = await createClient()
 
-  const { error } = await supabase.from("services").update({ price: newPrice }).eq("id", serviceId)
+  const { error } = await supabase.from("services").update({ base_price: newPrice }).eq("id", serviceId)
 
   if (error) throw error
 
@@ -68,11 +68,8 @@ export async function updateService(serviceId: string, data: any) {
   const supabase = await createClient()
 
   const updateData = { ...data }
-  if (updateData.base_price !== undefined) {
-    updateData.price = updateData.base_price
-    delete updateData.base_price
-  }
-
+  // Keep base_price as is - no need to convert to 'price'
+  
   const { error } = await supabase.from("services").update(updateData).eq("id", serviceId)
 
   if (error) throw error
@@ -84,15 +81,15 @@ export async function updateService(serviceId: string, data: any) {
 export async function updateAllServicesPricing(percentage: number) {
   const supabase = await createClient()
 
-  const { data: services, error: fetchError } = await supabase.from("services").select("id, price, provider_price")
+  const { data: services, error: fetchError } = await supabase.from("services").select("id, base_price, provider_price")
 
   if (fetchError) throw fetchError
 
   let updated = 0
   for (const service of services || []) {
-    const currentPrice = service.price || service.provider_price * 3
+    const currentPrice = service.base_price || service.provider_price * 3
     const newPrice = currentPrice * (1 + percentage / 100)
-    const { error } = await supabase.from("services").update({ price: newPrice }).eq("id", service.id)
+    const { error } = await supabase.from("services").update({ base_price: newPrice }).eq("id", service.id)
     if (!error) updated++
   }
 
