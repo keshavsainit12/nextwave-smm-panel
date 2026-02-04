@@ -3,6 +3,9 @@ import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { AdminSidebar } from "@/components/admin/admin-sidebar"
 import { MobileAdminMenu } from "@/components/admin/mobile-admin-menu"
+import { CurrencyProvider } from "@/lib/currency-context"
+import { getCurrency } from "@/lib/currency"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies()
@@ -12,7 +15,25 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect("/admin-login")
   }
 
+  // Get system currency settings
+  const supabase = createAdminClient()
+  const { data: currencySettings } = await supabase
+    .from("system_settings")
+    .select("value")
+    .eq("key", "currency")
+    .single()
+
+  const { data: currencySymbolSettings } = await supabase
+    .from("system_settings")
+    .select("value")
+    .eq("key", "currency_symbol")
+    .single()
+
+  const currency = currencySettings?.value || "USD"
+  const currencySymbol = currencySymbolSettings?.value || getCurrency(currency)?.symbol || "$"
+
   return (
+    <CurrencyProvider currency={currency} currencySymbol={currencySymbol}>
     <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-950 lg:overflow-hidden">
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 z-30">
@@ -34,5 +55,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </main>
       </div>
     </div>
+    </CurrencyProvider>
   )
 }
