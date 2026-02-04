@@ -81,33 +81,34 @@ export async function updateService(serviceId: string, data: any) {
 export async function updateAllServicesPricing(percentage: number) {
   try {
     const supabase = await createClient()
+    const DEFAULT_PRICE_MULTIPLIER = 3 // Default multiplier for normal users
 
-    console.log(`[v0] Fetching all services for ${percentage}% price adjustment`)
+    console.log(`[BulkPricing] Fetching all services for ${percentage}% price adjustment`)
     
     const { data: services, error: fetchError } = await supabase
       .from("services")
       .select("id, base_price, provider_price")
 
     if (fetchError) {
-      console.error("[v0] Fetch services error:", fetchError)
+      console.error("[BulkPricing] Fetch services error:", fetchError)
       return { success: false, error: "Failed to fetch services", updated: 0 }
     }
 
     if (!services || services.length === 0) {
-      console.log("[v0] No services found to update")
+      console.log("[BulkPricing] No services found to update")
       return { success: false, error: "No services found", updated: 0 }
     }
 
-    console.log(`[v0] Updating ${services.length} services with ${percentage}% adjustment`)
+    console.log(`[BulkPricing] Updating ${services.length} services with ${percentage}% adjustment`)
 
     let updated = 0
-    const errors: string[] = []
+    const failedServiceIds: string[] = []
 
     for (const service of services) {
-      const currentPrice = service.base_price || service.provider_price * 3
+      const currentPrice = service.base_price || service.provider_price * DEFAULT_PRICE_MULTIPLIER
       const newPrice = currentPrice * (1 + percentage / 100)
       
-      console.log(`[v0] Service ${service.id}: ${currentPrice.toFixed(4)} → ${newPrice.toFixed(4)} (${percentage > 0 ? '+' : ''}${percentage}%)`)
+      console.log(`[BulkPricing] Service ${service.id}: ${currentPrice.toFixed(4)} → ${newPrice.toFixed(4)} (${percentage > 0 ? '+' : ''}${percentage}%)`)
       
       const { error } = await supabase
         .from("services")
@@ -115,17 +116,17 @@ export async function updateAllServicesPricing(percentage: number) {
         .eq("id", service.id)
       
       if (error) {
-        console.error(`[v0] Failed to update service ${service.id}:`, error)
-        errors.push(service.id)
+        console.error(`[BulkPricing] Failed to update service ${service.id}:`, error)
+        failedServiceIds.push(service.id)
       } else {
         updated++
       }
     }
 
-    console.log(`[v0] Successfully updated ${updated}/${services.length} services`)
+    console.log(`[BulkPricing] Successfully updated ${updated}/${services.length} services`)
 
-    if (errors.length > 0) {
-      console.error(`[v0] Failed to update ${errors.length} services:`, errors)
+    if (failedServiceIds.length > 0) {
+      console.error(`[BulkPricing] Failed to update ${failedServiceIds.length} services:`, failedServiceIds)
     }
 
     // Revalidate all relevant paths so changes show up immediately
@@ -140,7 +141,7 @@ export async function updateAllServicesPricing(percentage: number) {
 
     return { success: true, updated, total: services.length }
   } catch (error) {
-    console.error("[v0] Update pricing error:", error)
+    console.error("[BulkPricing] Update pricing error:", error)
     return { 
       success: false, 
       error: error instanceof Error ? error.message : "Failed to update pricing",
