@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
-import { Home, Package, HeadphonesIcon, Gift, Code, LogOut, Settings, Receipt, Crown, Star, Wallet } from "lucide-react"
+import { Home, Package, HeadphonesIcon, Gift, Code, LogOut, Settings, Receipt, Crown, Star, Wallet, Shield } from "lucide-react"
 import { useCurrency } from "@/lib/currency-context"
 
 // Tier configuration based on price_multiplier
@@ -28,11 +28,16 @@ const navigation = [
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ]
 
-export function DashboardSidebar({ userName = "User", userBalance = 0, priceMultiplier }: { userName?: string; userBalance?: number; priceMultiplier?: number }) {
+export function DashboardSidebar({ userName = "User", userBalance = 0, priceMultiplier, userRole }: { userName?: string; userBalance?: number; priceMultiplier?: number; userRole?: string }) {
   const tierInfo = getTierInfo(priceMultiplier)
   const pathname = usePathname()
   const router = useRouter()
   const { displayAmount } = useCurrency()
+  
+  // Add admin panel link if user is admin
+  const navigationWithAdmin = userRole === 'admin' 
+    ? [...navigation.slice(0, 1), { name: "Admin Panel", href: "/admin-panel-2024", icon: Shield }, ...navigation.slice(1)]
+    : navigation
 
   const getCartoonAvatar = (name: string) => {
     const char = name.charAt(0).toUpperCase()
@@ -128,7 +133,7 @@ export function DashboardSidebar({ userName = "User", userBalance = 0, priceMult
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-4 sm:py-6 px-3 sm:px-4 space-y-1">
-        {navigation.map((item) => {
+        {navigationWithAdmin.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
           const IconComponent = item.icon
           return (

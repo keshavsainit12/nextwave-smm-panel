@@ -38,6 +38,11 @@ redirect("/auth/login")
     redirect("/auth/login")
   }
 
+  // Auto-redirect admins to admin panel
+  if (userProfile?.role === 'admin') {
+    redirect("/admin-panel-2024")
+  }
+
   // Get system currency settings
   const { data: currencySettings } = await supabase
     .from("system_settings")
@@ -64,6 +69,7 @@ return (
           userName={userProfile?.full_name || user?.email || "User"}
           userBalance={userProfile?.balance || 0}
           priceMultiplier={userProfile?.price_multiplier}
+          userRole={userProfile?.role}
         />
 </div>
 
