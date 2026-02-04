@@ -49,11 +49,14 @@ export function SimpleBulkPricing() {
         console.log(`[SimpleBulkUI] ✅ SUCCESS:`, message)
         toast.success(message, { duration: 3000 })
         
-        // Wait to show message, then reload
+        // Wait to show message, then force reload bypassing cache
         console.log(`[SimpleBulkUI] Waiting 2 seconds before reload...`)
         setTimeout(() => {
-          console.log(`[SimpleBulkUI] Now reloading page...`)
-          window.location.reload()
+          console.log(`[SimpleBulkUI] Now force reloading page (bypassing cache) to show updated prices...`)
+          // Force reload bypassing cache by adding timestamp to URL
+          const currentUrl = new URL(window.location.href)
+          currentUrl.searchParams.set('_t', Date.now().toString())
+          window.location.href = currentUrl.toString()
         }, 2000)
       } else {
         const errorMsg = result.error || "Failed to update prices"
