@@ -37,25 +37,30 @@ export function BulkPricingControl() {
       if (result.error) {
         console.error(`[BulkPricingUI] Error in result:`, result.error)
         toast.error(result.error)
+        setLoading(false)
       } else if (result.updated === 0) {
         console.warn(`[BulkPricingUI] No services updated`)
         toast.warning("No services were updated. Please check if services exist.")
+        setLoading(false)
       } else {
         console.log(`[BulkPricingUI] Success! ${result.updated} services updated`)
         toast.success(
           `Successfully ${increase ? 'increased' : 'decreased'} prices for ${result.updated} service${result.updated === 1 ? '' : 's'} by ${percentage}%`
         )
+        
+        // Wait 1.5 seconds to let user see the success message, then reload
+        console.log(`[BulkPricingUI] Waiting 1.5 seconds before reload...`)
+        setTimeout(() => {
+          console.log(`[BulkPricingUI] Reloading page to show updated prices...`)
+          window.location.reload()
+        }, 1500)
       }
-
-      console.log(`[BulkPricingUI] Reloading page to show updated prices...`)
-      window.location.reload()
       console.log(`[BulkPricingUI] ====== END: Complete ======`)
     } catch (error) {
       console.error("[BulkPricingUI] ====== EXCEPTION caught ======")
       console.error("[BulkPricingUI] Pricing update error:", error)
       console.error("[BulkPricingUI] Error stack:", error instanceof Error ? error.stack : 'No stack')
       toast.error("Failed to update pricing. Please try again.")
-    } finally {
       setLoading(false)
     }
   }
