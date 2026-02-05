@@ -532,7 +532,7 @@ export function MobileHighTrustDashboard({
                                 }}
                               />
                             )}
-                            <span className="truncate">{category.name}</span>
+                            <span className="whitespace-normal break-words leading-tight py-0.5">{category.name}</span>
                           </div>
                         </SelectItem>
                       )
@@ -595,7 +595,7 @@ export function MobileHighTrustDashboard({
                                     }}
                                   />
                                 )}
-                                <span className="truncate">{service.name} - {displayAmount(Number(service.price || service.base_price || 0))}/1k</span>
+                                <span className="whitespace-normal break-words leading-tight py-0.5">{service.name} - {displayAmount(Number(service.price || service.base_price || 0))}/1k</span>
                               </div>
                             </SelectItem>
                           )
