@@ -1,7 +1,13 @@
 import { Resend } from 'resend'
 import { getDepositConfirmationHTML } from './email-templates'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Lazy initialization - only create Resend instance when needed
+function getResendClient() {
+  if (!process.env.RESEND_API_KEY) {
+    return null
+  }
+  return new Resend(process.env.RESEND_API_KEY)
+}
 
 export async function sendDepositConfirmation(
   userEmail: string,
@@ -10,7 +16,9 @@ export async function sendDepositConfirmation(
   transactionId: string
 ) {
   try {
-    if (!process.env.RESEND_API_KEY) {
+    const resend = getResendClient()
+    
+    if (!resend) {
       console.warn('[Email] RESEND_API_KEY not configured - skipping email')
       return { success: false, error: 'API key not configured' }
     }
