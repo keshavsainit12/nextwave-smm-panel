@@ -7,97 +7,121 @@ import Image from "next/image"
 import { useEffect, useState } from "react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { createClient } from "@/lib/supabase/client"
-import { Menu, Bell } from "lucide-react"
+import { Menu, Bell, ShoppingCart, Ticket, Wallet } from "lucide-react"
+import { useRouter } from "next/navigation"
+
+interface Notification {
+  id: string
+  type: string
+  title: string
+  message: string
+  link: string | null
+  read: boolean
+  created_at: string
+}
 
 export function DashboardHeader({ user }: { user: any }) {
-  const [notifications, setNotifications] = useState<any[]>([])
+  const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
   useEffect(() => {
     const supabase = createClient()
 
     // Fetch initial notifications
     const fetchNotifications = async () => {
-      const { data: tickets } = await supabase
-        .from("support_tickets")
-        .select("id, subject, status, updated_at")
-        .eq("user_id", user.id)
-        .order("updated_at", { ascending: false })
-        .limit(5)
-
-      const { data: orders } = await supabase
-        .from("orders")
-        .select("id, status, created_at")
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
-        .limit(5)
+        .limit(10)
 
-      const notifs: any[] = []
-
-      if (tickets) {
-        tickets.forEach((ticket) => {
-          if (ticket.status === "replied") {
-            notifs.push({
-              id: `ticket-${ticket.id}`,
-              message: `Admin replied to your ticket: ${ticket.subject}`,
-              time: new Date(ticket.updated_at).toLocaleString(),
-              read: false,
-            })
-          }
-        })
+      if (data) {
+        setNotifications(data)
       }
-
-      if (orders) {
-        orders.forEach((order) => {
-          if (order.status === "completed") {
-            notifs.push({
-              id: `order-${order.id}`,
-              message: `Your order #${order.id} has been completed`,
-              time: new Date(order.created_at).toLocaleString(),
-              read: false,
-            })
-          }
-        })
-      }
-
-      setNotifications(notifs)
       setLoading(false)
     }
 
     fetchNotifications()
 
-    const ticketChannel = supabase
-      .channel("ticket-updates")
+    // Subscribe to real-time notifications
+    const channel = supabase
+      .channel("header-notifications")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          setNotifications((prev) => [payload.new as Notification, ...prev.slice(0, 9)])
+        }
+      )
       .on(
         "postgres_changes",
         {
           event: "UPDATE",
           schema: "public",
-          table: "support_tickets",
+          table: "notifications",
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          if (payload.new.status === "replied") {
-            setNotifications((prev) => [
-              {
-                id: `ticket-${payload.new.id}`,
-                message: `Admin replied to your ticket: ${payload.new.subject}`,
-                time: "Just now",
-                read: false,
-              },
-              ...prev,
-            ])
-          }
-        },
+          setNotifications((prev) =>
+            prev.map((n) => (n.id === payload.new.id ? (payload.new as Notification) : n))
+          )
+        }
       )
       .subscribe()
 
     return () => {
-      supabase.removeChannel(ticketChannel)
+      supabase.removeChannel(channel)
     }
   }, [user.id])
 
   const unreadCount = notifications.filter((n) => !n.read).length
+
+  const markAsRead = async (id: string) => {
+    const supabase = createClient()
+    await supabase.from("notifications").update({ read: true }).eq("id", id)
+  }
+
+  const handleNotificationClick = (notification: Notification) => {
+    if (!notification.read) {
+      markAsRead(notification.id)
+    }
+    if (notification.link) {
+      router.push(notification.link)
+    }
+  }
+
+  const getIcon = (type: string) => {
+    if (type.includes("order")) {
+      return <ShoppingCart className="h-4 w-4" />
+    }
+    if (type.includes("ticket")) {
+      return <Ticket className="h-4 w-4" />
+    }
+    if (type.includes("deposit")) {
+      return <Wallet className="h-4 w-4" />
+    }
+    return <Bell className="h-4 w-4" />
+  }
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diff = now.getTime() - date.getTime()
+    const minutes = Math.floor(diff / 60000)
+    const hours = Math.floor(diff / 3600000)
+
+    if (minutes < 1) return "Just now"
+    if (minutes < 60) return `${minutes}m ago`
+    if (hours < 24) return `${hours}h ago`
+    return date.toLocaleDateString()
+  }
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/50 bg-white/80 backdrop-blur-xl">
@@ -126,7 +150,7 @@ export function DashboardHeader({ user }: { user: any }) {
           </div>
         </div>
 
-        <div className="hidden md:flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative h-9 w-9">
@@ -138,7 +162,7 @@ export function DashboardHeader({ user }: { user: any }) {
                 )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
+            <DropdownMenuContent align="end" className="w-80 max-h-[500px] overflow-y-auto">
               <div className="px-4 py-3 border-b">
                 <h3 className="font-semibold text-sm">Notifications</h3>
               </div>
@@ -150,25 +174,33 @@ export function DashboardHeader({ user }: { user: any }) {
                 notifications.map((notif) => (
                   <DropdownMenuItem
                     key={notif.id}
-                    className="px-4 py-3 cursor-pointer"
-                    onClick={() => {
-                      if (notif.id.startsWith("ticket-")) {
-                        const ticketId = notif.id.replace("ticket-", "")
-                        window.location.href = `/dashboard/tickets/${ticketId}`
-                      }
-                    }}
+                    className={`px-4 py-3 cursor-pointer ${!notif.read ? "bg-blue-50/50" : ""}`}
+                    onClick={() => handleNotificationClick(notif)}
                   >
-                    <div className="flex flex-col gap-1 w-full">
-                      <p className={`text-sm ${notif.read ? "text-slate-600" : "text-slate-900 font-medium"}`}>
-                        {notif.message}
-                      </p>
-                      <p className="text-xs text-slate-400">{notif.time}</p>
+                    <div className="flex gap-3 w-full">
+                      <div className="flex-shrink-0 mt-1">{getIcon(notif.type)}</div>
+                      <div className="flex flex-col gap-1 flex-1 min-w-0">
+                        <p className={`text-sm ${notif.read ? "text-slate-600" : "text-slate-900 font-medium"}`}>
+                          {notif.title}
+                        </p>
+                        <p className="text-xs text-slate-500 line-clamp-2">{notif.message}</p>
+                        <p className="text-xs text-slate-400">{formatTime(notif.created_at)}</p>
+                      </div>
+                      {!notif.read && (
+                        <div className="flex-shrink-0">
+                          <div className="h-2 w-2 bg-blue-600 rounded-full"></div>
+                        </div>
+                      )}
                     </div>
                   </DropdownMenuItem>
                 ))
               )}
               <div className="px-4 py-2 border-t">
-                <Button variant="ghost" className="w-full text-xs text-blue-600 hover:text-blue-700">
+                <Button
+                  variant="ghost"
+                  className="w-full text-xs text-blue-600 hover:text-blue-700"
+                  onClick={() => router.push("/dashboard/notifications")}
+                >
                   View All Notifications
                 </Button>
               </div>
