@@ -6,7 +6,7 @@ import { Suspense } from "react"
 import { getCurrency } from "@/lib/currency"
 
 interface OrdersPageProps {
-  searchParams: Promise<{ page?: string }>
+  searchParams: { page?: string }
 }
 
 async function OrdersContent({ page = 1 }: { page: number }) {
@@ -100,8 +100,7 @@ async function OrdersContent({ page = 1 }: { page: number }) {
 }
 
 export default async function OrdersPage({ searchParams }: OrdersPageProps) {
-  const params = await searchParams
-  const page = parseInt(params?.page || "1", 10)
+  const page = parseInt(searchParams?.page || "1", 10)
 
   return (
     <Suspense fallback={<OrdersPageSkeleton />}>

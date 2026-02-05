@@ -70,6 +70,40 @@ export async function POST(req: NextRequest) {
     // Get the transaction ID from webhook payload (try multiple field names)
     const webhookTransactionId = body.transactionId || body.transaction_id || body.id
 
+    // ===== WEBHOOK REPLAY PROTECTION =====
+    // Create unique webhook ID from transaction ID + timestamp + status
+    const webhookId = `${webhookTransactionId}_${body.status}_${Date.now()}`
+    
+    // Check if this webhook was already processed
+    const { data: existingWebhook } = await supabase
+      .from("processed_webhooks")
+      .select("id")
+      .eq("webhook_id", webhookId)
+      .single()
+
+    if (existingWebhook) {
+      console.log("[v0] Webhook already processed, ignoring duplicate:", webhookId)
+      return NextResponse.json({ 
+        success: true, 
+        message: "Webhook already processed",
+        duplicate: true 
+      })
+    }
+
+    // Check for recent similar webhooks (within 5 minutes) to prevent rapid replays
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString()
+    const { data: recentWebhooks } = await supabase
+      .from("processed_webhooks")
+      .select("id")
+      .eq("transaction_id", webhookTransactionId)
+      .gte("created_at", fiveMinutesAgo)
+      .limit(1)
+
+    if (recentWebhooks && recentWebhooks.length > 0) {
+      console.log("[v0] Recent webhook found for same transaction, possible replay attempt")
+      // Still process but log as suspicious
+    }
+
     // Try to find transaction by payment_id first (original transaction ID we sent)
     let transaction = null
     let searchField = "payment_id"
@@ -277,6 +311,20 @@ export async function POST(req: NextRequest) {
         console.log("[v0] All pages revalidated after deposit completion")
       } catch (err) {
         console.log("[v0] Note: Could not revalidate pages:", err)
+      }
+
+      // ===== RECORD PROCESSED WEBHOOK =====
+      try {
+        await supabase.from("processed_webhooks").insert({
+          webhook_id: webhookId,
+          transaction_id: transaction.id,
+          payload: body,
+          signature: receivedSignature || "none",
+        })
+        console.log("[v0] Webhook recorded in processed_webhooks table")
+      } catch (webhookLogError) {
+        console.error("[v0] Failed to record webhook (non-critical):", webhookLogError)
+        // Don't fail the webhook if logging fails
       }
 
       return NextResponse.json({ success: true, message: "Payment processed successfully" })
