@@ -22,6 +22,7 @@ import { Edit2, Trash2, Search, Loader2 } from "lucide-react"
 import { updateTransactionStatus, deleteTransaction, getUserTransactions, searchUserByEmail } from "@/app/actions/admin-transactions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { useCurrency } from "@/lib/currency-context"
 
 export function AdminTransactionManager() {
   const [searchEmail, setSearchEmail] = useState("")
@@ -35,6 +36,7 @@ export function AdminTransactionManager() {
   const [newStatus, setNewStatus] = useState("")
   const [adminNotes, setAdminNotes] = useState("")
   const router = useRouter()
+  const { displayAmount } = useCurrency()
 
   const handleSearch = async () => {
     if (!searchEmail.trim()) return
@@ -161,7 +163,7 @@ export function AdminTransactionManager() {
                         <p className="text-sm text-muted-foreground">{user.email}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold">${user.balance?.toFixed(2) || "0.00"}</p>
+                        <p className="font-semibold">{displayAmount(user.balance || 0)}</p>
                         <Badge variant={user.status === "active" ? "default" : "secondary"}>{user.status}</Badge>
                       </div>
                     </div>
@@ -189,7 +191,7 @@ export function AdminTransactionManager() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Balance</p>
-                <p className="text-2xl font-bold">${selectedUser.balance?.toFixed(2) || "0.00"}</p>
+                <p className="text-2xl font-bold">{displayAmount(selectedUser.balance || 0)}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Status</p>
@@ -242,7 +244,7 @@ export function AdminTransactionManager() {
                         </TableCell>
                         <TableCell className="font-mono font-semibold">
                           <span className={tx.type === "deposit" ? "text-green-600" : "text-red-600"}>
-                            {tx.type === "deposit" ? "+" : "-"}${Math.abs(Number(tx.amount)).toFixed(2)}
+                            {tx.type === "deposit" ? "+" : "-"}{displayAmount(Math.abs(Number(tx.amount)))}
                           </span>
                         </TableCell>
                         <TableCell>
@@ -350,8 +352,8 @@ export function AdminTransactionManager() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Transaction?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the transaction. If it's a completed deposit of $
-              {selectedTransaction && Math.abs(Number(selectedTransaction.amount)).toFixed(2)}, the amount will be
+              This will permanently delete the transaction. If it's a completed deposit of{" "}
+              {selectedTransaction && displayAmount(Math.abs(Number(selectedTransaction.amount)))}, the amount will be
               refunded from the user's balance.
             </AlertDialogDescription>
           </AlertDialogHeader>

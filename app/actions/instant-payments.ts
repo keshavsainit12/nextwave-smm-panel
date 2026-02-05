@@ -268,6 +268,7 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
       merchantId: ACCOUNTPE_MERCHANT_ID,
       amount: params.amount,
       email: params.email,
+      returnUrl: `${APP_URL}/payment/return?status=success&transaction_id=${transaction.id}`,
     })
 
     const response = await fetch(`${ACCOUNTPE_API_URL}/create_payment_links`, {
@@ -287,6 +288,10 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
         transaction_id: transaction.id,
         pass_digital_charge: true,
         callback_url: `${APP_URL}/api/webhooks/instant-payment`,
+        return_url: `${APP_URL}/payment/return?status=success&transaction_id=${transaction.id}`,
+        cancel_url: `${APP_URL}/payment/return?status=failed&transaction_id=${transaction.id}`,
+        success_url: `${APP_URL}/payment/return?status=success&transaction_id=${transaction.id}`,
+        failure_url: `${APP_URL}/payment/return?status=failed&transaction_id=${transaction.id}`,
       }),
     })
 

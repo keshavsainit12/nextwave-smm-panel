@@ -9,6 +9,7 @@ import { EditUserDialog } from "./edit-user-dialog"
 import { banUser, deleteUser } from "@/app/actions/users"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { useCurrency } from "@/lib/currency-context"
 
 function getTierName(tier: number | null | undefined): string {
   switch (tier) {
@@ -27,6 +28,7 @@ function getTierName(tier: number | null | undefined): string {
 
 export function UserList({ users }: { users: any[] }) {
   const router = useRouter()
+  const { displayAmount } = useCurrency()
 
   const handleBan = async (userId: string, email: string) => {
     if (confirm(`Ban user ${email}? They won't be able to login.`)) {
@@ -91,7 +93,7 @@ export function UserList({ users }: { users: any[] }) {
             <TableCell>
               <Badge variant="outline">{getTierName(user.tier)}</Badge>
             </TableCell>
-            <TableCell className="font-mono">${user.balance?.toFixed(2) || "0.00"}</TableCell>
+            <TableCell className="font-mono">{displayAmount(user.balance || 0)}</TableCell>
             <TableCell>{user.total_orders || 0}</TableCell>
             <TableCell>
               <Badge variant="outline">{user.language || "English"}</Badge>

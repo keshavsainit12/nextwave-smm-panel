@@ -45,11 +45,28 @@ export async function deleteService(id: string) {
 export async function updateServicePrice(serviceId: string, newPrice: number) {
   const supabase = await createClient()
 
-  const { error } = await supabase.from("services").update({ price: newPrice }).eq("id", serviceId)
+  console.log("[v0] Updating service price:", { serviceId, newPrice })
 
-  if (error) throw error
+  // Update both price and base_price for backward compatibility
+  // Production might use either column name
+  const { error, data } = await supabase
+    .from("services")
+    .update({ 
+      price: newPrice,        // For backward compatibility with production
+      base_price: newPrice    // For new schema
+    })
+    .eq("id", serviceId)
+    .select()
+
+  if (error) {
+    console.error("[v0] Update service price error:", error)
+    throw error
+  }
+
+  console.log("[v0] Service price updated successfully:", data)
 
   revalidatePath("/admin-panel-2024/services")
+  revalidatePath("/dashboard/new-order")
   return { success: true }
 }
 
@@ -67,10 +84,13 @@ export async function toggleServiceStatus(serviceId: string, isActive: boolean) 
 export async function updateService(serviceId: string, data: any) {
   const supabase = await createClient()
 
+  // Keep the data as-is for backward compatibility
+  // Update both price and base_price to work with any schema
   const updateData = { ...data }
+  
+  // Ensure both columns are updated if base_price is provided
   if (updateData.base_price !== undefined) {
-    updateData.price = updateData.base_price
-    delete updateData.base_price
+    updateData.price = updateData.base_price  // For backward compatibility
   }
 
   const { error } = await supabase.from("services").update(updateData).eq("id", serviceId)
@@ -84,15 +104,26 @@ export async function updateService(serviceId: string, data: any) {
 export async function updateAllServicesPricing(percentage: number) {
   const supabase = await createClient()
 
-  const { data: services, error: fetchError } = await supabase.from("services").select("id, price, provider_price")
+  // Fetch services with both price and base_price for compatibility
+  const { data: services, error: fetchError } = await supabase
+    .from("services")
+    .select("id, price, base_price, provider_price")
 
   if (fetchError) throw fetchError
 
   let updated = 0
   for (const service of services || []) {
-    const currentPrice = service.price || service.provider_price * 3
+    const currentPrice = service.base_price || service.price || service.provider_price * 3
     const newPrice = currentPrice * (1 + percentage / 100)
-    const { error } = await supabase.from("services").update({ price: newPrice }).eq("id", service.id)
+    
+    // Update both columns for backward compatibility
+    const { error } = await supabase
+      .from("services")
+      .update({ 
+        price: newPrice,        // For backward compatibility
+        base_price: newPrice    // For new schema
+      })
+      .eq("id", service.id)
     if (!error) updated++
   }
 
@@ -137,8 +168,8 @@ export async function setAllServicesMultiplier(multiplier: number) {
       const { error } = await supabase
         .from("services")
         .update({
-          price: newPrice,
-          base_price: newPrice,
+          price: newPrice,        // For backward compatibility
+          base_price: newPrice,   // For new schema
         })
         .eq("id", service.id)
 

@@ -6,10 +6,12 @@ import { createClient } from "@/lib/supabase/client"
 import { formatDistance } from "date-fns"
 import { Badge } from "@/components/ui/badge"
 import { Loader2 } from "lucide-react"
+import { useCurrency } from "@/lib/currency-context"
 
 export function RecentTransactions() {
   const [transactions, setTransactions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const { displayAmount } = useCurrency()
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -80,7 +82,7 @@ export function RecentTransactions() {
                 </div>
                 <div className="text-right space-y-1">
                   <p className={`font-semibold text-sm font-mono ${tx.type === "deposit" ? "text-green-600" : "text-red-600"}`}>
-                    {tx.type === "deposit" ? "+" : "-"}${Math.abs(Number(tx.amount)).toFixed(2)}
+                    {tx.type === "deposit" ? "+" : "-"}{displayAmount(Math.abs(Number(tx.amount)))}
                   </p>
                   <Badge
                     variant={

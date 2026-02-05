@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { updateOrderStatus, cancelOrder } from "@/app/actions/admin-orders"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { useCurrency } from "@/lib/currency-context"
 
 const statusColors: Record<string, "default" | "secondary" | "destructive"> = {
   pending: "secondary",
@@ -29,6 +30,7 @@ export function OrderList({ orders }: { orders: any[] }) {
   const [adminNotes, setAdminNotes] = useState("")
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const { displayAmount } = useCurrency()
 
   const handleStatusUpdate = async () => {
     if (!selectedOrder || !newStatus) return
@@ -118,7 +120,7 @@ export function OrderList({ orders }: { orders: any[] }) {
                 </div>
               </TableCell>
               <TableCell>{order.quantity?.toLocaleString() || 0}</TableCell>
-              <TableCell className="font-mono">${(order.total_price || order.price || 0).toFixed(2)}</TableCell>
+              <TableCell className="font-mono">{displayAmount(order.total_price || order.price || 0)}</TableCell>
               <TableCell>
                 <Badge variant={statusColors[order.status] || "default"}>{order.status}</Badge>
               </TableCell>
@@ -165,7 +167,7 @@ export function OrderList({ orders }: { orders: any[] }) {
               <div>
                 <div className="text-xs text-muted-foreground font-semibold">Total Price</div>
                 <div className="font-mono font-semibold text-green-600">
-                  ${(selectedOrder?.price || selectedOrder?.total_price || 0).toFixed(2)}
+                  {displayAmount(selectedOrder?.price || selectedOrder?.total_price || 0)}
                 </div>
               </div>
               <div>

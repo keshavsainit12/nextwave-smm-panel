@@ -6,10 +6,12 @@ import { createClient } from "@/lib/supabase/client"
 import { formatDistance } from "date-fns"
 import { Badge } from "@/components/ui/badge"
 import { Loader2 } from "lucide-react"
+import { useCurrency } from "@/lib/currency-context"
 
 export function RecentOrders() {
   const [orders, setOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const { displayAmount } = useCurrency()
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -82,8 +84,7 @@ export function RecentOrders() {
                 <div className="space-y-1 flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{order.services?.name || "Unknown Service"}</p>
                   <p className="text-xs text-muted-foreground truncate">
-                    {order.users?.full_name || order.users?.email} • $
-                    {(order.total_price || order.price || 0).toFixed(2)}
+                    {order.users?.full_name || order.users?.email} • {displayAmount(order.total_price || order.price || 0)}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {formatDistance(new Date(order.created_at), new Date(), { addSuffix: true })}
