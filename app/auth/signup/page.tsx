@@ -7,8 +7,9 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, Loader2 } from "lucide-react"
 import { signupUser } from "@/app/actions/auth"
-import Script from "next/script"
-import { RECAPTCHA_SITE_KEY } from "@/lib/recaptcha-config"
+// Temporarily disabled reCAPTCHA
+// import Script from "next/script"
+// import { RECAPTCHA_SITE_KEY } from "@/lib/recaptcha-config"
 
 function SignupContent() {
   const [email, setEmail] = useState("")
@@ -20,8 +21,9 @@ function SignupContent() {
   const [success, setSuccess] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
-  const [recaptchaLoaded, setRecaptchaLoaded] = useState(false)
+  // Temporarily disabled reCAPTCHA
+  // const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  // const [recaptchaLoaded, setRecaptchaLoaded] = useState(false)
   const router = useRouter()
 
   const validateForm = () => {
@@ -41,13 +43,16 @@ function SignupContent() {
       setError("Passwords do not match")
       return false
     }
-    if (RECAPTCHA_SITE_KEY && !captchaToken) {
-      setError("Please complete the reCAPTCHA verification")
-      return false
-    }
+    // Temporarily disabled reCAPTCHA validation
+    // if (RECAPTCHA_SITE_KEY && !captchaToken) {
+    //   setError("Please complete the reCAPTCHA verification")
+    //   return false
+    // }
     return true
   }
 
+  // Temporarily disabled reCAPTCHA functions
+  /*
   const handleRecaptchaChange = (token: string | null) => {
     console.log("[v0] reCAPTCHA token received:", token ? "✓ Valid" : "✗ Null")
     setCaptchaToken(token)
@@ -88,6 +93,7 @@ function SignupContent() {
       }
     }, 100)
   }
+  */
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -222,8 +228,8 @@ function SignupContent() {
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 overflow-hidden bg-transparent">
-      {/* Load reCAPTCHA script */}
-      {RECAPTCHA_SITE_KEY && (
+      {/* Temporarily disabled reCAPTCHA */}
+      {/* {RECAPTCHA_SITE_KEY && (
         <Script
           src="https://www.google.com/recaptcha/api.js"
           strategy="afterInteractive"
@@ -233,7 +239,7 @@ function SignupContent() {
             setError("Failed to load reCAPTCHA. Please refresh the page.")
           }}
         />
-      )}
+      )} */}
 
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
         <div className="absolute w-96 h-96 rounded-full blur-3xl opacity-40 bg-blue-500 -top-32 -left-32"></div>
@@ -346,8 +352,8 @@ function SignupContent() {
               />
             </div>
 
-            {/* reCAPTCHA */}
-            {RECAPTCHA_SITE_KEY ? (
+            {/* Temporarily disabled reCAPTCHA */}
+            {/* {RECAPTCHA_SITE_KEY ? (
               <div className="space-y-2">
                 <label className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-600">
                   Verification
@@ -371,7 +377,7 @@ function SignupContent() {
                   </p>
                 </div>
               )
-            )}
+            )} */}
 
             {error && (
               <div className="text-sm text-red-600 bg-red-50/80 backdrop-blur border border-red-200/50 p-3 sm:p-4 rounded-2xl">
@@ -381,7 +387,7 @@ function SignupContent() {
 
             <button
               type="submit"
-              disabled={isLoading || (RECAPTCHA_SITE_KEY && !captchaToken)}
+              disabled={isLoading}
               className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-3 sm:py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isLoading ? (
