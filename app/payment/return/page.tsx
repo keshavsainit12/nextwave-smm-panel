@@ -31,8 +31,9 @@ export default function PaymentReturnPage() {
       setStatus("pending")
       setMessage("Payment is being processed. Your wallet will be credited shortly.")
     } else {
-      setStatus("success")
-      setMessage("Payment completed! Redirecting to your wallet...")
+      // Unknown or missing status - show as pending to avoid misleading users
+      setStatus("pending")
+      setMessage("Checking payment status... Please wait.")
     }
   }, [searchParams])
 

@@ -12,14 +12,16 @@ export function PaymentStatusAlert() {
 
   useEffect(() => {
     const urlStatus = searchParams.get("status")
+    let detectedStatus: "success" | "failed" | null = null
+
     if (urlStatus === "success") {
-      setStatus("success")
-      setShow(true)
-      // Auto-hide after 10 seconds
-      const timer = setTimeout(() => setShow(false), 10000)
-      return () => clearTimeout(timer)
+      detectedStatus = "success"
     } else if (urlStatus === "failed" || urlStatus === "failure") {
-      setStatus("failed")
+      detectedStatus = "failed"
+    }
+
+    if (detectedStatus) {
+      setStatus(detectedStatus)
       setShow(true)
       // Auto-hide after 10 seconds
       const timer = setTimeout(() => setShow(false), 10000)
