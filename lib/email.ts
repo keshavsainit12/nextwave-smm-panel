@@ -1,11 +1,12 @@
 import { Resend } from 'resend';
 
-// Initialize Resend with API key
-const resend = new Resend(process.env.RESEND_API_KEY || 're_MsciK1E1_AzghPuCc8R8tE3vznMjp2nLv');
+// Initialize Resend with API key from environment
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Email service class
 export class EmailService {
-  private static fromEmail = 'NextWave SMM Panel <noreply@yourdomain.com>'; // Update with your verified domain
+  // Use environment variable for from email, fallback to a placeholder
+  private static fromEmail = process.env.RESEND_FROM_EMAIL || 'NextWave SMM Panel <onboarding@resend.dev>';
 
   /**
    * Send deposit confirmation email
