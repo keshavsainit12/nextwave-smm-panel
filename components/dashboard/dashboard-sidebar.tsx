@@ -115,26 +115,6 @@ export function DashboardSidebar({ userName = "User", userBalance = 0, priceMult
         </div>
       </div>
 
-      {/* Wallet Balance */}
-      <div className="px-4 sm:px-6 py-3 border-b border-slate-200/50 dark:border-slate-800/50 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-slate-800 dark:to-slate-700">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-white dark:bg-slate-800 rounded-lg">
-              <Wallet className="w-4 h-4 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">Wallet Balance</p>
-              <p className="text-lg font-bold text-slate-900 dark:text-white">{displayAmount(userBalance)}</p>
-            </div>
-          </div>
-          <Link href="/dashboard/deposit">
-            <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 h-auto">
-              Add Funds
-            </Button>
-          </Link>
-        </div>
-      </div>
-
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-4 sm:py-6 px-3 sm:px-4 space-y-1">
         {navigationWithAdmin.map((item) => {
