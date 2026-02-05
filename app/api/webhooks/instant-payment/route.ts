@@ -197,6 +197,27 @@ export async function POST(req: NextRequest) {
         console.warn("[v0] Activity log error:", logErr)
       }
 
+      // TODO: Send deposit confirmation email
+      // To implement email notifications, install an email service like Resend or use Supabase Edge Functions
+      // Example with Resend:
+      // import { Resend } from 'resend'
+      // import { getDepositConfirmationHTML } from '@/lib/email-templates'
+      // const resend = new Resend(process.env.RESEND_API_KEY)
+      // try {
+      //   const { data: user } = await supabase.from("users").select("full_name, email").eq("id", transaction.user_id).single()
+      //   if (user?.email) {
+      //     await resend.emails.send({
+      //       from: 'NextWave SMM <noreply@yourdomain.com>',
+      //       to: user.email,
+      //       subject: 'Deposit Confirmed - Your Balance Has Been Credited',
+      //       html: getDepositConfirmationHTML(user.full_name, transaction.amount, transaction.id)
+      //     })
+      //     console.log("[v0] Deposit confirmation email sent to:", user.email)
+      //   }
+      // } catch (emailErr) {
+      //   console.warn("[v0] Email sending failed (non-critical):", emailErr)
+      // }
+
       // Revalidate admin dashboard and deposits page
       try {
         revalidatePath("/admin-panel-2024")
