@@ -30,9 +30,9 @@ export function ServiceCard({ service }: { service: any }) {
                     }}
                   />
                 )}
-                <div className="flex-1">
-                  <CardTitle className="text-lg line-clamp-2">{service.name}</CardTitle>
-                  <CardDescription className="mt-0.5">{service.service_categories?.name || "Uncategorized"}</CardDescription>
+                <div className="flex-1 min-w-0">
+                  <CardTitle className="text-lg break-words">{service.name}</CardTitle>
+                  <CardDescription className="mt-0.5 break-words">{service.service_categories?.name || "Uncategorized"}</CardDescription>
                 </div>
               </div>
             </div>

@@ -1,0 +1,66 @@
+📧 EMAIL KAHA DALNI HAI? (WHERE TO ADD EMAIL)
+================================================
+
+आपका सवाल: "EMAIL KAHA DALNI HAI ISME?"
+
+जवाब: VERCEL DASHBOARD में Environment Variables में!
+
+SIMPLE STEPS (सिर्फ 5 मिनट):
+================================
+
+1. खोलें: https://vercel.com
+
+2. अपना project select करें: "nextwave-smm-panel"
+
+3. ऊपर menu में click करें: "Settings"
+
+4. Left sidebar में scroll करें और click करें: "Environment Variables"
+
+5. "Add New" button click करें
+
+6. यह information fill करें:
+   
+   KEY (name):
+   RESEND_API_KEY
+   
+   VALUE:
+   re_MsciK1E1_AzghPuCc8R8tE3vznMjp2nLv
+   
+   ENVIRONMENTS (सभी select करें):
+   ✅ Production
+   ✅ Preview  
+   ✅ Development
+
+7. "Save" button click करें
+
+8. अब wait करें: 2-3 minutes
+   (Vercel automatically deployment restart करेगा)
+
+9. Test करें: 
+   Browser में खोलें: https://yourdomain.com/api/test-email
+
+10. Email check करें: keshavsainit1@gmail.com
+    (Spam folder भी देखें)
+
+✅ DONE! Email test work करना चाहिए!
+
+HELP CHAHIYE?
+=============
+Full guide देखें: RESEND_EMAIL_SETUP.md
+
+STILL PROBLEM?
+==============
+1. Vercel logs check करें
+2. RESEND_API_KEY correctly copy किया?
+3. Spaces नहीं होना चाहिए
+4. 2-3 minutes wait किया deployment के बाद?
+
+SUCCESS DIKHEGA:
+================
+{
+  "success": true,
+  "message": "✅ Test email sent successfully!",
+  "recipient": "keshavsainit1@gmail.com"
+}
+
+यह response आने पर email inbox check करें!

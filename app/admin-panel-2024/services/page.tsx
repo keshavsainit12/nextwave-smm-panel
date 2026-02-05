@@ -3,12 +3,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ServiceList } from "@/components/admin/service-list"
 import { AddServiceDialog } from "@/components/admin/add-service-dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BulkPricingControl } from "@/components/admin/bulk-pricing-control"
+import { SimpleBulkPricing } from "@/components/admin/simple-bulk-pricing"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Info } from "lucide-react"
 
+// Disable caching for this page to ensure fresh service data
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function AdminServicesPage() {
   const supabase = await createClient()
+  
+  // Add timestamp to force cache busting
+  const timestamp = Date.now()
+  console.log(`[ServicesPage] Fetching services at ${timestamp}`)
+  
   const [{ data: services }, { data: categories }, { data: providers }] = await Promise.all([
     supabase
       .from("services")
@@ -17,6 +26,8 @@ export default async function AdminServicesPage() {
     supabase.from("service_categories").select("*").order("display_order"),
     supabase.from("api_providers").select("id, name").eq("is_active", true),
   ])
+  
+  console.log(`[ServicesPage] Fetched ${services?.length || 0} services`)
 
   return (
     <div className="space-y-3 sm:space-y-4 md:space-y-6">
@@ -39,7 +50,7 @@ export default async function AdminServicesPage() {
         </AlertDescription>
       </Alert>
 
-      <BulkPricingControl />
+      <SimpleBulkPricing />
 
       <Tabs defaultValue="all" className="w-full">
         <TabsList className="grid grid-cols-3 gap-1 w-full h-auto">
@@ -61,7 +72,7 @@ export default async function AdminServicesPage() {
               <CardDescription className="text-xs sm:text-sm">Complete list of available services</CardDescription>
             </CardHeader>
             <CardContent className="p-3 sm:p-4 md:p-6 overflow-x-auto">
-              <ServiceList services={services || []} />
+              <ServiceList key={`all-${timestamp}`} services={services || []} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -73,7 +84,7 @@ export default async function AdminServicesPage() {
               <CardDescription className="text-xs sm:text-sm">Services available to users</CardDescription>
             </CardHeader>
             <CardContent className="p-3 sm:p-4 md:p-6 overflow-x-auto">
-              <ServiceList services={services?.filter((s) => s.is_active) || []} />
+              <ServiceList key={`active-${timestamp}`} services={services?.filter((s) => s.is_active) || []} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -85,7 +96,7 @@ export default async function AdminServicesPage() {
               <CardDescription className="text-xs sm:text-sm">Disabled services</CardDescription>
             </CardHeader>
             <CardContent className="p-3 sm:p-4 md:p-6 overflow-x-auto">
-              <ServiceList services={services?.filter((s) => !s.is_active) || []} />
+              <ServiceList key={`inactive-${timestamp}`} services={services?.filter((s) => !s.is_active) || []} />
             </CardContent>
           </Card>
         </TabsContent>

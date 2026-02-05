@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { NextRequest, NextResponse } from "next/server"
 import crypto from "crypto"
 import { revalidatePath } from "next/cache"
+import { EmailService } from "@/lib/email"
 
 export async function POST(req: NextRequest) {
   try {
@@ -176,6 +177,30 @@ export async function POST(req: NextRequest) {
           balanceBefore: currentBalance,
           balanceAfter: newBalance,
         })
+
+        // Send deposit confirmation email
+        try {
+          const { data: userData } = await supabase
+            .from("users")
+            .select("email, username")
+            .eq("id", transaction.user_id)
+            .single()
+
+          if (userData?.email) {
+            console.log("[v0] Sending deposit confirmation email to:", userData.email)
+            await EmailService.sendDepositConfirmation(
+              userData.email,
+              amountToAdd,
+              transaction.currency || "USD",
+              transaction.id,
+              userData.username || "User"
+            )
+            console.log("[v0] Deposit confirmation email sent successfully")
+          }
+        } catch (emailError) {
+          console.error("[v0] Email notification error (non-critical):", emailError)
+          // Don't fail the webhook if email fails
+        }
       }
 
       // Log activity

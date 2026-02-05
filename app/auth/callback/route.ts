@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
 
     if (userError || !user) {
       console.error("[v0] Failed to get user:", userError)
-      return NextResponse.redirect(new URL("/auth/login?error=Failed to get user", request.url))
+      return NextResponse.redirect(new URL("/auth/login?error=Failed to get user", requestUrl.origin))
     }
 
     console.log("[v0] User authenticated:", { userId: user.id, email: user.email })
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
 
     if (userCheckError && userCheckError.code !== "PGRST116") {
       console.error("[v0] User check error:", userCheckError)
-      return NextResponse.redirect(new URL("/auth/login?error=Database error", request.url))
+      return NextResponse.redirect(new URL("/auth/login?error=Database error", requestUrl.origin))
     }
 
     if (!existingUser) {
@@ -118,25 +118,25 @@ export async function GET(request: NextRequest) {
       if (insertError) {
         console.error("[v0] Failed to create user profile:", insertError)
         console.error("[v0] Insert error details:", insertError.message)
-        return NextResponse.redirect(new URL("/auth/login?error=Failed to create profile", request.url))
+        return NextResponse.redirect(new URL("/auth/login?error=Failed to create profile", requestUrl.origin))
       }
 
       console.log("[v0] User profile created successfully")
-      return NextResponse.redirect(new URL("/dashboard", request.url))
+      return NextResponse.redirect(new URL("/dashboard", requestUrl.origin))
     }
 
     console.log("[v0] User already exists, redirecting based on role:", existingUser.role)
 
     if (existingUser.role === "admin") {
-      return NextResponse.redirect(new URL("/admin-panel-2024", request.url))
+      return NextResponse.redirect(new URL("/admin-panel-2024", requestUrl.origin))
     }
 
-    return NextResponse.redirect(new URL("/dashboard", request.url))
+    return NextResponse.redirect(new URL("/dashboard", requestUrl.origin))
   } catch (error) {
     console.error("[v0] OAuth callback exception:", error)
     const errorMessage = error instanceof Error ? error.message : "Unknown error"
     return NextResponse.redirect(
-      new URL(`/auth/login?error=${encodeURIComponent(errorMessage)}`, request.url)
+      new URL(`/auth/login?error=${encodeURIComponent(errorMessage)}`, requestUrl.origin)
     )
   }
 }

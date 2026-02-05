@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 import { AlertCircle, CheckCircle2, Loader2, RefreshCw, Search } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { fetchPendingUsers } from '@/app/actions/instant-payments'
+import { useCurrency } from '@/lib/currency-context'
 
 interface PendingUser {
   userId: string
@@ -21,6 +22,7 @@ interface PendingUser {
 }
 
 export default function ProcessPendingPaymentsPage() {
+  const { displayAmount } = useCurrency()
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([])
@@ -158,7 +160,7 @@ export default function ProcessPendingPaymentsPage() {
                           </p>
                         </div>
                         <div className="text-right">
-                          <Badge className="bg-orange-600">${user.pendingAmount.toFixed(2)}</Badge>
+                          <Badge className="bg-orange-600">{displayAmount(user.pendingAmount)}</Badge>
                           <p className="text-xs text-muted-foreground mt-1">Pending</p>
                         </div>
                       </div>
@@ -192,7 +194,7 @@ export default function ProcessPendingPaymentsPage() {
                 <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-900">
                   <p className="text-xs text-muted-foreground mb-1">Selected User</p>
                   <p className="text-sm font-medium">{selectedUser.userEmail}</p>
-                  <p className="text-sm font-bold text-blue-600 mt-2">${selectedUser.pendingAmount.toFixed(2)}</p>
+                  <p className="text-sm font-bold text-blue-600 mt-2">{displayAmount(selectedUser.pendingAmount)}</p>
                 </div>
               )}
 
@@ -256,7 +258,7 @@ export default function ProcessPendingPaymentsPage() {
                 <div className="space-y-1 text-xs">
                   <p>Total Users: <span className="font-semibold">{pendingUsers.length}</span></p>
                   <p>Total Amount: <span className="font-semibold text-orange-600">
-                    ${pendingUsers.reduce((acc, u) => acc + u.pendingAmount, 0).toFixed(2)}
+                    {displayAmount(pendingUsers.reduce((acc, u) => acc + u.pendingAmount, 0))}
                   </span></p>
                 </div>
               </div>
@@ -330,8 +332,8 @@ export default function ProcessPendingPaymentsPage() {
                       {r.status === 'completed' && (
                         <div className="text-xs space-y-1 text-muted-foreground">
                           <p>User: <span className="text-foreground">{r.userEmail}</span></p>
-                          <p>Amount: <span className="text-foreground font-semibold">${r.amount.toFixed(2)}</span></p>
-                          <p>Balance: ${r.balanceBefore.toFixed(2)} → ${r.balanceAfter.toFixed(2)}</p>
+                          <p>Amount: <span className="text-foreground font-semibold">{displayAmount(r.amount)}</span></p>
+                          <p>Balance: {displayAmount(r.balanceBefore)} → {displayAmount(r.balanceAfter)}</p>
                         </div>
                       )}
                       {r.status === 'failed' && (

@@ -45,11 +45,19 @@ export async function deleteService(id: string) {
 export async function updateServicePrice(serviceId: string, newPrice: number) {
   const supabase = await createClient()
 
-  const { error } = await supabase.from("services").update({ price: newPrice }).eq("id", serviceId)
+  console.log('[UpdatePrice] Updating service:', serviceId, 'to price:', newPrice)
 
-  if (error) throw error
+  const { error } = await supabase.from("services").update({ base_price: newPrice }).eq("id", serviceId)
 
+  if (error) {
+    console.error('[UpdatePrice] Error:', error)
+    throw error
+  }
+
+  console.log('[UpdatePrice] Success')
   revalidatePath("/admin-panel-2024/services")
+  revalidatePath("/dashboard")
+  revalidatePath("/dashboard/new-order")
   return { success: true }
 }
 
@@ -67,37 +75,112 @@ export async function toggleServiceStatus(serviceId: string, isActive: boolean) 
 export async function updateService(serviceId: string, data: any) {
   const supabase = await createClient()
 
+  // Convert 'price' field to 'base_price' for database
   const updateData = { ...data }
-  if (updateData.base_price !== undefined) {
-    updateData.price = updateData.base_price
-    delete updateData.base_price
+  if ('price' in updateData) {
+    updateData.base_price = updateData.price
+    delete updateData.price
   }
-
+  
+  console.log('[UpdateService] Updating service:', serviceId, 'with data:', updateData)
+  
   const { error } = await supabase.from("services").update(updateData).eq("id", serviceId)
 
-  if (error) throw error
+  if (error) {
+    console.error('[UpdateService] Error:', error)
+    throw error
+  }
 
+  console.log('[UpdateService] Success')
   revalidatePath("/admin-panel-2024/services")
+  revalidatePath("/dashboard")
   return { success: true }
 }
 
 export async function updateAllServicesPricing(percentage: number) {
-  const supabase = await createClient()
+  console.log(`[BulkPricing] ====== START: Bulk pricing adjustment by ${percentage}% ======`)
+  try {
+    const supabase = await createClient()
+    console.log(`[BulkPricing] Supabase client created`)
+    
+    const DEFAULT_PRICE_MULTIPLIER = 3 // Default multiplier for normal users
 
-  const { data: services, error: fetchError } = await supabase.from("services").select("id, price, provider_price")
+    console.log(`[BulkPricing] Fetching all services for ${percentage}% price adjustment`)
+    
+    const { data: services, error: fetchError } = await supabase
+      .from("services")
+      .select("id, base_price, provider_price")
 
-  if (fetchError) throw fetchError
+    if (fetchError) {
+      console.error("[BulkPricing] Fetch services error:", fetchError)
+      console.error("[BulkPricing] Error details:", JSON.stringify(fetchError, null, 2))
+      return { success: false, error: `Failed to fetch services: ${fetchError.message}`, updated: 0 }
+    }
 
-  let updated = 0
-  for (const service of services || []) {
-    const currentPrice = service.price || service.provider_price * 3
-    const newPrice = currentPrice * (1 + percentage / 100)
-    const { error } = await supabase.from("services").update({ price: newPrice }).eq("id", service.id)
-    if (!error) updated++
+    if (!services || services.length === 0) {
+      console.log("[BulkPricing] No services found to update")
+      return { success: false, error: "No services found in database", updated: 0 }
+    }
+
+    console.log(`[BulkPricing] Found ${services.length} services to update`)
+    console.log(`[BulkPricing] Updating ${services.length} services with ${percentage}% adjustment`)
+
+    let updated = 0
+    const failedServiceIds: string[] = []
+
+    for (const service of services) {
+      const currentPrice = service.base_price || service.provider_price * DEFAULT_PRICE_MULTIPLIER
+      const newPrice = currentPrice * (1 + percentage / 100)
+      
+      console.log(`[BulkPricing] Service ${service.id}: ${currentPrice.toFixed(4)} → ${newPrice.toFixed(4)} (${percentage > 0 ? '+' : ''}${percentage}%)`)
+      
+      const { error, data } = await supabase
+        .from("services")
+        .update({ base_price: newPrice })
+        .eq("id", service.id)
+        .select()
+      
+      if (error) {
+        console.error(`[BulkPricing] Failed to update service ${service.id}:`, error)
+        console.error(`[BulkPricing] Error details:`, JSON.stringify(error, null, 2))
+        failedServiceIds.push(service.id)
+      } else {
+        console.log(`[BulkPricing] Successfully updated service ${service.id}`)
+        updated++
+      }
+    }
+
+    console.log(`[BulkPricing] Successfully updated ${updated}/${services.length} services`)
+
+    if (failedServiceIds.length > 0) {
+      console.error(`[BulkPricing] Failed to update ${failedServiceIds.length} services:`, failedServiceIds)
+    }
+
+    // Revalidate all relevant paths so changes show up immediately
+    console.log(`[BulkPricing] Revalidating paths...`)
+    revalidatePath("/admin-panel-2024/services")
+    revalidatePath("/dashboard")
+    revalidatePath("/dashboard/new-order")
+    revalidatePath("/")
+    console.log(`[BulkPricing] Paths revalidated`)
+
+    if (updated === 0) {
+      console.log(`[BulkPricing] No services were updated - returning error`)
+      return { success: false, error: "Failed to update any services - check console for details", updated: 0 }
+    }
+
+    console.log(`[BulkPricing] ====== END: Returning success with ${updated} updates ======`)
+    return { success: true, updated, total: services.length }
+  } catch (error) {
+    console.error("[BulkPricing] ====== EXCEPTION: Update pricing error ======")
+    console.error("[BulkPricing] Exception:", error)
+    console.error("[BulkPricing] Exception stack:", error instanceof Error ? error.stack : 'No stack trace')
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Failed to update pricing",
+      updated: 0 
+    }
   }
-
-  revalidatePath("/admin-panel-2024/services")
-  return { success: true, updated }
 }
 
 export async function setAllServicesMultiplier(multiplier: number) {
