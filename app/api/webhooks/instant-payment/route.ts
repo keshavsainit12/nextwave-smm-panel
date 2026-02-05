@@ -4,6 +4,29 @@ import crypto from "crypto"
 import { revalidatePath } from "next/cache"
 import { EmailService } from "@/lib/email"
 
+// GET handler for testing webhook endpoint
+export async function GET() {
+  return NextResponse.json({
+    status: "active",
+    message: "Instant Payment Webhook Endpoint",
+    info: "This endpoint accepts POST requests from AccountPe payment gateway",
+    documentation: {
+      method: "POST",
+      contentType: "application/json",
+      headers: {
+        "x-accountpe-signature": "HMAC-SHA256 signature for verification"
+      },
+      requiredFields: ["transactionId", "status", "amount"],
+      statusCodes: {
+        "1": "success",
+        "-1": "failed",
+        "pending": "pending"
+      }
+    },
+    timestamp: new Date().toISOString()
+  })
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
@@ -178,6 +201,27 @@ export async function POST(req: NextRequest) {
           balanceAfter: newBalance,
         })
 
+        // Create notification for deposit approval
+        try {
+          await supabase.from("notifications").insert({
+            user_id: transaction.user_id,
+            type: "deposit_approved",
+            title: "Deposit Approved",
+            message: `Your deposit of ${transaction.currency || "USD"} ${amountToAdd.toFixed(2)} has been approved and added to your wallet.`,
+            metadata: {
+              transaction_id: transaction.id,
+              amount: amountToAdd,
+              currency: transaction.currency || "USD",
+              payment_method: "instant_payment"
+            },
+            is_read: false
+          })
+          console.log("[v0] Deposit notification created successfully")
+        } catch (notifError) {
+          console.error("[v0] Notification creation error (non-critical):", notifError)
+          // Don't fail the webhook if notification fails
+        }
+
         // Send deposit confirmation email
         try {
           const { data: userData } = await supabase
@@ -247,6 +291,27 @@ export async function POST(req: NextRequest) {
 
       if (error) {
         console.error("[v0] Transaction update error:", error.message)
+      }
+
+      // Create notification for deposit rejection
+      try {
+        await supabase.from("notifications").insert({
+          user_id: transaction.user_id,
+          type: "deposit_rejected",
+          title: "Deposit Failed",
+          message: `Your deposit of ${transaction.currency || "USD"} ${Number(transaction.amount).toFixed(2)} has failed. Please try again or contact support.`,
+          metadata: {
+            transaction_id: transaction.id,
+            amount: transaction.amount,
+            currency: transaction.currency || "USD",
+            payment_method: "instant_payment",
+            reason: "Payment gateway returned failed status"
+          },
+          is_read: false
+        })
+        console.log("[v0] Deposit failure notification created successfully")
+      } catch (notifError) {
+        console.error("[v0] Notification creation error (non-critical):", notifError)
       }
 
       try {
