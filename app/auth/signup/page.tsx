@@ -347,7 +347,7 @@ function SignupContent() {
             </div>
 
             {/* reCAPTCHA */}
-            {RECAPTCHA_SITE_KEY && (
+            {RECAPTCHA_SITE_KEY ? (
               <div className="space-y-2">
                 <label className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-600">
                   Verification
@@ -361,6 +361,16 @@ function SignupContent() {
                   <p className="text-xs text-slate-500">Please complete the verification above</p>
                 )}
               </div>
+            ) : (
+              // Development notice when reCAPTCHA is not configured
+              process.env.NODE_ENV === 'development' && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-xs">
+                  <p className="text-yellow-800 font-semibold mb-1">⚠️ reCAPTCHA Not Configured</p>
+                  <p className="text-yellow-700">
+                    reCAPTCHA will show after you add <code className="bg-yellow-100 px-1 rounded">NEXT_PUBLIC_RECAPTCHA_SITE_KEY</code> in Vercel environment variables.
+                  </p>
+                </div>
+              )
             )}
 
             {error && (

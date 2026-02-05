@@ -1,7 +1,14 @@
 import { Resend } from 'resend';
 
 // Initialize Resend with API key from environment
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Will throw error if API key is missing when trying to send emails
+const resendApiKey = process.env.RESEND_API_KEY;
+
+if (!resendApiKey) {
+  console.warn('[EmailService] WARNING: RESEND_API_KEY not configured. Email sending will not work.');
+}
+
+const resend = new Resend(resendApiKey);
 
 // Email service class
 export class EmailService {
@@ -19,6 +26,11 @@ export class EmailService {
     userName: string
   ) {
     try {
+      if (!resendApiKey) {
+        console.error('[EmailService] Cannot send email: RESEND_API_KEY not configured');
+        return { success: false, error: { message: 'Email service not configured' } };
+      }
+
       const { data, error } = await resend.emails.send({
         from: this.fromEmail,
         to: to,
@@ -52,6 +64,11 @@ export class EmailService {
     userName: string
   ) {
     try {
+      if (!resendApiKey) {
+        console.error('[EmailService] Cannot send email: RESEND_API_KEY not configured');
+        return { success: false, error: { message: 'Email service not configured' } };
+      }
+
       const { data, error } = await resend.emails.send({
         from: this.fromEmail,
         to: to,
@@ -84,6 +101,11 @@ export class EmailService {
     userName: string
   ) {
     try {
+      if (!resendApiKey) {
+        console.error('[EmailService] Cannot send email: RESEND_API_KEY not configured');
+        return { success: false, error: { message: 'Email service not configured' } };
+      }
+
       const { data, error } = await resend.emails.send({
         from: this.fromEmail,
         to: to,
@@ -115,6 +137,11 @@ export class EmailService {
     userName: string
   ) {
     try {
+      if (!resendApiKey) {
+        console.error('[EmailService] Cannot send email: RESEND_API_KEY not configured');
+        return { success: false, error: { message: 'Email service not configured' } };
+      }
+
       const { data, error } = await resend.emails.send({
         from: this.fromEmail,
         to: to,

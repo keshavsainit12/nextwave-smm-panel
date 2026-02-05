@@ -99,7 +99,7 @@ Name: _dmarc
 Value: v=DMARC1; p=none;
 ```
 
-6. Wait 24-48 hours for DNS propagation
+6. Wait 1-24 hours for DNS propagation (typically completes within a few hours)
 7. Click **"Verify"** in Resend dashboard
 
 ### Step 4: Add to Vercel Environment Variables
