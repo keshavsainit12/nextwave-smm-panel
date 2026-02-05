@@ -6,6 +6,7 @@ import { MobileAdminMenu } from "@/components/admin/mobile-admin-menu"
 import { CurrencyProvider } from "@/lib/currency-context"
 import { createClient } from "@/lib/supabase/server"
 import { CURRENCIES } from "@/lib/currency"
+import { Toaster } from "@/components/ui/sonner"
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies()
@@ -49,6 +50,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </main>
         </div>
       </div>
+      <Toaster position="top-right" richColors />
     </CurrencyProvider>
   )
 }

@@ -53,17 +53,26 @@ export function ServiceList({ services }: { services: any[] }) {
     setSavingPrice(true)
     try {
       console.log("[v0] Saving price:", editingPrice)
-      await updateServicePrice(editingPrice.id, editingPrice.price)
+      const result = await updateServicePrice(editingPrice.id, editingPrice.price)
+      console.log("[v0] Update result:", result)
+      
+      // Show success feedback
       toast({ title: "Success", description: "Price updated successfully" })
+      alert("Price updated successfully!") // Backup notification
+      
       setEditingPrice(null)
       router.refresh()
     } catch (error: any) {
       console.error("[v0] Failed to update price:", error)
+      const errorMsg = error?.message || "Failed to update price"
+      
+      // Show error feedback
       toast({ 
         title: "Error", 
-        description: error?.message || "Failed to update price", 
+        description: errorMsg, 
         variant: "destructive" 
       })
+      alert(`ERROR: ${errorMsg}`) // Backup notification
     } finally {
       setSavingPrice(false)
     }
