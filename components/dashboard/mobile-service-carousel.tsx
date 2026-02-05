@@ -166,8 +166,8 @@ export function MobileServiceCarousel({ onSelectCategory, onSelectService }: Ser
                 />
               </div>
               {/* Platform Name */}
-              <div className="min-w-0">
-                <h3 className="text-xl font-bold text-slate-900 font-poppins truncate">{currentPlatform.name}</h3>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-xl font-bold text-slate-900 font-poppins break-words">{currentPlatform.name}</h3>
                 <p className={`text-xs font-semibold ${currentPlatform.textAccent}`}>Social Platform</p>
               </div>
             </div>
