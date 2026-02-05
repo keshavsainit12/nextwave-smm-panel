@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { CheckCircle, ArrowRight, Wallet } from "lucide-react"
 import Link from "next/link"
 import { redirect } from "next/navigation"
+import { SuccessRedirect } from "@/components/deposit/success-redirect"
 
 export default async function DepositSuccessPage({
   searchParams,
@@ -111,23 +112,10 @@ export default async function DepositSuccessPage({
             </Link>
           </div>
 
-          {/* Auto-redirect notice */}
-          <p className="text-xs text-center text-muted-foreground">
-            You will be redirected to dashboard in 5 seconds...
-          </p>
+          {/* Auto-redirect notice with countdown */}
+          <SuccessRedirect />
         </CardContent>
       </Card>
-
-      {/* Auto-redirect script */}
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            setTimeout(function() {
-              window.location.href = '/dashboard';
-            }, 5000);
-          `,
-        }}
-      />
     </div>
   )
 }
