@@ -86,12 +86,31 @@ export function NotificationsList({ initialNotifications }: NotificationsListPro
     setLoading(false)
   }
 
-  const handleNotificationClick = (notification: Notification) => {
+  const handleNotificationClick = async (notification: Notification) => {
+    // Mark as read first
     if (!notification.read) {
-      markAsRead(notification.id)
+      await markAsRead(notification.id)
     }
-    if (notification.link) {
-      router.push(notification.link)
+    
+    // Determine navigation link
+    let link = notification.link
+    
+    // If no link, generate from related IDs
+    if (!link) {
+      if (notification.related_order_id) {
+        link = `/dashboard/orders`
+      } else if (notification.related_ticket_id) {
+        link = `/dashboard/tickets/${notification.related_ticket_id}`
+      } else if (notification.related_transaction_id) {
+        link = `/dashboard/wallet`
+      } else {
+        link = `/dashboard`
+      }
+    }
+    
+    // Navigate to the link
+    if (link) {
+      router.push(link)
     }
   }
 
