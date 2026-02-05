@@ -32,6 +32,15 @@ export function DashboardHeader({ user }: { user: any }) {
         .order("created_at", { ascending: false })
         .limit(5)
 
+      // Fetch recent deposits/transactions
+      const { data: deposits } = await supabase
+        .from("transactions")
+        .select("id, type, amount, status, created_at")
+        .eq("user_id", user.id)
+        .eq("type", "deposit")
+        .order("created_at", { ascending: false })
+        .limit(5)
+
       const notifs: any[] = []
 
       if (tickets) {
@@ -52,8 +61,21 @@ export function DashboardHeader({ user }: { user: any }) {
           if (order.status === "completed") {
             notifs.push({
               id: `order-${order.id}`,
-              message: `Your order #${order.id} has been completed`,
+              message: `Your order #${order.id.substring(0, 8)} has been completed`,
               time: new Date(order.created_at).toLocaleString(),
+              read: false,
+            })
+          }
+        })
+      }
+
+      if (deposits) {
+        deposits.forEach((deposit) => {
+          if (deposit.status === "completed") {
+            notifs.push({
+              id: `deposit-${deposit.id}`,
+              message: `Deposit of $${deposit.amount} has been credited to your wallet`,
+              time: new Date(deposit.created_at).toLocaleString(),
               read: false,
             })
           }
@@ -92,8 +114,64 @@ export function DashboardHeader({ user }: { user: any }) {
       )
       .subscribe()
 
+    // Listen for order status changes
+    const orderChannel = supabase
+      .channel("order-updates")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "orders",
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          if (payload.new.status === "completed") {
+            setNotifications((prev) => [
+              {
+                id: `order-${payload.new.id}`,
+                message: `Your order #${payload.new.id.substring(0, 8)} has been completed`,
+                time: "Just now",
+                read: false,
+              },
+              ...prev,
+            ])
+          }
+        },
+      )
+      .subscribe()
+
+    // Listen for deposit notifications
+    const depositChannel = supabase
+      .channel("deposit-updates")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "transactions",
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          if (payload.new.type === "deposit" && payload.new.status === "completed") {
+            setNotifications((prev) => [
+              {
+                id: `deposit-${payload.new.id}`,
+                message: `Deposit of $${payload.new.amount} has been credited to your wallet`,
+                time: "Just now",
+                read: false,
+              },
+              ...prev,
+            ])
+          }
+        },
+      )
+      .subscribe()
+
     return () => {
       supabase.removeChannel(ticketChannel)
+      supabase.removeChannel(orderChannel)
+      supabase.removeChannel(depositChannel)
     }
   }, [user.id])
 
@@ -126,11 +204,11 @@ export function DashboardHeader({ user }: { user: any }) {
           </div>
         </div>
 
-        <div className="hidden md:flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative h-9 w-9">
-                <Bell className="h-5 w-5" />
+              <Button variant="ghost" size="icon" className="relative h-8 w-8 sm:h-9 sm:w-9">
+                <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
                 {unreadCount > 0 && (
                   <Badge className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 rounded-full p-0 flex items-center justify-center bg-red-500 text-[10px] sm:text-xs">
                     {unreadCount}
@@ -138,7 +216,7 @@ export function DashboardHeader({ user }: { user: any }) {
                 )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
+            <DropdownMenuContent align="end" className="w-72 sm:w-80">
               <div className="px-4 py-3 border-b">
                 <h3 className="font-semibold text-sm">Notifications</h3>
               </div>

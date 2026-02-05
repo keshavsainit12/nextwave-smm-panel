@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { NextRequest, NextResponse } from "next/server"
 import crypto from "crypto"
 import { revalidatePath } from "next/cache"
+import { sendDepositConfirmation } from "@/lib/email"
 
 export async function POST(req: NextRequest) {
   try {
@@ -195,6 +196,26 @@ export async function POST(req: NextRequest) {
         })
       } catch (logErr) {
         console.warn("[v0] Activity log error:", logErr)
+      }
+
+      // Send deposit confirmation email
+      try {
+        const { data: user } = await supabase
+          .from("users")
+          .select("full_name, email")
+          .eq("id", transaction.user_id)
+          .single()
+
+        if (user?.email) {
+          await sendDepositConfirmation(
+            user.email,
+            user.full_name || 'User',
+            transaction.amount,
+            transaction.id
+          )
+        }
+      } catch (emailErr) {
+        console.warn("[v0] Email sending failed (non-critical):", emailErr)
       }
 
       // Revalidate admin dashboard and deposits page

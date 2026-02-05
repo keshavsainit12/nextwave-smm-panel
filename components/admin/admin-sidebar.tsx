@@ -10,6 +10,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { toast } from "react-toastify"
+import { COMPANY_EMAIL } from "@/lib/constants/company"
 import {
   LayoutDashboard,
   Bitcoin,
@@ -26,6 +27,7 @@ import {
   Receipt,
   Zap,
   ImageIcon,
+  Mail,
 } from "lucide-react"
 
 const navigation = [
@@ -73,7 +75,14 @@ function SidebarContent({ pathname, handleLogout, onClose }: { pathname: string;
           )
         })}
       </nav>
-      <div className="border-t bg-white/50 backdrop-blur-sm p-4">
+      <div className="border-t bg-white/50 backdrop-blur-sm p-4 space-y-3">
+        <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+          <Mail className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+          <div className="flex flex-col min-w-0">
+            <span className="text-xs text-slate-600 dark:text-slate-400">Support Email</span>
+            <span className="text-xs font-medium text-blue-600 dark:text-blue-400 truncate">{COMPANY_EMAIL}</span>
+          </div>
+        </div>
         <Button
           variant="outline"
           className="w-full justify-start bg-transparent hover:bg-red-50 hover:text-red-600 hover:border-red-300"

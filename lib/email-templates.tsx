@@ -175,3 +175,88 @@ export function getPasswordResetHTML(fullName: string, resetUrl: string) {
 </html>
   `.trim()
 }
+
+export function getDepositConfirmationHTML(fullName: string, amount: number, transactionId: string) {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .header h1 { margin: 0; font-size: 28px; }
+        .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
+        .amount-box { background: white; border: 2px solid #10b981; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0; }
+        .amount { font-size: 36px; font-weight: bold; color: #10b981; }
+        .info-box { background: white; padding: 15px; border-radius: 6px; margin: 20px 0; }
+        .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
+        .info-row:last-child { border-bottom: none; }
+        .button { display: inline-block; background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: bold; text-align: center; }
+        .footer { text-align: center; padding: 20px; font-size: 12px; color: #666; border-top: 1px solid #e5e7eb; }
+        .footer a { color: #3b82f6; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✅ Deposit Successful!</h1>
+        </div>
+        <div class="content">
+            <p class="welcome-text">Hi ${fullName},</p>
+            
+            <p>Great news! Your deposit has been successfully processed and credited to your account.</p>
+            
+            <div class="amount-box">
+                <p style="margin: 0; font-size: 14px; color: #666;">Amount Credited</p>
+                <p class="amount">$${amount.toFixed(2)}</p>
+            </div>
+            
+            <div class="info-box">
+                <div class="info-row">
+                    <span style="color: #666;">Transaction ID:</span>
+                    <span style="font-weight: bold; font-family: monospace;">${transactionId.substring(0, 12)}...</span>
+                </div>
+                <div class="info-row">
+                    <span style="color: #666;">Status:</span>
+                    <span style="font-weight: bold; color: #10b981;">Completed</span>
+                </div>
+                <div class="info-row">
+                    <span style="color: #666;">Date & Time:</span>
+                    <span style="font-weight: bold;">${new Date().toLocaleString()}</span>
+                </div>
+            </div>
+            
+            <p style="text-align: center;">
+                <a href="${COMPANY_WEBSITE}/dashboard" class="button">View Dashboard</a>
+            </p>
+            
+            <p>Your new balance is now available for placing orders. Start growing your social media presence today!</p>
+            
+            <p><strong>What's Next?</strong></p>
+            <ul>
+                <li>Browse our premium SMM services</li>
+                <li>Place orders for Instagram, YouTube, TikTok, and more</li>
+                <li>Track your orders in real-time</li>
+                <li>Earn referral bonuses by inviting friends</li>
+            </ul>
+            
+            <p>Need help? Our support team is available 24/7 at <a href="mailto:${COMPANY_EMAIL}">${COMPANY_EMAIL}</a></p>
+            
+            <p>Thank you for choosing ${COMPANY_NAME}! 🚀</p>
+            <p>Best regards,<br><strong>${COMPANY_NAME} Team</strong></p>
+        </div>
+        <div class="footer">
+            <p>&copy; ${new Date().getFullYear()} ${COMPANY_NAME}. All rights reserved.</p>
+            <p>
+                <a href="${COMPANY_WEBSITE}">Visit Website</a> • 
+                <a href="mailto:${COMPANY_EMAIL}">Contact Support</a> • 
+                <a href="${COMPANY_WEBSITE}/dashboard/transaction-history">View Transactions</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>
+  `.trim()
+}

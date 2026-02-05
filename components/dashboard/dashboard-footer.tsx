@@ -100,8 +100,36 @@ export function DashboardFooter() {
       </div>
 
       {/* Footer Bottom */}
-      <div className="max-w-6xl mx-auto mt-8 text-center text-xs text-slate-500 font-medium">
-        <p>© 2024 NextWave SMM Panel. All rights reserved.</p>
+      <div className="max-w-6xl mx-auto mt-8 text-center">
+        <div className="flex flex-wrap justify-center items-center gap-4 mb-4">
+          <a 
+            href="/terms-of-service" 
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs font-medium text-slate-600 hover:text-blue-600 transition-colors"
+          >
+            Terms & Conditions
+          </a>
+          <span className="text-slate-300">|</span>
+          <a 
+            href="/privacy-policy" 
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs font-medium text-slate-600 hover:text-blue-600 transition-colors"
+          >
+            Privacy Policy
+          </a>
+          <span className="text-slate-300">|</span>
+          <a 
+            href="/refund-policy" 
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs font-medium text-slate-600 hover:text-blue-600 transition-colors"
+          >
+            Refund Policy
+          </a>
+        </div>
+        <p className="text-xs text-slate-500 font-medium">© 2024 NextWave SMM Panel. All rights reserved.</p>
       </div>
     </div>
   )
