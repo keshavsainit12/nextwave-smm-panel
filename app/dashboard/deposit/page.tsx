@@ -4,6 +4,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Info, Zap, CheckCircle, XCircle, Clock } from "lucide-react"
 import { MobileAddFunds } from "@/components/dashboard/mobile-add-funds"
 import { InstantPaymentForm } from "@/components/dashboard/instant-payment-form"
+import { PaymentStatusAlert } from "@/components/dashboard/payment-status-alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
@@ -119,6 +120,9 @@ export default async function DepositPage() {
         <h1 className="text-3xl font-bold tracking-tight">Add Balance</h1>
         <p className="text-muted-foreground">Choose your preferred deposit method</p>
       </div>
+
+      {/* Payment Status Alert */}
+      <PaymentStatusAlert />
 
       <Tabs defaultValue="instant" className="w-full">
         <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 gap-2 h-auto">
