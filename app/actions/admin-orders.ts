@@ -8,6 +8,24 @@ export async function updateOrderStatus(orderId: string, status: string, adminNo
   try {
     const supabase = createAdminClient()
 
+    // Get current order status and user info for email
+    const { data: order, error: fetchError } = await supabase
+      .from("orders")
+      .select(`
+        *,
+        user:users(email, full_name),
+        service:services(name)
+      `)
+      .eq("id", orderId)
+      .single()
+
+    if (fetchError || !order) {
+      console.error("[v0] Failed to fetch order:", fetchError)
+      return { error: "Order not found" }
+    }
+
+    const oldStatus = order.status
+
     const updateData: any = {
       status,
       updated_at: new Date().toISOString(),
@@ -22,6 +40,25 @@ export async function updateOrderStatus(orderId: string, status: string, adminNo
     if (error) {
       console.error("[v0] Update order status error:", error)
       return { error: error.message }
+    }
+
+    // Send status update email if status changed
+    if (oldStatus !== status && order.user) {
+      try {
+        console.log("[v0] Order status changed by admin, sending email notification...")
+        const { EmailService } = await import("@/lib/email")
+        await EmailService.sendOrderStatusUpdate(
+          order.user.email,
+          orderId,
+          order.service?.name || "Service",
+          oldStatus,
+          status,
+          order.user.full_name || order.user.email
+        )
+        console.log("[v0] Order status update email sent successfully")
+      } catch (emailError) {
+        console.error("[v0] Failed to send order status update email (non-critical):", emailError)
+      }
     }
 
     revalidatePath("/admin-panel-2024")
