@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
+import { DashboardFooter } from "@/components/dashboard/dashboard-footer"
 import { MobileBottomNav } from "@/components/dashboard/mobile-bottom-nav"
 import { CurrencyProvider } from "@/lib/currency-context"
 import { getCurrency } from "@/lib/currency"
@@ -84,10 +85,11 @@ return (
 
 {/* Content */}
 <main className="flex-1 overflow-y-auto overflow-x-hidden pb-20 md:pb-0">
-<div className="h-full w-full">
-<div className="w-full max-w-7xl mx-auto px-2 py-4 sm:px-4 md:px-6 lg:px-8">
+<div className="h-full w-full flex flex-col">
+<div className="w-full max-w-7xl mx-auto px-2 py-4 sm:px-4 md:px-6 lg:px-8 flex-1">
 {children}
 </div>
+<DashboardFooter />
 </div>
 </main>
 </div>

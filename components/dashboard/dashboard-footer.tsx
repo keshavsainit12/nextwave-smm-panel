@@ -100,8 +100,29 @@ export function DashboardFooter() {
       </div>
 
       {/* Footer Bottom */}
-      <div className="max-w-6xl mx-auto mt-8 text-center text-xs text-slate-500 font-medium">
-        <p>© 2024 NextWave SMM Panel. All rights reserved.</p>
+      <div className="max-w-6xl mx-auto mt-8 space-y-4">
+        {/* Legal Links */}
+        <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-medium">
+          <a href="/terms" className="text-slate-600 hover:text-slate-900 transition-colors">
+            Terms & Conditions
+          </a>
+          <span className="text-slate-300">|</span>
+          <a href="/privacy" className="text-slate-600 hover:text-slate-900 transition-colors">
+            Privacy Policy
+          </a>
+          <span className="text-slate-300">|</span>
+          <a href="/refund-policy" className="text-slate-600 hover:text-slate-900 transition-colors">
+            Refund Policy
+          </a>
+          <span className="text-slate-300">|</span>
+          <a href="/dashboard/tickets" className="text-slate-600 hover:text-slate-900 transition-colors">
+            Support
+          </a>
+        </div>
+        {/* Copyright */}
+        <div className="text-center text-xs text-slate-500 font-medium">
+          <p>© 2024 NextWave SMM Panel. All rights reserved.</p>
+        </div>
       </div>
     </div>
   )
