@@ -45,13 +45,25 @@ export async function deleteService(id: string) {
 export async function updateServicePrice(serviceId: string, newPrice: number) {
   const supabase = await createClient()
 
+  console.log("[v0] Updating service price:", { serviceId, newPrice })
+
   // Update base_price (the selling price shown to users)
   // Note: services table has base_price, not price
-  const { error } = await supabase.from("services").update({ base_price: newPrice }).eq("id", serviceId)
+  const { error, data } = await supabase
+    .from("services")
+    .update({ base_price: newPrice })
+    .eq("id", serviceId)
+    .select()
 
-  if (error) throw error
+  if (error) {
+    console.error("[v0] Update service price error:", error)
+    throw error
+  }
+
+  console.log("[v0] Service price updated successfully:", data)
 
   revalidatePath("/admin-panel-2024/services")
+  revalidatePath("/dashboard/new-order")
   return { success: true }
 }
 
