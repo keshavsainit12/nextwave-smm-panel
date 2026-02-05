@@ -1,5 +1,8 @@
+"use client"
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DollarSign, Users, ShoppingCart, Clock, AlertCircle, UserCheck, TrendingUp } from "lucide-react"
+import { useCurrency } from "@/lib/currency-context"
 
 interface AdminStatsCardsProps {
   totalRevenue: number
@@ -20,16 +23,18 @@ export function AdminStatsCards({
   activeOrders,
   pendingDeposits,
 }: AdminStatsCardsProps) {
+  const { displayAmount } = useCurrency()
+  
   const stats = [
     {
       title: "Total Revenue",
-      value: `$${totalRevenue.toFixed(2)}`,
+      value: displayAmount(totalRevenue),
       icon: DollarSign,
       description: "From completed orders",
     },
     {
       title: "Total Profit",
-      value: `$${totalProfit.toFixed(2)}`,
+      value: displayAmount(totalProfit),
       icon: TrendingUp,
       description: "Revenue minus cost",
     },

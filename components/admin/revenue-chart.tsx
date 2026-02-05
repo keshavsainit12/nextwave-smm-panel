@@ -4,10 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { useCurrency } from "@/lib/currency-context"
 
 export function RevenueChart() {
   const [chartData, setChartData] = useState([])
   const [loading, setLoading] = useState(true)
+  const { displayAmount, currencySymbol } = useCurrency()
 
   useEffect(() => {
     const fetchRevenueData = async () => {
@@ -119,7 +121,7 @@ export function RevenueChart() {
                 border: "1px solid #e5e7eb",
                 borderRadius: "8px",
               }}
-              formatter={(value) => `$${Number(value).toFixed(2)}`}
+              formatter={(value) => displayAmount(Number(value))}
             />
             <Legend />
             <Line
