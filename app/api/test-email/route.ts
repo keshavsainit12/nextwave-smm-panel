@@ -23,7 +23,7 @@ export async function GET() {
     const apiKey = process.env.RESEND_API_KEY
     console.log('[TestEmail] API Key check:', apiKey ? '✅ Found' : '❌ Missing')
     
-    if (!apiKey || apiKey === 're_MsciK1E1_AzghPuCc8R8tE3vznMjp2nLv') {
+    if (!apiKey) {
       console.error('[TestEmail] ❌ RESEND_API_KEY not properly configured!')
       return NextResponse.json({
         success: false,
