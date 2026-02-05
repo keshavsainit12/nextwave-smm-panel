@@ -1,11 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { CheckCircle, XCircle, Info } from "lucide-react"
 
-export function PaymentStatusAlert() {
+function PaymentStatusAlertContent() {
   const searchParams = useSearchParams()
   const [show, setShow] = useState(false)
   const [status, setStatus] = useState<"success" | "failed" | null>(null)
@@ -55,5 +55,13 @@ export function PaymentStatusAlert() {
         </Alert>
       )}
     </>
+  )
+}
+
+export function PaymentStatusAlert() {
+  return (
+    <Suspense fallback={null}>
+      <PaymentStatusAlertContent />
+    </Suspense>
   )
 }
