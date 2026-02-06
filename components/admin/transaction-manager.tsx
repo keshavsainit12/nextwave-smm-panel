@@ -21,7 +21,6 @@ import { formatDistance } from "date-fns"
 import { Edit2, Trash2, Search, Loader2 } from "lucide-react"
 import { updateTransactionStatus, deleteTransaction, getUserTransactions, searchUserByEmail } from "@/app/actions/admin-transactions"
 import { toast } from "sonner"
-import { useRouter } from "next/navigation"
 
 export function AdminTransactionManager() {
   const [searchEmail, setSearchEmail] = useState("")
@@ -34,7 +33,6 @@ export function AdminTransactionManager() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [newStatus, setNewStatus] = useState("")
   const [adminNotes, setAdminNotes] = useState("")
-  const router = useRouter()
 
   const handleSearch = async () => {
     if (!searchEmail.trim()) return

@@ -12,7 +12,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { updateOrderStatus, cancelOrder } from "@/app/actions/admin-orders"
 import { toast } from "sonner"
-import { useRouter } from "next/navigation"
 
 const statusColors: Record<string, "default" | "secondary" | "destructive"> = {
   pending: "secondary",
@@ -28,7 +27,6 @@ export function OrderList({ orders }: { orders: any[] }) {
   const [newStatus, setNewStatus] = useState("")
   const [adminNotes, setAdminNotes] = useState("")
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
 
   const handleStatusUpdate = async () => {
     if (!selectedOrder || !newStatus) return

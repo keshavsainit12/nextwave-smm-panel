@@ -6,13 +6,11 @@ import { Button } from "@/components/ui/button"
 import { Check, X, ImageIcon } from "lucide-react"
 import { formatDistance } from "date-fns"
 import { approveDeposit, rejectDeposit } from "@/app/actions/deposits"
-import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { toast } from "sonner"
 
 export function CryptoDepositList({ deposits }: { deposits: any[] }) {
-  const router = useRouter()
   const [selectedScreenshot, setSelectedScreenshot] = useState<string | null>(null)
   const [loading, setLoading] = useState<string | null>(null)
 
