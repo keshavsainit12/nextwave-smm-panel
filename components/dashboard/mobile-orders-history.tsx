@@ -323,6 +323,8 @@ export function MobileOrdersHistory({ orders, currency, currencySymbol }: { orde
                         variant="outline"
                         onClick={() => handleRefill(order.id)}
                         disabled={refillLoading === order.id}
+                        aria-busy={refillLoading === order.id}
+                        aria-label={refillLoading === order.id ? "Refilling order" : "Refill order"}
                         className="flex-1 border-slate-200 text-slate-700 hover:bg-slate-50 font-semibold h-9 flex items-center justify-center gap-2 bg-transparent"
                       >
                         <RefreshCw size={16} className={refillLoading === order.id ? "animate-spin" : ""} />
