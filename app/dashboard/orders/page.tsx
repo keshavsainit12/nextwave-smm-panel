@@ -41,7 +41,7 @@ async function OrdersContent({ page = 1 }: { page: number }) {
   // Fetch paginated orders
   const { data: orders, error: ordersError } = await supabase
     .from("orders")
-    .select("id, order_id, user_id, service_id, external_order_id, link, quantity, price, start_count, remains, status, can_refill, refill_count, created_at, services(id, name, icon, platform, has_refill, category_id)")
+    .select("id, order_id, user_id, service_id, external_order_id, link, quantity, price, start_count, remains, status, can_refill, refill_count, created_at, services(id, name, icon, platform, has_refill, cancel, category_id)")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .range(offset, offset + pageSize - 1)
