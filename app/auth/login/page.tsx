@@ -96,7 +96,26 @@ function LoginContent() {
         router.push("/dashboard")
       }
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred")
+      // Convert Supabase errors to user-friendly messages
+      let errorMessage = "An error occurred during login"
+      
+      if (error instanceof Error) {
+        const msg = error.message.toLowerCase()
+        
+        if (msg.includes("invalid login credentials") || msg.includes("invalid email or password")) {
+          errorMessage = "Incorrect email or password. Please check your credentials and try again."
+        } else if (msg.includes("email not confirmed")) {
+          errorMessage = "Please verify your email address before logging in. Check your inbox for the verification link."
+        } else if (msg.includes("user not found")) {
+          errorMessage = "No account found with this email. Please sign up first."
+        } else if (msg.includes("too many requests")) {
+          errorMessage = "Too many login attempts. Please wait a few minutes and try again."
+        } else {
+          errorMessage = error.message
+        }
+      }
+      
+      setError(errorMessage)
       setIsLoading(false)
     }
   }

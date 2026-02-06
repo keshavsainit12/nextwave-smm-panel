@@ -105,8 +105,6 @@ const getIconUrl = (serviceName: string): string | undefined => {
   return undefined
 }
 
-  currency: string
-  currencySymbol: string
 export function MobileOrdersHistory({ orders, currency, currencySymbol }: { orders: Order[], currency: string, currencySymbol: string }) {
   const [searchQuery, setSearchQuery] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
