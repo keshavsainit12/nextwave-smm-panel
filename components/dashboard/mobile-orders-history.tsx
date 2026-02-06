@@ -4,7 +4,7 @@ import React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Download, Search, Info, MessageCircle, RefreshCw } from "lucide-react"
+import { Download, Search, Info, MessageCircle, RefreshCw, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -19,7 +19,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { createTicket } from "@/app/actions/tickets"
-import { requestRefill } from "@/app/actions/orders"
+import { requestRefill, cancelOrder } from "@/app/actions/orders"
 import { toast } from "sonner"
 
 import { displayAmount } from "@/lib/currency"
@@ -35,6 +35,7 @@ interface Order {
   services: {
     name: string
     platform: string | null
+    can_cancel?: boolean
   }
 }
 
@@ -114,6 +115,7 @@ export function MobileOrdersHistory({ orders, currency, currencySymbol }: { orde
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
   const [ticketLoading, setTicketLoading] = useState(false)
   const [refillLoading, setRefillLoading] = useState<string | null>(null)
+  const [cancelLoading, setCancelLoading] = useState<string | null>(null)
   const router = useRouter()
 
   const filteredOrders = orders.filter((order) => {
@@ -166,6 +168,27 @@ export function MobileOrdersHistory({ orders, currency, currencySymbol }: { orde
       toast.error(error instanceof Error ? error.message : "Failed to request refill")
     } finally {
       setRefillLoading(null)
+    }
+  }
+
+  const handleCancel = async (orderId: string) => {
+    if (!confirm("Are you sure you want to cancel this order? You will be refunded.")) {
+      return
+    }
+
+    setCancelLoading(orderId)
+    try {
+      const result = await cancelOrder(orderId)
+      if (result.success) {
+        toast.success(result.message || "Order cancelled successfully")
+        router.refresh()
+      } else {
+        toast.error(result.error || "Failed to cancel order")
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to cancel order")
+    } finally {
+      setCancelLoading(null)
     }
   }
 
@@ -322,13 +345,27 @@ export function MobileOrdersHistory({ orders, currency, currencySymbol }: { orde
                         type="button"
                         variant="outline"
                         onClick={() => handleRefill(order.id)}
-                        disabled={refillLoading === order.id}
+                        disabled={refillLoading === order.id || cancelLoading === order.id}
                         aria-busy={refillLoading === order.id}
                         aria-label={refillLoading === order.id ? "Refilling order" : "Refill order"}
                         className="flex-1 border-slate-200 text-slate-700 hover:bg-slate-50 font-semibold h-9 flex items-center justify-center gap-2 bg-transparent"
                       >
                         <RefreshCw size={16} className={refillLoading === order.id ? "animate-spin" : ""} />
                         {refillLoading === order.id ? "Refilling..." : "Refill"}
+                      </Button>
+                    )}
+                    {order.services?.can_cancel && (status === "pending" || status === "processing") && (
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        onClick={() => handleCancel(order.id)}
+                        disabled={cancelLoading === order.id || refillLoading === order.id}
+                        aria-busy={cancelLoading === order.id}
+                        aria-label={cancelLoading === order.id ? "Cancelling order" : "Cancel order"}
+                        className="flex-1 h-9 flex items-center justify-center gap-2"
+                      >
+                        <X size={16} className={cancelLoading === order.id ? "animate-spin" : ""} />
+                        {cancelLoading === order.id ? "Cancelling..." : "Cancel"}
                       </Button>
                     )}
                   </div>
