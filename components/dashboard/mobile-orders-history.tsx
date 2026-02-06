@@ -383,8 +383,8 @@ export function MobileOrdersHistory({ orders, currency, currencySymbol }: { orde
                       </Button>
                     )}
                     
-                    {/* Refill Button - Show for all refill-eligible orders (except pending/processing which show cancel) */}
-                    {(order.can_refill || order.services?.has_refill) && status !== "pending" && status !== "processing" && (
+                    {/* Refill Button - Only for completed orders (use common sense!) */}
+                    {(order.can_refill || order.services?.has_refill) && status === "completed" && (
                       <Button
                         type="button"
                         variant="outline"
