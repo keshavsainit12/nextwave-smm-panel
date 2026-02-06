@@ -141,7 +141,8 @@ export function UserOrderList({ orders }: { orders: any[] }) {
             </TableCell>
             <TableCell className="text-right">
               <div className="flex justify-end gap-2">
-                {order.can_refill && order.status === "completed" && (
+                {/* Refill Button - show if service supports refill AND order is completed */}
+                {(order.can_refill || order.services?.has_refill) && order.status === "completed" && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -152,6 +153,7 @@ export function UserOrderList({ orders }: { orders: any[] }) {
                     Refill
                   </Button>
                 )}
+                {/* Cancel Button - show if service supports cancel AND order is pending/processing */}
                 {(order.services?.can_cancel || order.services?.cancel) && (order.status === "pending" || order.status === "processing") && (
                   <Button
                     variant="ghost"

@@ -65,6 +65,12 @@ const statusConfig = {
     text: "text-slate-600",
     progress: 10,
   },
+  canceled: {
+    label: "Canceled",
+    bg: "bg-red-100",
+    text: "text-red-700",
+    progress: 0,
+  },
   cancelled: {
     label: "Canceled",
     bg: "bg-red-100",
@@ -123,7 +129,22 @@ export function MobileOrdersHistory({ orders, currency, currencySymbol }: { orde
     const matchesSearch =
       order.order_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.services?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesFilter = filterStatus === "all" || order.status?.toLowerCase() === filterStatus
+    
+    // Fix status matching to handle in_progress -> processing and canceled/cancelled
+    let matchesFilter = filterStatus === "all"
+    if (!matchesFilter) {
+      const orderStatus = order.status?.toLowerCase() || ""
+      if (filterStatus === "in_progress") {
+        // Match both "processing" and "in_progress" statuses
+        matchesFilter = orderStatus === "processing" || orderStatus === "in_progress"
+      } else if (filterStatus === "cancelled") {
+        // Match both "canceled" and "cancelled" spellings
+        matchesFilter = orderStatus === "canceled" || orderStatus === "cancelled"
+      } else {
+        matchesFilter = orderStatus === filterStatus
+      }
+    }
+    
     return matchesSearch && matchesFilter
   })
 
@@ -341,7 +362,8 @@ export function MobileOrdersHistory({ orders, currency, currencySymbol }: { orde
                       <MessageCircle size={16} />
                       Get Support
                     </Button>
-                    {order.can_refill && status === "completed" && (
+                    {/* Refill Button - show if service supports refill AND order is completed */}
+                    {(order.can_refill || order.services?.has_refill) && status === "completed" && (
                       <Button
                         type="button"
                         variant="outline"
@@ -355,6 +377,7 @@ export function MobileOrdersHistory({ orders, currency, currencySymbol }: { orde
                         {refillLoading === order.id ? "Refilling..." : "Refill"}
                       </Button>
                     )}
+                    {/* Cancel Button - show if service supports cancel AND order is pending/processing */}
                     {(order.services?.can_cancel || order.services?.cancel) && (status === "pending" || status === "processing") && (
                       <Button
                         type="button"
