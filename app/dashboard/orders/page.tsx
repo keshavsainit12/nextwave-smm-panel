@@ -5,6 +5,10 @@ import { redirect } from "next/navigation"
 import { Suspense } from "react"
 import { getCurrency } from "@/lib/currency"
 
+// Force dynamic rendering to always show fresh data
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 interface OrdersPageProps {
   searchParams: { page?: string }
 }
