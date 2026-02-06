@@ -4,7 +4,7 @@ import React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Download, Search, Info, MessageCircle, RefreshCw, X } from "lucide-react"
+import { Download, Search, Info, MessageCircle, RefreshCw, X, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -364,7 +364,11 @@ export function MobileOrdersHistory({ orders, currency, currencySymbol }: { orde
                         aria-label={cancelLoading === order.id ? "Cancelling order" : "Cancel order"}
                         className="flex-1 h-9 flex items-center justify-center gap-2"
                       >
-                        <X size={16} className={cancelLoading === order.id ? "animate-spin" : ""} />
+                        {cancelLoading === order.id ? (
+                          <Loader2 size={16} className="animate-spin" />
+                        ) : (
+                          <X size={16} />
+                        )}
                         {cancelLoading === order.id ? "Cancelling..." : "Cancel"}
                       </Button>
                     )}
