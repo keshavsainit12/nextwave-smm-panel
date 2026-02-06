@@ -85,7 +85,7 @@ export function AdminTransactionManager() {
         setNewStatus("")
         setAdminNotes("")
         setSelectedTransaction(null)
-        router.refresh()
+        // No redirect - stay on current page
 
         // Refresh user transactions
         if (selectedUser) {
@@ -110,7 +110,7 @@ export function AdminTransactionManager() {
         toast.success("Transaction deleted successfully")
         setShowDeleteDialog(false)
         setSelectedTransaction(null)
-        router.refresh()
+        // No redirect - stay on current page
 
         // Refresh user transactions
         if (selectedUser) {

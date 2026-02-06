@@ -42,7 +42,7 @@ export function OrderList({ orders }: { orders: any[] }) {
       setSelectedOrder(null)
       setNewStatus("")
       setAdminNotes("")
-      router.refresh()
+      // No redirect - stay on current page
     } catch (error: any) {
       toast.error(error.message || "Failed to update order status")
     } finally {
@@ -63,7 +63,7 @@ export function OrderList({ orders }: { orders: any[] }) {
 
       toast.success("Order cancelled and balance refunded")
       setSelectedOrder(null)
-      router.refresh()
+      // No redirect - stay on current page
     } catch (error: any) {
       toast.error(error.message || "Failed to cancel order")
     } finally {
