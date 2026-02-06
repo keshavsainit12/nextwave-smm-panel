@@ -1,0 +1,121 @@
+=================================================
+WHAT YOU NEED TO DO NOW - SIMPLE 3 STEPS
+=================================================
+
+I've fixed the instant payment redirect issue in the code.
+Now YOU need to deploy and test it.
+
+-------------------------------------------------
+STEP 1: MERGE CODE ON GITHUB (2 minutes)
+-------------------------------------------------
+
+1. Go to: https://github.com/keshavsainit12/nextwave-smm-panel
+
+2. Click on "Pull requests" tab
+
+3. You'll see: "Fix instant payment redirect" 
+
+4. Click "Merge Pull Request" button
+
+5. Click "Confirm Merge"
+
+Done! ✅
+
+-------------------------------------------------
+STEP 2: WAIT FOR DEPLOYMENT (3 minutes)
+-------------------------------------------------
+
+Vercel will automatically deploy your code.
+
+Just wait 2-3 minutes.
+
+Check: https://vercel.com (your project deployments)
+
+-------------------------------------------------
+STEP 3: TEST PAYMENT (5 minutes)
+-------------------------------------------------
+
+1. Open: https://nextwavesmm.com
+
+2. Login to your account
+
+3. Go to: Dashboard → Deposit
+
+4. Enter amount (100 XAF for test)
+
+5. Click "Add Funds" or "Instant Payment"
+
+6. Complete payment on payment gateway
+
+7. CHECK: You should be redirected to:
+   https://nextwavesmm.com/dashboard/deposit/success
+
+8. You'll see:
+   - ✅ "Payment Successful!" message
+   - ✅ Transaction details
+   - ✅ Your updated balance
+   - ✅ Auto-redirect to dashboard after 5 seconds
+
+If this works → YOU'RE DONE! 🎉
+
+=================================================
+TOTAL TIME: 10 MINUTES
+=================================================
+
+Step 1: Merge PR      = 2 minutes
+Step 2: Wait deploy   = 3 minutes  
+Step 3: Test payment  = 5 minutes
+---------------------------------------------
+TOTAL                 = 10 minutes ✅
+
+=================================================
+HINDI INSTRUCTIONS / हिंदी में
+=================================================
+
+तुमको क्या करना है:
+
+1. GitHub पे जाओ
+   - Pull Request merge करो
+   - "Merge Pull Request" button दबाओ
+
+2. 3 मिनट wait करो
+   - Vercel automatically deploy करेगा
+
+3. Payment test करो
+   - Website खोलो
+   - Deposit करो
+   - Check करो redirect हो रहा है
+
+अगर redirect हो गया = Done! ✅
+
+बस 10 minute में सब ready! 🚀
+
+=================================================
+TROUBLESHOOTING
+=================================================
+
+If redirect still not working:
+
+1. Hard refresh browser: Ctrl + Shift + R
+
+2. Clear browser cache and cookies
+
+3. Try in incognito/private mode
+
+4. Check Vercel deployment finished successfully
+
+5. Verify NEXT_PUBLIC_SITE_URL is set in Vercel
+
+=================================================
+WHAT I FIXED
+=================================================
+
+Changed: callback_url from API endpoint to success page
+
+Before: callback_url = /api/webhooks/instant-payment
+After:  callback_url = /dashboard/deposit/success
+
+This makes users redirect to success page instead of
+API endpoint after payment completion.
+
+=================================================
