@@ -362,22 +362,8 @@ export function MobileOrdersHistory({ orders, currency, currencySymbol }: { orde
                       <MessageCircle size={16} />
                       Get Support
                     </Button>
-                    {/* Refill Button - show if service supports refill AND order is completed */}
-                    {(order.can_refill || order.services?.has_refill) && status === "completed" && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => handleRefill(order.id)}
-                        disabled={refillLoading === order.id || cancelLoading === order.id}
-                        aria-busy={refillLoading === order.id}
-                        aria-label={refillLoading === order.id ? "Refilling order" : "Refill order"}
-                        className="flex-1 border-slate-200 text-slate-700 hover:bg-slate-50 font-semibold h-9 flex items-center justify-center gap-2 bg-transparent"
-                      >
-                        <RefreshCw size={16} className={refillLoading === order.id ? "animate-spin" : ""} />
-                        {refillLoading === order.id ? "Refilling..." : "Refill"}
-                      </Button>
-                    )}
-                    {/* Cancel Button - show if service supports cancel AND order is pending/processing */}
+                    
+                    {/* Cancel Button - Priority for pending/processing orders */}
                     {(order.services?.can_cancel || order.services?.cancel) && (status === "pending" || status === "processing") && (
                       <Button
                         type="button"
@@ -394,6 +380,22 @@ export function MobileOrdersHistory({ orders, currency, currencySymbol }: { orde
                           <X size={16} />
                         )}
                         {cancelLoading === order.id ? "Cancelling..." : "Cancel"}
+                      </Button>
+                    )}
+                    
+                    {/* Refill Button - Show for all refill-eligible orders (except pending/processing which show cancel) */}
+                    {(order.can_refill || order.services?.has_refill) && status !== "pending" && status !== "processing" && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => handleRefill(order.id)}
+                        disabled={refillLoading === order.id || cancelLoading === order.id}
+                        aria-busy={refillLoading === order.id}
+                        aria-label={refillLoading === order.id ? "Refilling order" : "Refill order"}
+                        className="flex-1 border-slate-200 text-slate-700 hover:bg-slate-50 font-semibold h-9 flex items-center justify-center gap-2 bg-transparent"
+                      >
+                        <RefreshCw size={16} className={refillLoading === order.id ? "animate-spin" : ""} />
+                        {refillLoading === order.id ? "Refilling..." : "Refill"}
                       </Button>
                     )}
                   </div>
