@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { createTicket } from "@/app/actions/tickets"
+import { requestRefill } from "@/app/actions/orders"
 import { toast } from "sonner"
 
 import { displayAmount } from "@/lib/currency"
@@ -30,6 +31,7 @@ interface Order {
   price: number
   start_count?: number
   created_at: string
+  can_refill?: boolean
   services: {
     name: string
     platform: string | null
@@ -111,6 +113,7 @@ export function MobileOrdersHistory({ orders, currency, currencySymbol }: { orde
   const [ticketDialogOpen, setTicketDialogOpen] = useState(false)
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
   const [ticketLoading, setTicketLoading] = useState(false)
+  const [refillLoading, setRefillLoading] = useState<string | null>(null)
   const router = useRouter()
 
   const filteredOrders = orders.filter((order) => {
@@ -146,6 +149,23 @@ export function MobileOrdersHistory({ orders, currency, currencySymbol }: { orde
       toast.error(error instanceof Error ? error.message : "Failed to create ticket. Please try again.")
     } finally {
       setTicketLoading(false)
+    }
+  }
+
+  const handleRefill = async (orderId: string) => {
+    setRefillLoading(orderId)
+    try {
+      const result = await requestRefill(orderId)
+      if (result.success) {
+        toast.success(result.message || "Refill requested successfully")
+        router.refresh()
+      } else {
+        toast.error(result.error || "Failed to request refill")
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to request refill")
+    } finally {
+      setRefillLoading(null)
     }
   }
 
@@ -297,14 +317,16 @@ export function MobileOrdersHistory({ orders, currency, currencySymbol }: { orde
                       <MessageCircle size={16} />
                       Get Support
                     </Button>
-                    {status === "completed" && (
+                    {order.can_refill && status === "completed" && (
                       <Button
                         type="button"
                         variant="outline"
+                        onClick={() => handleRefill(order.id)}
+                        disabled={refillLoading === order.id}
                         className="flex-1 border-slate-200 text-slate-700 hover:bg-slate-50 font-semibold h-9 flex items-center justify-center gap-2 bg-transparent"
                       >
-                        <RefreshCw size={16} />
-                        Refill
+                        <RefreshCw size={16} className={refillLoading === order.id ? "animate-spin" : ""} />
+                        {refillLoading === order.id ? "Refilling..." : "Refill"}
                       </Button>
                     )}
                   </div>
