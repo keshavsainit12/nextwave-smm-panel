@@ -36,6 +36,7 @@ interface Order {
     name: string
     platform: string | null
     can_cancel?: boolean
+    cancel?: boolean
   }
 }
 
@@ -354,7 +355,7 @@ export function MobileOrdersHistory({ orders, currency, currencySymbol }: { orde
                         {refillLoading === order.id ? "Refilling..." : "Refill"}
                       </Button>
                     )}
-                    {order.services?.can_cancel && (status === "pending" || status === "processing") && (
+                    {(order.services?.can_cancel || order.services?.cancel) && (status === "pending" || status === "processing") && (
                       <Button
                         type="button"
                         variant="destructive"

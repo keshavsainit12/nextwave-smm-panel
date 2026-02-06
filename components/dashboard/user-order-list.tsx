@@ -152,7 +152,7 @@ export function UserOrderList({ orders }: { orders: any[] }) {
                     Refill
                   </Button>
                 )}
-                {order.services?.can_cancel && (order.status === "pending" || order.status === "processing") && (
+                {(order.services?.can_cancel || order.services?.cancel) && (order.status === "pending" || order.status === "processing") && (
                   <Button
                     variant="ghost"
                     size="sm"
