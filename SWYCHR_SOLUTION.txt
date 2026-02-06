@@ -1,0 +1,39 @@
+SWYCHR CONNECT INTEGRATION SOLUTION
+====================================
+
+Based on API documentation you shared:
+
+1. CALLBACK_URL WORKS!
+   From your webhook doc:
+   "when_callback_set": "Redirects to the callback_url if set."
+   
+   So you just need to send callback_url in API request!
+
+2. WHAT TO DO:
+   
+   a) Get from Swychr dashboard:
+      - API base URL
+      - API key/token
+      - How to authenticate
+   
+   b) I'll update code to use Swychr instead of AccountPe
+   
+   c) Code will send:
+      {
+        "callback_url": "https://nextwavesmm.com/api/webhooks/instant-payment",
+        ...other fields
+      }
+   
+   d) After payment, Swychr will redirect to callback_url
+   
+   e) Webhook will process and redirect to success page
+
+3. NO DASHBOARD CONFIG NEEDED!
+   Swychr uses callback_url from API request
+   
+4. SHARE WITH ME:
+   - Swychr API base URL
+   - How to get/use API token
+   - Any special headers
+   
+Then I'll update the code immediately!
