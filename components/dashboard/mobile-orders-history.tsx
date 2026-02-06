@@ -25,7 +25,6 @@ import { toast } from "sonner"
 import { displayAmount } from "@/lib/currency"
 interface Order {
   id: string
-  order_id: string
   status: string
   quantity: number
   price: number
@@ -127,7 +126,7 @@ export function MobileOrdersHistory({ orders, currency, currencySymbol }: { orde
 
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
-      order.order_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.services?.name?.toLowerCase().includes(searchQuery.toLowerCase())
     
     // Fix status matching to handle in_progress -> processing and canceled/cancelled
@@ -299,7 +298,7 @@ export function MobileOrdersHistory({ orders, currency, currencySymbol }: { orde
                           {order.services?.name}
                         </h3>
                         <p className="text-xs text-slate-500 uppercase font-semibold tracking-wider truncate">
-                          Order #{order.order_id}
+                          Order #{order.id.slice(0, 8)}
                         </p>
                       </div>
                     </div>
@@ -354,7 +353,7 @@ export function MobileOrdersHistory({ orders, currency, currencySymbol }: { orde
                     <Button
                       type="button"
                       onClick={() => {
-                        setSelectedOrderId(order.order_id)
+                        setSelectedOrderId(order.id)
                         setTicketDialogOpen(true)
                       }}
                       className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold h-9 flex items-center justify-center gap-2"
