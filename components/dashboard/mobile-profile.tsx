@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { Grid3x3, ListTodo, User, MessageCircle } from "lucide-react"
+import { useCurrency } from "@/lib/currency-context"
 
 interface UserProfile {
   id: string
@@ -19,6 +20,7 @@ const tierNames = ["Regular Member", "Silver Member", "Gold Member", "Platinum M
 
 export function MobileProfile({ user, userProfile }: { user: any; userProfile: UserProfile }) {
   const router = useRouter()
+  const { displayAmount } = useCurrency()
   const tierName = tierNames[userProfile?.tier || 0]
 
   return (
@@ -39,7 +41,7 @@ export function MobileProfile({ user, userProfile }: { user: any; userProfile: U
         {/* Balance Card */}
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-[#dbdfe6] dark:border-gray-700 p-4">
           <p className="text-[11px] text-[#616f89] uppercase font-bold mb-1">Current Balance</p>
-          <p className="text-2xl font-bold text-primary">${Number(userProfile?.balance || 0).toFixed(2)}</p>
+          <p className="text-2xl font-bold text-primary">{displayAmount(Number(userProfile?.balance || 0))}</p>
         </div>
 
         {/* Stats Grid */}
@@ -51,7 +53,7 @@ export function MobileProfile({ user, userProfile }: { user: any; userProfile: U
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-[#dbdfe6] dark:border-gray-700 p-3">
             <p className="text-[10px] text-[#616f89] uppercase font-bold mb-2">Lifetime Spent</p>
             <p className="text-xl font-bold text-[#111318] dark:text-white">
-              ${Number(userProfile?.total_spent || 0).toFixed(2)}
+              {displayAmount(Number(userProfile?.total_spent || 0))}
             </p>
           </div>
         </div>

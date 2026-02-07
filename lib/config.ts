@@ -4,7 +4,7 @@
 
 // Domain Configuration
 export const DOMAIN = "nextwavesmm.com"
-export const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://nextwavesmm.com"
+export const APP_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || "https://nextwavesmm.com"
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://nextwavesmm.com/api"
 
 // ============================================

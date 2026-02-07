@@ -6,13 +6,11 @@ import { Button } from "@/components/ui/button"
 import { Check, X, ImageIcon } from "lucide-react"
 import { formatDistance } from "date-fns"
 import { approveDeposit, rejectDeposit } from "@/app/actions/deposits"
-import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { toast } from "sonner"
 
 export function CryptoDepositList({ deposits }: { deposits: any[] }) {
-  const router = useRouter()
   const [selectedScreenshot, setSelectedScreenshot] = useState<string | null>(null)
   const [loading, setLoading] = useState<string | null>(null)
 
@@ -26,9 +24,7 @@ export function CryptoDepositList({ deposits }: { deposits: any[] }) {
         if (result.success) {
           console.log("[v0] Deposit approved successfully")
           toast.success("Deposit approved! User balance updated.")
-          // Wait a moment then refresh to ensure server cache is cleared
-          await new Promise(resolve => setTimeout(resolve, 800))
-          router.refresh()
+          // No redirect - stay on current page
         } else {
           console.error("[v0] Approval failed:", result.error)
           toast.error(result.error || "Failed to approve deposit")
@@ -53,9 +49,7 @@ export function CryptoDepositList({ deposits }: { deposits: any[] }) {
         if (result.success) {
           console.log("[v0] Deposit rejected successfully")
           toast.success("Deposit rejected successfully")
-          // Wait a moment then refresh to ensure server cache is cleared
-          await new Promise(resolve => setTimeout(resolve, 800))
-          router.refresh()
+          // No redirect - stay on current page
         } else {
           console.error("[v0] Rejection failed:", result.error)
           toast.error(result.error || "Failed to reject deposit")

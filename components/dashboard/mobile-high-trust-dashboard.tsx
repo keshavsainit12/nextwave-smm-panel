@@ -10,6 +10,7 @@ import Link from "next/link"
 import { MobileServiceCarousel } from "./mobile-service-carousel"
 import { DashboardFooter } from "./dashboard-footer"
 import { CouponPasteCard } from "./coupon-paste-card"
+import { useCurrency } from "@/lib/currency-context"
 import {
   Wallet,
   ShoppingCart,
@@ -68,6 +69,7 @@ export function MobileHighTrustDashboard({
   priceMultiplier?: number
 }) {
   const tierInfo = getTierInfo(priceMultiplier)
+  const { displayAmount } = useCurrency()
   const [selectedCategory, setSelectedCategory] = useState<any>(null)
   const [selectedService, setSelectedService] = useState<any>(null)
   const [link, setLink] = useState("")
@@ -217,7 +219,7 @@ export function MobileHighTrustDashboard({
     if (userBalance < totalPrice) {
       toast({
         title: "Insufficient Balance",
-        description: `You need $${totalPrice.toFixed(2)}. Please add funds.`,
+        description: `You need ${displayAmount(totalPrice)}. Please add funds.`,
         variant: "destructive",
       })
       return
@@ -335,7 +337,7 @@ export function MobileHighTrustDashboard({
                     <Info className="w-3.5 h-3.5" />
                   </p>
                   <p className="text-white text-3xl font-bold leading-tight tracking-tight mt-1">
-                    ${userBalance.toFixed(2)}
+                    {displayAmount(userBalance)}
                   </p>
                 </div>
                 <div className="bg-white/20 px-3 py-1.5 rounded-full backdrop-blur-sm">
@@ -381,7 +383,7 @@ export function MobileHighTrustDashboard({
                 <p className="text-xs font-medium uppercase tracking-wider">Lifetime Spent</p>
               </div>
               <div className="flex items-end justify-between mt-1">
-                <p className="text-slate-900 text-2xl font-bold leading-none">${totalSpent.toFixed(2)}</p>
+                <p className="text-slate-900 text-2xl font-bold leading-none">{displayAmount(totalSpent)}</p>
                 <p className="text-emerald-600 text-sm font-bold flex items-center bg-emerald-50 px-1.5 py-0.5 rounded">
                   12%
                 </p>
@@ -423,7 +425,7 @@ export function MobileHighTrustDashboard({
                         style={{ width: `${Math.min((totalSpent / 500) * 100, 100)}%` }}
                       />
                     </div>
-                    <p className="text-xs text-slate-500">Spend ${Math.max(0, 500 - totalSpent).toFixed(0)} more to unlock VIP</p>
+                    <p className="text-xs text-slate-500">Spend {displayAmount(Math.max(0, 500 - totalSpent))} more to unlock VIP</p>
                   </div>
                   
                   {/* VIP Benefits Preview */}
@@ -530,7 +532,7 @@ export function MobileHighTrustDashboard({
                                 }}
                               />
                             )}
-                            <span className="truncate">{category.name}</span>
+                            <span className="whitespace-normal break-words leading-tight py-0.5">{category.name}</span>
                           </div>
                         </SelectItem>
                       )
@@ -593,7 +595,7 @@ export function MobileHighTrustDashboard({
                                     }}
                                   />
                                 )}
-                                <span className="truncate">{service.name} - ${Number(service.price || service.base_price || 0).toFixed(2)}/1k</span>
+                                <span className="whitespace-normal break-words leading-tight py-0.5">{service.name} - {displayAmount(Number(service.price || service.base_price || 0))}/1k</span>
                               </div>
                             </SelectItem>
                           )
@@ -606,7 +608,7 @@ export function MobileHighTrustDashboard({
                           <span>Min: {selectedService.min_quantity}</span>
                           <span>Max: {selectedService.max_quantity?.toLocaleString()}</span>
                           <span className="font-bold text-blue-600">
-                            ${Number(selectedService.price || selectedService.base_price || 0).toFixed(4)}/1k
+                            {displayAmount(Number(selectedService.price || selectedService.base_price || 0))}/1k
                           </span>
                         </div>
                       </div>
@@ -734,7 +736,7 @@ export function MobileHighTrustDashboard({
                       <CreditCard className="w-5 h-5 text-blue-600" />
                       <span className="text-slate-900 text-sm font-semibold">Total Charge</span>
                     </div>
-                    <span className="text-xl font-bold text-blue-600">${totalPrice.toFixed(2)}</span>
+                    <span className="text-xl font-bold text-blue-600">{displayAmount(totalPrice)}</span>
                   </div>
 
                   <button

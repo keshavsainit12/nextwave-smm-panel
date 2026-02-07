@@ -7,6 +7,8 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, Loader2 } from "lucide-react"
 import { signupUser } from "@/app/actions/auth"
+import Script from "next/script"
+import { RECAPTCHA_SITE_KEY } from "@/lib/recaptcha-config"
 
 function SignupContent() {
   const [email, setEmail] = useState("")
@@ -18,6 +20,8 @@ function SignupContent() {
   const [success, setSuccess] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const [recaptchaLoaded, setRecaptchaLoaded] = useState(false)
   const router = useRouter()
 
   const validateForm = () => {
@@ -37,7 +41,52 @@ function SignupContent() {
       setError("Passwords do not match")
       return false
     }
+    if (RECAPTCHA_SITE_KEY && !captchaToken) {
+      setError("Please complete the reCAPTCHA verification")
+      return false
+    }
     return true
+  }
+
+  const handleRecaptchaChange = (token: string | null) => {
+    console.log("[v0] reCAPTCHA token received:", token ? "✓ Valid" : "✗ Null")
+    setCaptchaToken(token)
+    if (token) {
+      setError(null)
+    }
+  }
+
+  const loadRecaptcha = () => {
+    if (!RECAPTCHA_SITE_KEY) {
+      console.log("[v0] reCAPTCHA not configured - skipping")
+      return
+    }
+
+    console.log("[v0] reCAPTCHA API script loaded successfully")
+    setRecaptchaLoaded(true)
+    
+    // Wait for DOM to be ready, then render reCAPTCHA
+    setTimeout(() => {
+      if (typeof window !== 'undefined' && (window as any).grecaptcha) {
+        try {
+          const container = document.getElementById('recaptcha-container')
+          if (container && !container.hasChildNodes()) {
+            (window as any).grecaptcha.render('recaptcha-container', {
+              sitekey: RECAPTCHA_SITE_KEY,
+              callback: handleRecaptchaChange,
+              'expired-callback': () => handleRecaptchaChange(null),
+              'error-callback': () => {
+                console.error("[v0] reCAPTCHA error occurred")
+                setError("reCAPTCHA verification failed. Please try again.")
+              }
+            })
+            console.log("[v0] reCAPTCHA widget rendered")
+          }
+        } catch (err) {
+          console.error("[v0] reCAPTCHA render error:", err)
+        }
+      }
+    }, 100)
   }
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -173,6 +222,18 @@ function SignupContent() {
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 overflow-hidden bg-transparent">
+      {/* Load reCAPTCHA script */}
+      {RECAPTCHA_SITE_KEY && (
+        <Script
+          src="https://www.google.com/recaptcha/api.js"
+          strategy="afterInteractive"
+          onLoad={loadRecaptcha}
+          onError={() => {
+            console.error("[v0] Failed to load reCAPTCHA script")
+            setError("Failed to load reCAPTCHA. Please refresh the page.")
+          }}
+        />
+      )}
 
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
         <div className="absolute w-96 h-96 rounded-full blur-3xl opacity-40 bg-blue-500 -top-32 -left-32"></div>
@@ -285,6 +346,33 @@ function SignupContent() {
               />
             </div>
 
+            {/* reCAPTCHA */}
+            {RECAPTCHA_SITE_KEY ? (
+              <div className="space-y-2">
+                <label className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-600">
+                  Verification
+                </label>
+                <div 
+                  id="recaptcha-container" 
+                  className="flex justify-center"
+                  data-sitekey={RECAPTCHA_SITE_KEY}
+                />
+                {recaptchaLoaded && !captchaToken && (
+                  <p className="text-xs text-slate-500">Please complete the verification above</p>
+                )}
+              </div>
+            ) : (
+              // Development notice when reCAPTCHA is not configured
+              process.env.NODE_ENV === 'development' && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-xs">
+                  <p className="text-yellow-800 font-semibold mb-1">⚠️ reCAPTCHA Not Configured</p>
+                  <p className="text-yellow-700">
+                    reCAPTCHA will show after you add <code className="bg-yellow-100 px-1 rounded">NEXT_PUBLIC_RECAPTCHA_SITE_KEY</code> in Vercel environment variables.
+                  </p>
+                </div>
+              )
+            )}
+
             {error && (
               <div className="text-sm text-red-600 bg-red-50/80 backdrop-blur border border-red-200/50 p-3 sm:p-4 rounded-2xl">
                 {error}
@@ -293,7 +381,7 @@ function SignupContent() {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || (RECAPTCHA_SITE_KEY && !captchaToken)}
               className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-3 sm:py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isLoading ? (

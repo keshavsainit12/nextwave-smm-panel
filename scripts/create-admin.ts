@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js"
+import { randomBytes } from "crypto"
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
@@ -29,8 +30,8 @@ async function createAdmin() {
     // Get default tier
     const { data: tierData } = await supabase.from("user_tiers").select("id").eq("name", "Regular").single()
 
-    // Generate referral code
-    const referralCode = "ADMIN" + Math.random().toString(36).substring(2, 8).toUpperCase()
+    // Generate referral code using cryptographically secure random bytes
+    const referralCode = "ADMIN" + randomBytes(4).toString("hex").toUpperCase()
 
     // Create user profile with admin role
     const { error: profileError } = await supabase.from("users").insert({
