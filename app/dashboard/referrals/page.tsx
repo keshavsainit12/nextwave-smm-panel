@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ReferralStats } from "@/components/dashboard/referral-stats"
 import { ReferralList } from "@/components/dashboard/referral-list"
+import { randomBytes } from "crypto"
 
 export default async function ReferralsPage() {
   const supabase = await createClient()
@@ -19,6 +20,24 @@ export default async function ReferralsPage() {
       .gt("created_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()),
   ])
 
+  // If user doesn't have a referral code, generate one
+  let referralCode = userProfile?.referral_code || ""
+  if (!referralCode && user) {
+    // Use cryptographically secure random generation (fixes SonarQube security hotspot)
+    referralCode = "REF" + randomBytes(4).toString("hex").toUpperCase()
+    
+    // Update user profile with new referral code
+    const { error } = await supabase
+      .from("users")
+      .update({ referral_code: referralCode })
+      .eq("id", user.id)
+    
+    if (error) {
+      console.error("Failed to generate referral code:", error)
+      referralCode = "" // Fallback to empty if update fails
+    }
+  }
+
   const totalEarnings = earnings?.reduce((sum, e) => sum + Number(e.commission_amount), 0) || 0
 
   return (
@@ -29,7 +48,7 @@ export default async function ReferralsPage() {
       </div>
 
       <ReferralStats
-        referralCode={userProfile?.referral_code || ""}
+        referralCode={referralCode}
         totalReferrals={referredUsers?.length || 0}
         monthlyEarnings={totalEarnings}
       />

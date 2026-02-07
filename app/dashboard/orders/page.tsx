@@ -5,6 +5,10 @@ import { redirect } from "next/navigation"
 import { Suspense } from "react"
 import { getCurrency } from "@/lib/currency"
 
+// Force dynamic rendering to always show fresh data
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 interface OrdersPageProps {
   searchParams: { page?: string }
 }
@@ -52,8 +56,25 @@ async function OrdersContent({ page = 1 }: { page: number }) {
     .select("id", { count: "exact", head: true })
     .eq("user_id", user.id)
 
+  // Log detailed info for debugging
+  console.log("[v0] Orders query result:", {
+    hasOrders: !!orders,
+    ordersCount: orders?.length || 0,
+    hasError: !!ordersError,
+    error: ordersError,
+    userId: user.id,
+  })
+
   if (ordersError) {
     console.error("[v0] Orders fetch error:", ordersError)
+    // Return error state to display to user
+    return (
+      <div className="p-4 text-center">
+        <p className="text-red-600 font-semibold">Error loading orders</p>
+        <p className="text-sm text-gray-600 mt-2">{ordersError.message}</p>
+        <p className="text-xs text-gray-500 mt-1">Check console for details</p>
+      </div>
+    )
   }
   
   if (countError) {
