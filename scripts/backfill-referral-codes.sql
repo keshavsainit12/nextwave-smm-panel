@@ -1,6 +1,9 @@
 -- Backfill referral codes for users who don't have one
 -- This script generates unique referral codes for existing users without them
 
+-- Enable pgcrypto extension for cryptographically secure random generation
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Create a function to generate a random referral code
 CREATE OR REPLACE FUNCTION generate_referral_code()
 RETURNS TEXT AS $$
@@ -9,8 +12,8 @@ DECLARE
   exists BOOLEAN;
 BEGIN
   LOOP
-    -- Generate a code like REF + 8 random characters
-    code := 'REF' || upper(substring(md5(random()::text || clock_timestamp()::text) from 1 for 8));
+    -- Generate a code like REF + 8 random characters using cryptographically secure gen_random_bytes
+    code := 'REF' || upper(encode(gen_random_bytes(4), 'hex'));
     
     -- Check if code already exists
     SELECT EXISTS(SELECT 1 FROM users WHERE referral_code = code) INTO exists;

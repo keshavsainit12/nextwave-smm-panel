@@ -4,6 +4,7 @@ import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 import { COMPANY_NAME, EMAIL_CONFIG } from "@/lib/constants/company"
+import { randomBytes } from "crypto"
 
 export async function signupUser(formData: {
   email: string
@@ -88,8 +89,8 @@ export async function signupUser(formData: {
       return { success: true, userId: authData.user.id, message: "Account already created" }
     }
 
-    // Generate referral code
-    const referralCode = "REF" + Math.random().toString(36).substring(2, 10).toUpperCase()
+    // Generate referral code using cryptographically secure random bytes
+    const referralCode = "REF" + randomBytes(4).toString("hex").toUpperCase()
     console.log("[v0] Generated referral code:", referralCode)
 
     // Check for referrer if referral code provided
@@ -183,7 +184,7 @@ export async function handleOAuthCallback(userId: string, email: string, fullNam
       return { success: true, existing: true }
     }
 
-    const referralCode = "REF" + Math.random().toString(36).substring(2, 8).toUpperCase()
+    const referralCode = "REF" + randomBytes(4).toString("hex").toUpperCase()
 
     const { error: profileError } = await supabaseAdmin.from("users").insert({
       id: userId,
@@ -245,7 +246,7 @@ export async function createAdminUser(email: string, password: string, fullName:
       throw authError || new Error("Failed to create auth user")
     }
 
-    const referralCode = "ADMIN" + Math.random().toString(36).substring(2, 8).toUpperCase()
+    const referralCode = "ADMIN" + randomBytes(4).toString("hex").toUpperCase()
 
     const { error: profileError } = await supabaseAdmin.from("users").insert({
       id: authData.user.id,

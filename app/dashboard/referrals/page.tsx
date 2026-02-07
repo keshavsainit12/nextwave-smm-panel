@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ReferralStats } from "@/components/dashboard/referral-stats"
 import { ReferralList } from "@/components/dashboard/referral-list"
+import { randomBytes } from "crypto"
 
 export default async function ReferralsPage() {
   const supabase = await createClient()
@@ -22,7 +23,8 @@ export default async function ReferralsPage() {
   // If user doesn't have a referral code, generate one
   let referralCode = userProfile?.referral_code || ""
   if (!referralCode && user) {
-    referralCode = "REF" + Math.random().toString(36).substring(2, 10).toUpperCase()
+    // Use cryptographically secure random generation (fixes SonarQube security hotspot)
+    referralCode = "REF" + randomBytes(4).toString("hex").toUpperCase()
     
     // Update user profile with new referral code
     const { error } = await supabase
