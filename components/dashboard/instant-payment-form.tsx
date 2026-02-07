@@ -42,6 +42,12 @@ export function InstantPaymentForm({ userId, userEmail, userName, currentBalance
     setLoading(true)
 
     try {
+      console.log("[v0] Submitting payment request:", {
+        userId,
+        amount: Number(amount),
+        email: userEmail,
+      })
+
       const result = await createInstantPayment({
         userId,
         amount: Number(amount),
@@ -50,13 +56,24 @@ export function InstantPaymentForm({ userId, userEmail, userName, currentBalance
         userName,
       })
 
+      console.log("[v0] Payment result received:", {
+        success: result.success,
+        hasPaymentLink: !!result.paymentLink,
+        paymentLink: result.paymentLink,
+        transactionId: result.transactionId,
+        error: result.error
+      })
+
       if (result.success && result.paymentLink) {
+        console.log("[v0] Redirecting to payment URL:", result.paymentLink)
         toast.success("Redirecting to payment...")
-        setTimeout(() => {
-          window.location.href = result.paymentLink!
-        }, 500)
+        
+        // Immediate redirect for better UX
+        window.location.href = result.paymentLink
       } else {
-        toast.error(result.error || "Failed to create payment")
+        const errorMsg = result.error || "Failed to create payment"
+        console.error("[v0] Payment creation failed:", errorMsg)
+        toast.error(errorMsg)
       }
     } catch (error) {
       console.error("[v0] Payment error:", error)

@@ -2,7 +2,13 @@
   "crons": [
     {
       "path": "/api/cron/sync-orders",
-      "schedule": "0 0 * * *"
+      "schedule": "*/30 * * * *",
+      "comment": "Sync orders every 30 minutes (48 runs/day)"
+    },
+    {
+      "path": "/api/cron/verify-instant-payments",
+      "schedule": "*/30 * * * *",
+      "comment": "Verify payments every 30 minutes (48 runs/day). Total: 96 runs/day (under 100 free limit)"
     }
   ]
 }
