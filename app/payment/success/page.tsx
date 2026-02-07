@@ -10,13 +10,31 @@ export default function PaymentSuccessPage() {
   const router = useRouter()
   const [countdown, setCountdown] = useState(3)
 
+  // 🔥 NEW: backend se payment confirm check
   useEffect(() => {
-    // Countdown timer
+    const checkPaymentStatus = async () => {
+      try {
+        const res = await fetch("/api/cron/verify-instant-payments")
+        const data = await res.json()
+
+        if (data?.status === "SUCCESS") {
+          router.push("/dashboard/wallet")
+        }
+      } catch (err) {
+        console.error("Payment verification failed", err)
+      }
+    }
+
+    const interval = setInterval(checkPaymentStatus, 3000)
+    return () => clearInterval(interval)
+  }, [router])
+
+  // ⏳ Existing countdown (fallback)
+  useEffect(() => {
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer)
-          // Redirect to wallet after countdown
           router.push("/dashboard/wallet")
           return 0
         }
@@ -41,6 +59,7 @@ export default function PaymentSuccessPage() {
             Your payment has been processed successfully
           </CardDescription>
         </CardHeader>
+
         <CardContent className="space-y-4">
           <div className="text-center p-4 bg-green-50 dark:bg-green-900/10 rounded-lg border border-green-200 dark:border-green-800">
             <p className="text-sm text-muted-foreground mb-1">
