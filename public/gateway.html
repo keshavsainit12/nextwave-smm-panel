@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Payment Gateway</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .box {
+      background: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+    h1 {
+      color: #16a34a;
+      margin-bottom: 10px;
+    }
+    p {
+      color: #555;
+      margin-bottom: 20px;
+    }
+    button {
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      width: 100%;
+    }
+    button:hover {
+      background: #1e40af;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="box">
+    <h1>Payment Gateway</h1>
+    <p>Click below to continue payment</p>
+
+    <button onclick="startPayment()">Proceed to Pay</button>
+  </div>
+
+  <script>
+    function startPayment() {
+      // 🔁 AFTER PAYMENT SUCCESS
+      // Gateway complete hone ke baad yahan redirect karo
+
+      window.location.href = "/payment/success";
+    }
+  </script>
+</body>
+</html>
