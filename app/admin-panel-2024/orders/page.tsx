@@ -3,23 +3,29 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { OrderList } from "@/components/admin/order-list"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ExportCsvButton } from "@/components/admin/export-csv-button"
-import { revalidatePath } from "next/cache"
-import { useState } from "react"
+// import { revalidatePath } from "next/cache" // (Unused, removed for code quality)
+
+// Move handleSyncOrders to outer scope for better maintainability
+async function handleSyncOrders() {
+  try {
+    const res = await fetch("/api/cron/sync-orders", { method: "POST" })
+    if (res.ok) {
+      globalThis.location.reload()
+    } else {
+      // Optionally log error for debugging
+      // eslint-disable-next-line no-console
+      console.error("Sync failed", await res.text())
+      alert("Sync failed")
+    }
+  } catch (e) {
+    // Log error for maintainability
+    // eslint-disable-next-line no-console
+    console.error("Sync error", e)
+    alert("Sync error")
+  }
+}
 
 export default async function AdminOrdersPage() {
-  // Client-side sync handler
-  async function handleSyncOrders() {
-    try {
-      const res = await fetch("/api/cron/sync-orders", { method: "POST" })
-      if (res.ok) {
-        window.location.reload()
-      } else {
-        alert("Sync failed")
-      }
-    } catch (e) {
-      alert("Sync error")
-    }
-  }
   const supabase = createAdminClient()
   const { data: orders, error } = await supabase
     .from("orders")
@@ -72,7 +78,7 @@ export default async function AdminOrdersPage() {
           <button
             type="button"
             className="inline-flex items-center px-3 py-2 border border-blue-600 text-blue-600 rounded hover:bg-blue-50 text-xs sm:text-sm font-medium"
-            onClick={handleSyncOrders}
+            onClick={() => handleSyncOrders()}
           >
             Sync Orders
           </button>
