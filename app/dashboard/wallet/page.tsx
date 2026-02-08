@@ -5,7 +5,6 @@ import { Wallet, Plus, TrendingUp, ArrowUpRight, ArrowDownRight, Clock } from "l
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { formatDistance } from "date-fns"
-import { displayAmount, getCurrency } from "@/lib/currency"
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -20,23 +19,6 @@ export default async function WalletPage() {
   if (!user) {
     redirect("/auth/login")
   }
-
-  // Get system currency settings
-  const { data: currencySettings } = await supabase
-    .from("system_settings")
-    .select("value")
-    .eq("key", "currency")
-    .single()
-
-  const { data: currencySymbolSettings } = await supabase
-    .from("system_settings")
-    .select("value")
-    .eq("key", "currency_symbol")
-    .single()
-
-  const currency = currencySettings?.value || "USD"
-  const currencySymbol = currencySymbolSettings?.value || getCurrency(currency)?.symbol || "$"
-  const currencyName = getCurrency(currency)?.name || "United States Dollar"
 
   // Fetch user balance and profile
   const { data: userData } = await supabase
@@ -75,8 +57,8 @@ export default async function WalletPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div>
-            <p className="text-5xl font-bold text-blue-600 dark:text-blue-400">{displayAmount(balance, currency)}</p>
-            <p className="text-sm text-muted-foreground mt-1">{currency} ({currencyName})</p>
+            <p className="text-5xl font-bold text-blue-600 dark:text-blue-400">${balance.toFixed(2)}</p>
+            <p className="text-sm text-muted-foreground mt-1">USD (United States Dollar)</p>
           </div>
 
           <Link href="/dashboard/deposit">
@@ -99,7 +81,7 @@ export default async function WalletPage() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{displayAmount(totalSpent, currency)}</div>
+            <div className="text-2xl font-bold">${totalSpent.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">All-time spending</p>
           </CardContent>
         </Card>

@@ -437,16 +437,8 @@ export function MobileOrderInterface({
         <div className="space-y-2">
           <Label className="text-xs font-bold uppercase tracking-wider text-slate-600">Category</Label>
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-full h-11 bg-white/70 backdrop-blur-xl border border-white/30 rounded-xl text-sm font-medium group">
-              <SelectValue>
-                <div className="overflow-hidden w-full">
-                  <div className="whitespace-nowrap group-hover:animate-marquee inline-block">
-                    {categories.find((c) => c.id === selectedCategory)?.name || "Select Category"}
-                    {" "}
-                    {categories.find((c) => c.id === selectedCategory)?.name || "Select Category"}
-                  </div>
-                </div>
-              </SelectValue>
+            <SelectTrigger className="w-full h-11 bg-white/70 backdrop-blur-xl border border-white/30 rounded-xl text-sm font-medium">
+              <SelectValue />
             </SelectTrigger>
             <SelectContent
               position="popper"
@@ -499,16 +491,8 @@ export function MobileOrderInterface({
                 }
               }}
             >
-              <SelectTrigger className="w-full h-11 bg-white/70 backdrop-blur-xl border border-white/30 rounded-xl text-sm font-medium group">
-                <SelectValue>
-                  <div className="overflow-hidden w-full">
-                    <div className="whitespace-nowrap group-hover:animate-marquee inline-block">
-                      {selectedService?.name || "Select Service"}
-                      {" "}
-                      {selectedService?.name || "Select Service"}
-                    </div>
-                  </div>
-                </SelectValue>
+              <SelectTrigger className="w-full h-11 bg-white/70 backdrop-blur-xl border border-white/30 rounded-xl text-sm font-medium">
+                <SelectValue />
               </SelectTrigger>
               <SelectContent
                 position="popper"
