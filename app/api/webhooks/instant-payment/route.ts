@@ -327,7 +327,8 @@ export async function POST(req: NextRequest) {
         // Don't fail the webhook if logging fails
       }
 
-      return NextResponse.json({ success: true, message: "Payment processed successfully" })
+      // Redirect user to deposit success page after payment
+      return NextResponse.redirect("/dashboard/deposit/success")
     } else if (body.status === -1 || body.status === "-1" || body.status === "failed") {
       // FAILED: Do NOT credit wallet
       console.log("[v0] Payment failed - NOT crediting wallet:", transaction.id)
