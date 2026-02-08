@@ -282,7 +282,7 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
         pass_digital_charge: true,
         // Using existing deposit pages for consistency with current flow
         callback_url: `${APP_URL}/api/webhooks/instant-payment`,
-        success_url: `${APP_URL}/dashboard/deposit/success?transaction_id=${transaction.id}`,
+        success_url: `${APP_URL}/dashboard/wallet?transaction_id=${transaction.id}`,
         cancel_url: `${APP_URL}/dashboard/deposit/cancel`,
       }),
     })
