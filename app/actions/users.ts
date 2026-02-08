@@ -28,9 +28,23 @@ export async function updateUser(
     // Prepare update data
     const updateData: Record<string, any> = { ...data }
     
-    // Auto-set price_multiplier based on tier
+    // Auto-set price_multiplier based on tier, but preserve VIP custom multipliers when tier stays the same
     if (data.tier !== undefined) {
-      updateData.price_multiplier = TIER_MULTIPLIERS[data.tier] || 3.0
+      let priceMultiplier = TIER_MULTIPLIERS[data.tier] || 3.0
+
+      if (data.tier === 4) {
+        const { data: existingUser, error: existingUserError } = await supabase
+          .from("users")
+          .select("tier, price_multiplier")
+          .eq("id", userId)
+          .single()
+
+        if (!existingUserError && existingUser?.tier === 4 && existingUser.price_multiplier) {
+          priceMultiplier = existingUser.price_multiplier
+        }
+      }
+
+      updateData.price_multiplier = priceMultiplier
       console.log("[v0] Setting price_multiplier:", updateData.price_multiplier, "for tier:", data.tier)
     }
 
