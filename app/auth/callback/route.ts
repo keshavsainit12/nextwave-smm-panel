@@ -2,7 +2,6 @@ import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { randomBytes } from "crypto"
 
 export async function GET(request: NextRequest) {
   try {
@@ -102,7 +101,7 @@ export async function GET(request: NextRequest) {
     if (!existingUser) {
       console.log("[v0] Creating new user profile for OAuth user")
       
-      const referralCode = "REF" + randomBytes(4).toString("hex").toUpperCase()
+      const referralCode = "REF" + Math.random().toString(36).substring(2, 10).toUpperCase()
 
       const { error: insertError } = await supabaseAdmin.from("users").insert({
         id: user.id,

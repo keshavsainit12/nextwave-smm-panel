@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { updateOrderStatus, cancelOrder } from "@/app/actions/admin-orders"
 import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
 const statusColors: Record<string, "default" | "secondary" | "destructive"> = {
   pending: "secondary",
@@ -27,6 +28,7 @@ export function OrderList({ orders }: { orders: any[] }) {
   const [newStatus, setNewStatus] = useState("")
   const [adminNotes, setAdminNotes] = useState("")
   const [loading, setLoading] = useState(false)
+  const router = useRouter()
 
   const handleStatusUpdate = async () => {
     if (!selectedOrder || !newStatus) return
@@ -40,7 +42,7 @@ export function OrderList({ orders }: { orders: any[] }) {
       setSelectedOrder(null)
       setNewStatus("")
       setAdminNotes("")
-      // No redirect - stay on current page
+      router.refresh()
     } catch (error: any) {
       toast.error(error.message || "Failed to update order status")
     } finally {
@@ -61,7 +63,7 @@ export function OrderList({ orders }: { orders: any[] }) {
 
       toast.success("Order cancelled and balance refunded")
       setSelectedOrder(null)
-      // No redirect - stay on current page
+      router.refresh()
     } catch (error: any) {
       toast.error(error.message || "Failed to cancel order")
     } finally {

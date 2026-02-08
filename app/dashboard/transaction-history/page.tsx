@@ -54,14 +54,13 @@ export default async function TransactionHistoryPage() {
     return map
   }, {})
 
-  // Fetch instant payment transactions (deposits) - ONLY show completed/approved
+  // Fetch instant payment transactions (deposits)
   const { data: instantPayments, error: instantError } = await supabase
     .from("transactions")
     .select("*")
     .eq("user_id", user.id)
     .eq("type", "deposit")
     .eq("payment_method", "instant_xaf")
-    .in("status", ["completed", "approved"]) // Only show successful payments, not pending
     .order("created_at", { ascending: false })
 
   if (instantError) {

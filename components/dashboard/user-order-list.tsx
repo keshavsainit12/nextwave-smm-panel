@@ -141,21 +141,7 @@ export function UserOrderList({ orders }: { orders: any[] }) {
             </TableCell>
             <TableCell className="text-right">
               <div className="flex justify-end gap-2">
-                {/* Cancel Button - Priority for pending/processing orders */}
-                {(order.services?.can_cancel || order.services?.cancel) && (order.status === "pending" || order.status === "processing") && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleCancel(order.id)}
-                    disabled={loading === order.id}
-                  >
-                    <X className="h-3 w-3 mr-1" />
-                    Cancel
-                  </Button>
-                )}
-                
-                {/* Refill Button - Only for completed orders (use common sense!) */}
-                {(order.can_refill || order.services?.has_refill) && order.status === "completed" && (
+                {order.can_refill && order.status === "completed" && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -164,6 +150,17 @@ export function UserOrderList({ orders }: { orders: any[] }) {
                   >
                     <RefreshCw className={`h-3 w-3 mr-1 ${loading === order.id ? "animate-spin" : ""}`} />
                     Refill
+                  </Button>
+                )}
+                {(order.status === "pending" || order.status === "processing") && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleCancel(order.id)}
+                    disabled={loading === order.id}
+                  >
+                    <X className="h-3 w-3 mr-1" />
+                    Cancel
                   </Button>
                 )}
               </div>
