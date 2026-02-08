@@ -3,8 +3,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { OrderList } from "@/components/admin/order-list"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ExportCsvButton } from "@/components/admin/export-csv-button"
+import { revalidatePath } from "next/cache"
+import { useState } from "react"
 
 export default async function AdminOrdersPage() {
+  // Client-side sync handler
+  async function handleSyncOrders() {
+    try {
+      const res = await fetch("/api/cron/sync-orders", { method: "POST" })
+      if (res.ok) {
+        window.location.reload()
+      } else {
+        alert("Sync failed")
+      }
+    } catch (e) {
+      alert("Sync error")
+    }
+  }
   const supabase = createAdminClient()
   const { data: orders, error } = await supabase
     .from("orders")
@@ -52,8 +67,15 @@ export default async function AdminOrdersPage() {
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight">Orders</h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">Monitor and manage all user orders</p>
         </div>
-        <div className="flex-shrink-0 w-full sm:w-auto">
+        <div className="flex-shrink-0 w-full sm:w-auto flex gap-2">
           <ExportCsvButton data={exportData || []} filename="orders" />
+          <button
+            type="button"
+            className="inline-flex items-center px-3 py-2 border border-blue-600 text-blue-600 rounded hover:bg-blue-50 text-xs sm:text-sm font-medium"
+            onClick={handleSyncOrders}
+          >
+            Sync Orders
+          </button>
         </div>
       </div>
 
