@@ -80,8 +80,16 @@ export function MobileProfile({ user, userProfile }: { user: any; userProfile: U
 
         {/* Action Buttons */}
         <div className="space-y-2">
-          <button className="w-full px-4 py-3 rounded-lg bg-primary text-white font-bold text-sm">Add Funds</button>
-          <button className="w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-800 border border-[#dbdfe6] dark:border-gray-700 text-[#616f89] dark:text-gray-400 font-bold text-sm">
+          <button
+            className="w-full px-4 py-3 rounded-lg bg-primary text-white font-bold text-sm"
+            onClick={() => router.push("/dashboard/deposit")}
+          >
+            Add Funds
+          </button>
+          <button
+            className="w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-800 border border-[#dbdfe6] dark:border-gray-700 text-[#616f89] dark:text-gray-400 font-bold text-sm"
+            onClick={() => router.push("/auth/forgot-password")}
+          >
             Change Password
           </button>
         </div>
