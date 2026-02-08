@@ -2,9 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Payment Gateway</title>
+  <title>Make Payment</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="robots" content="noindex, nofollow" />
 
   <style>
     body {
@@ -16,51 +15,60 @@
       height: 100vh;
       margin: 0;
     }
-    .box {
+    .card {
       background: #fff;
       padding: 30px;
       border-radius: 10px;
+      width: 100%;
+      max-width: 420px;
       text-align: center;
       box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-      width: 100%;
-      max-width: 400px;
     }
-    h1 {
+    h2 {
       color: #16a34a;
       margin-bottom: 10px;
     }
     p {
       color: #555;
+      font-size: 14px;
       margin-bottom: 20px;
     }
-    button {
+    a.pay-btn {
+      display: block;
       background: #2563eb;
       color: #fff;
-      border: none;
-      padding: 12px 20px;
+      text-decoration: none;
+      padding: 14px;
       border-radius: 6px;
       font-size: 16px;
-      cursor: pointer;
-      width: 100%;
     }
-    button:hover {
+    a.pay-btn:hover {
       background: #1e40af;
+    }
+    .note {
+      margin-top: 12px;
+      font-size: 12px;
+      color: #777;
     }
   </style>
 </head>
 
 <body>
-  <div class="box">
-    <h1>Payment Gateway</h1>
-    <p>Click below to continue payment</p>
+  <div class="card">
+    <h2>Pay Securely</h2>
+    <p>Click below to continue to secure payment</p>
 
-    <button onclick="startPayment()">Proceed to Pay</button>
+    <!-- 🔴 AS-IT-IS PAYMENT LINK (YAHI CHANGE KARNA HAI) -->
+    <a
+      class="pay-btn"
+      href="https://pay.accountpe.in/CLIENT_PAYMENT_LINK"
+    >
+      Pay Now
+    </a>
+
+    <div class="note">
+      You will be redirected to a secure payment page
+    </div>
   </div>
-
-  <script>
-    function startPayment() {
-      window.location.href = "/payment/success";
-    }
-  </script>
 </body>
 </html>
