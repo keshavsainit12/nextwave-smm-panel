@@ -1,5 +1,7 @@
 "use client"
 
+// Changes applied in VS Code
+
 import type React from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useState, useMemo, useEffect, useCallback } from "react"
@@ -518,9 +520,11 @@ export function MobileHighTrustDashboard({
                   >
                     {categoriesWithServices.map((category) => {
                       const iconUrl = getIconUrl(category)
+                      const categoryLabel = category.name
+                      const shouldAnimate = categoryLabel.length > 28
                       return (
                         <SelectItem key={category.id} value={category.id}>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 w-full">
                             {iconUrl && (
                               <img
                                 src={iconUrl || "/placeholder.svg"}
@@ -532,7 +536,20 @@ export function MobileHighTrustDashboard({
                                 }}
                               />
                             )}
-                            <span className="whitespace-normal break-words leading-tight py-0.5">{category.name}</span>
+                            <div className="flex-1 min-w-0 overflow-hidden">
+                              <div
+                                className={`inline-flex whitespace-nowrap ${
+                                  shouldAnimate ? "animate-marquee motion-reduce:animate-none" : ""
+                                }`}
+                              >
+                                <span className="pr-6">{categoryLabel}</span>
+                                {shouldAnimate && (
+                                  <span className="pr-6" aria-hidden="true">
+                                    {categoryLabel}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           </div>
                         </SelectItem>
                       )
@@ -581,9 +598,11 @@ export function MobileHighTrustDashboard({
                       >
                         {filteredServices.map((service) => {
                           const iconUrl = getIconUrl(service)
+                          const serviceLabel = `${service.name} - ${displayAmount(Number(service.price || service.base_price || 0))}/1k`
+                          const shouldAnimate = serviceLabel.length > 32
                           return (
                             <SelectItem key={service.id} value={service.id}>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 w-full">
                                 {iconUrl && (
                                   <img
                                     src={iconUrl || "/placeholder.svg"}
@@ -595,7 +614,20 @@ export function MobileHighTrustDashboard({
                                     }}
                                   />
                                 )}
-                                <span className="whitespace-normal break-words leading-tight py-0.5">{service.name} - {displayAmount(Number(service.price || service.base_price || 0))}/1k</span>
+                                <div className="flex-1 min-w-0 overflow-hidden">
+                                  <div
+                                    className={`inline-flex whitespace-nowrap ${
+                                      shouldAnimate ? "animate-marquee motion-reduce:animate-none" : ""
+                                    }`}
+                                  >
+                                    <span className="pr-6">{serviceLabel}</span>
+                                    {shouldAnimate && (
+                                      <span className="pr-6" aria-hidden="true">
+                                        {serviceLabel}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
                             </SelectItem>
                           )
