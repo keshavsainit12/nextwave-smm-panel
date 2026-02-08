@@ -437,15 +437,11 @@ export function MobileOrderInterface({
         <div className="space-y-2">
           <Label className="text-xs font-bold uppercase tracking-wider text-slate-600">Category</Label>
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-full h-11 bg-white/70 backdrop-blur-xl border border-white/30 rounded-xl text-sm font-medium group">
+            <SelectTrigger className="w-full h-11 bg-white/70 backdrop-blur-xl border border-white/30 rounded-xl text-sm font-medium">
               <SelectValue>
-                <div className="overflow-hidden w-full">
-                  <div className="whitespace-nowrap group-hover:animate-marquee inline-block">
-                    {categories.find((c) => c.id === selectedCategory)?.name || "Select Category"}
-                    {" "}
-                    {categories.find((c) => c.id === selectedCategory)?.name || "Select Category"}
-                  </div>
-                </div>
+                <span className="truncate block">
+                  {categories.find((c) => c.id === selectedCategory)?.name || "Select Category"}
+                </span>
               </SelectValue>
             </SelectTrigger>
             <SelectContent
@@ -458,7 +454,7 @@ export function MobileOrderInterface({
                 const iconUrl = getIconUrl(cat.name)
                 return (
                   <SelectItem key={cat.id} value={cat.id} className="text-sm">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
                       {iconUrl && (
                         <img
                           src={iconUrl}
@@ -469,7 +465,7 @@ export function MobileOrderInterface({
                           }}
                         />
                       )}
-                      <span className="truncate block">{cat.name}</span>
+                      <span className="truncate">{cat.name}</span>
                     </div>
                   </SelectItem>
                 )
@@ -499,15 +495,11 @@ export function MobileOrderInterface({
                 }
               }}
             >
-              <SelectTrigger className="w-full h-11 bg-white/70 backdrop-blur-xl border border-white/30 rounded-xl text-sm font-medium group">
+              <SelectTrigger className="w-full h-11 bg-white/70 backdrop-blur-xl border border-white/30 rounded-xl text-sm font-medium">
                 <SelectValue>
-                  <div className="overflow-hidden w-full">
-                    <div className="whitespace-nowrap group-hover:animate-marquee inline-block">
-                      {selectedService?.name || "Select Service"}
-                      {" "}
-                      {selectedService?.name || "Select Service"}
-                    </div>
-                  </div>
+                  <span className="truncate block">
+                    {selectedService?.name || "Select Service"}
+                  </span>
                 </SelectValue>
               </SelectTrigger>
               <SelectContent
