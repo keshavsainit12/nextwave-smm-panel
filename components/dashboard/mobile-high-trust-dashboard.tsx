@@ -85,19 +85,23 @@ export function MobileHighTrustDashboard({
   const totalPrice = useMemo(() => {
     if (!selectedService) return 0
     const servicePrice = Number(selectedService.price || selectedService.base_price || 0)
-    const multiplier = isBulkBuy ? 2.5 : 3.0
+    const baseMultiplier = priceMultiplier ?? 3.0
+    const bulkMultiplier = Math.min(baseMultiplier, 2.5)
+    const multiplier = isBulkBuy ? bulkMultiplier : baseMultiplier
     const priceBeforeDiscount = (quantity / 1000) * servicePrice * multiplier
     const finalPrice = appliedCouponDiscount > 0 ? priceBeforeDiscount * (1 - appliedCouponDiscount / 100) : priceBeforeDiscount
     return finalPrice
-  }, [selectedService, quantity, isBulkBuy, appliedCouponDiscount])
+  }, [selectedService, quantity, isBulkBuy, appliedCouponDiscount, priceMultiplier])
 
   const savings = useMemo(() => {
     if (!selectedService || !isBulkBuy) return 0
     const servicePrice = Number(selectedService.price || selectedService.base_price || 0)
-    const regularPrice = (quantity / 1000) * servicePrice * 3.0
-    const bulkPrice = (quantity / 1000) * servicePrice * 2.5
+    const baseMultiplier = priceMultiplier ?? 3.0
+    const bulkMultiplier = Math.min(baseMultiplier, 2.5)
+    const regularPrice = (quantity / 1000) * servicePrice * baseMultiplier
+    const bulkPrice = (quantity / 1000) * servicePrice * bulkMultiplier
     return regularPrice - bulkPrice
-  }, [selectedService, quantity, isBulkBuy])
+  }, [selectedService, quantity, isBulkBuy, priceMultiplier])
 
   const categoriesWithServices = useMemo(() => {
     return categories.filter((category) => services.some((s) => s.category_id === category.id))
@@ -678,7 +682,9 @@ export function MobileHighTrustDashboard({
                       <Sparkles className="w-4 h-4 text-emerald-600" />
                       <div className="flex-1">
                         <p className="text-xs font-bold text-emerald-700">You're saving ${savings.toFixed(2)}!</p>
-                        <p className="text-[10px] text-slate-500 font-medium">Bulk pricing: 2.5x vs Regular: 3x</p>
+                        <p className="text-[10px] text-slate-500 font-medium">
+                          Bulk pricing: {Math.min(priceMultiplier ?? 3.0, 2.5)}x vs Regular: {priceMultiplier ?? 3.0}x
+                        </p>
                       </div>
                     </div>
                   )}
