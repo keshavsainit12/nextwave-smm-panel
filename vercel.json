@@ -2,13 +2,11 @@
   "crons": [
     {
       "path": "/api/cron/sync-orders",
-      "schedule": "0 2 * * *",
-      "comment": "Daily sync orders (once per day) - Vercel Hobby plan safe"
+      "schedule": "0 2 * * *"
     },
     {
       "path": "/api/cron/verify-instant-payments",
-      "schedule": "0 3 * * *",
-      "comment": "Daily verify instant payments (once per day) - Vercel Hobby plan safe"
+      "schedule": "0 3 * * *"
     }
   ]
 }
