@@ -2,13 +2,13 @@
   "crons": [
     {
       "path": "/api/cron/sync-orders",
-      "schedule": "*/30 * * * *",
-      "comment": "Sync orders every 30 minutes (48 runs/day)"
+      "schedule": "0 2 * * *",
+      "comment": "Daily sync orders (once per day) - Vercel Hobby plan safe"
     },
     {
       "path": "/api/cron/verify-instant-payments",
-      "schedule": "*/30 * * * *",
-      "comment": "Verify payments every 30 minutes (48 runs/day). Total: 96 runs/day (under 100 free limit)"
+      "schedule": "0 3 * * *",
+      "comment": "Daily verify instant payments (once per day) - Vercel Hobby plan safe"
     }
   ]
 }
