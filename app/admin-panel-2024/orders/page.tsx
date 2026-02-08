@@ -2,28 +2,8 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { OrderList } from "@/components/admin/order-list"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ExportCsvButton } from "@/components/admin/export-csv-button"
-// import { revalidatePath } from "next/cache" // (Unused, removed for code quality)
+import { SyncOrdersButton } from "@/components/admin/sync-orders-button"
 
-// Move handleSyncOrders to outer scope for better maintainability
-async function handleSyncOrders() {
-  try {
-    const res = await fetch("/api/cron/sync-orders", { method: "POST" })
-    if (res.ok) {
-      globalThis.location.reload()
-    } else {
-      // Optionally log error for debugging
-      // eslint-disable-next-line no-console
-      console.error("Sync failed", await res.text())
-      alert("Sync failed")
-    }
-  } catch (e) {
-    // Log error for maintainability
-    // eslint-disable-next-line no-console
-    console.error("Sync error", e)
-    alert("Sync error")
-  }
-}
 
 export default async function AdminOrdersPage() {
   const supabase = createAdminClient()
@@ -75,13 +55,7 @@ export default async function AdminOrdersPage() {
         </div>
         <div className="flex-shrink-0 w-full sm:w-auto flex gap-2">
           <ExportCsvButton data={exportData || []} filename="orders" />
-          <button
-            type="button"
-            className="inline-flex items-center px-3 py-2 border border-blue-600 text-blue-600 rounded hover:bg-blue-50 text-xs sm:text-sm font-medium"
-            onClick={() => handleSyncOrders()}
-          >
-            Sync Orders
-          </button>
+          <SyncOrdersButton />
         </div>
       </div>
 
