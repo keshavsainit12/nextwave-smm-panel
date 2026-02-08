@@ -5,7 +5,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { SyncOrdersButton } from "@/components/admin/sync-orders-button"
 
 
-export default async function AdminOrdersPage() {
   const supabase = createAdminClient()
   const { data: orders, error } = await supabase
     .from("orders")
@@ -13,18 +12,25 @@ export default async function AdminOrdersPage() {
     .order("created_at", { ascending: false })
     .limit(100)
 
+  // Error handling: show error in UI if query fails
   if (error) {
-    console.error("[v0] Admin orders fetch error:", error)
+    return (
+      <div className="p-6 text-center text-red-600 font-semibold">
+        Failed to load orders: {error.message || "Unknown error"}
+      </div>
+    )
   }
 
   // Transform orders - service icon fallback no longer needed
-  const transformedOrders = orders?.map((order: any) => ({
-    ...order,
-    services: {
-      ...order.services,
-      icon: order.services?.icon,
-    },
-  })) || []
+  const transformedOrders = Array.isArray(orders)
+    ? orders.map((order: any) => ({
+        ...order,
+        services: {
+          ...order.services,
+          icon: order.services?.icon,
+        },
+      }))
+    : []
 
   const statusCounts = {
     pending: orders?.filter((o) => o.status === "pending").length || 0,
@@ -131,4 +137,4 @@ export default async function AdminOrdersPage() {
       </Tabs>
     </div>
   )
-}
+
