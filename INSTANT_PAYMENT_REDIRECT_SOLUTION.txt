@@ -1,0 +1,124 @@
+================================================================================
+INSTANT PAYMENT REDIRECT - WHERE AND HOW
+================================================================================
+
+PROBLEM:
+Tumhare dashboard mein instant payment ke baad user kaha redirect ho raha hai
+aur kaha hona chahiye?
+
+================================================================================
+CURRENT SITUATION (Abhi kya ho raha hai):
+================================================================================
+
+After Payment:
+→ User redirect: success.php ya purana PHP page ❌
+→ Ye AccountPe dashboard mein purani PHP URLs set hain
+
+================================================================================
+EXPECTED BEHAVIOR (Kya hona chahiye):
+================================================================================
+
+Payment Success ke baad:
+→ Redirect to: https://nextwavesmm.com/dashboard/deposit/success?transaction_id=xxx ✅
+→ Success page show karega transaction details
+→ 5 seconds baad auto-redirect to dashboard
+
+Payment Cancel ke baad:
+→ Redirect to: https://nextwavesmm.com/dashboard/deposit/cancel ✅
+→ Cancel page show karega message
+
+Webhook Callback:
+→ AccountPe call karega: https://nextwavesmm.com/api/webhooks/instant-payment ✅
+→ Instant balance update
+
+================================================================================
+SOLUTION - ACCOUNTPE DASHBOARD UPDATE KARO
+================================================================================
+
+Step 1: AccountPe Dashboard Login
+---------------------------------
+Email: nextwavedigitalsolutions1@gmail.com
+Password: FMdbnds53@@
+URL: https://portal.accountpe.com
+
+Step 2: Settings Mein Jao
+---------------------------------
+Find: Settings → API Configuration
+Ya: Settings → Merchant Settings
+Ya: Developer → API Settings
+
+Step 3: URLs Update Karo
+---------------------------------
+PURANE URLs (Remove):
+❌ Success URL: https://nextwavesmm.com/success.php
+❌ Cancel URL: https://nextwavesmm.com/cancel.php
+❌ Callback: https://nextwavesmm.com/api/recharge/check.php
+
+NAYE URLs (Set):
+✅ Success URL: https://nextwavesmm.com/dashboard/deposit/success?transaction_id={transaction_id}
+✅ Cancel URL: https://nextwavesmm.com/dashboard/deposit/cancel
+✅ Webhook URL: https://nextwavesmm.com/api/webhooks/instant-payment
+
+Step 4: Save Karo
+---------------------------------
+Save button dabao aur 5 minute wait karo
+
+Step 5: Test Karo
+---------------------------------
+Small amount ka test payment try karo
+Check karo redirect sahi URL pe ja raha hai
+
+================================================================================
+TUMHARA NEXT.JS CODE - ALREADY SAHI HAI! ✅
+================================================================================
+
+File: app/actions/instant-payments.ts
+
+Code dekho (Lines 283-286):
+```typescript
+callback_url: `${APP_URL}/api/webhooks/instant-payment`,
+success_url: `${APP_URL}/dashboard/deposit/success?transaction_id=${transaction.id}`,
+cancel_url: `${APP_URL}/dashboard/deposit/cancel`,
+```
+
+Ye code bilkul sahi hai! ✅
+Problem dashboard settings mein hai, code mein nahi.
+
+================================================================================
+TESTING STEPS
+================================================================================
+
+1. AccountPe dashboard URLs update karo
+2. 5 minute wait karo
+3. Test payment karo (10 XAF)
+4. Payment complete karo
+5. Check karo redirect URL:
+   - Agar success.php dikha → Dashboard URLs abhi bhi purane hain
+   - Agar /dashboard/deposit/success dikha → Perfect! ✅
+
+================================================================================
+WHY THIS HAPPENING?
+================================================================================
+
+Purane PHP system mein:
+- success.php use hota tha
+- AccountPe dashboard mein wo URLs save the
+- Ab Next.js use kar rahe ho but dashboard mein purani URLs hain
+
+Solution:
+- Dashboard settings update karo
+- PHP URLs ko Next.js URLs se replace karo
+
+================================================================================
+QUICK SUMMARY
+================================================================================
+
+CURRENT: success.php pe redirect ❌
+SHOULD: /dashboard/deposit/success pe redirect ✅
+
+ACTION: AccountPe dashboard mein URLs update karo
+CODE: Already sahi hai, code change nahi chahiye ✅
+
+Login → Settings → API Config → URLs Update → Save → Test
+
+================================================================================

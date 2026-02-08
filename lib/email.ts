@@ -1,11 +1,32 @@
 import { Resend } from 'resend';
 
-// Initialize Resend with API key
-const resend = new Resend(process.env.RESEND_API_KEY || 're_MsciK1E1_AzghPuCc8R8tE3vznMjp2nLv');
-
 // Email service class
 export class EmailService {
-  private static fromEmail = 'NextWave SMM Panel <noreply@yourdomain.com>'; // Update with your verified domain
+  // Use environment variable for from email, fallback to a placeholder
+  private static fromEmail = process.env.RESEND_FROM_EMAIL || 'NextWave SMM Panel <onboarding@resend.dev>';
+  
+  // Lazy-load Resend instance to avoid build-time errors
+  private static resendInstance: Resend | null = null;
+  
+  private static getResendClient(): Resend | null {
+    if (this.resendInstance) {
+      return this.resendInstance;
+    }
+    
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      console.warn('[EmailService] RESEND_API_KEY not configured. Email sending disabled.');
+      return null;
+    }
+    
+    try {
+      this.resendInstance = new Resend(apiKey);
+      return this.resendInstance;
+    } catch (error) {
+      console.error('[EmailService] Failed to initialize Resend:', error);
+      return null;
+    }
+  }
 
   /**
    * Send deposit confirmation email
@@ -18,6 +39,12 @@ export class EmailService {
     userName: string
   ) {
     try {
+      const resend = this.getResendClient();
+      if (!resend) {
+        console.error('[EmailService] Cannot send email: RESEND_API_KEY not configured');
+        return { success: false, error: { message: 'Email service not configured' } };
+      }
+
       const { data, error } = await resend.emails.send({
         from: this.fromEmail,
         to: to,
@@ -51,6 +78,12 @@ export class EmailService {
     userName: string
   ) {
     try {
+      const resend = this.getResendClient();
+      if (!resend) {
+        console.error('[EmailService] Cannot send email: RESEND_API_KEY not configured');
+        return { success: false, error: { message: 'Email service not configured' } };
+      }
+
       const { data, error } = await resend.emails.send({
         from: this.fromEmail,
         to: to,
@@ -83,6 +116,12 @@ export class EmailService {
     userName: string
   ) {
     try {
+      const resend = this.getResendClient();
+      if (!resend) {
+        console.error('[EmailService] Cannot send email: RESEND_API_KEY not configured');
+        return { success: false, error: { message: 'Email service not configured' } };
+      }
+
       const { data, error } = await resend.emails.send({
         from: this.fromEmail,
         to: to,
@@ -114,6 +153,12 @@ export class EmailService {
     userName: string
   ) {
     try {
+      const resend = this.getResendClient();
+      if (!resend) {
+        console.error('[EmailService] Cannot send email: RESEND_API_KEY not configured');
+        return { success: false, error: { message: 'Email service not configured' } };
+      }
+
       const { data, error } = await resend.emails.send({
         from: this.fromEmail,
         to: to,

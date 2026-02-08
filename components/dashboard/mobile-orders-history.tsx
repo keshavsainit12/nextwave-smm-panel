@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { createTicket } from "@/app/actions/tickets"
 import { toast } from "sonner"
 
+import { displayAmount } from "@/lib/currency"
 interface Order {
   id: string
   order_id: string
@@ -104,7 +105,7 @@ const getIconUrl = (serviceName: string): string | undefined => {
   return undefined
 }
 
-export function MobileOrdersHistory({ orders }: { orders: Order[] }) {
+export function MobileOrdersHistory({ orders, currency, currencySymbol }: { orders: Order[], currency: string, currencySymbol: string }) {
   const [searchQuery, setSearchQuery] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
   const [ticketDialogOpen, setTicketDialogOpen] = useState(false)
@@ -268,7 +269,7 @@ export function MobileOrdersHistory({ orders }: { orders: Order[] }) {
                     </div>
                     <div className="bg-slate-50 rounded-lg p-3">
                       <p className="text-xs text-slate-600 font-medium mb-1">Total Price</p>
-                      <p className="text-sm font-bold text-slate-900">${(order.price || 0).toFixed(2)}</p>
+                      <p className="text-sm font-bold text-slate-900">{displayAmount(order.price, currency)}</p>
                     </div>
                   </div>
 

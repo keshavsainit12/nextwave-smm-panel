@@ -280,6 +280,26 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
       })
     }
 
+    // Send order confirmation email
+    try {
+      console.log("[v0] Sending order confirmation email...")
+      const { EmailService } = await import("@/lib/email")
+      
+      await EmailService.sendOrderConfirmation(
+        userData.email,
+        order.id,
+        service.name,
+        quantity,
+        price,
+        "USD", // TODO: Use user's currency from settings
+        userData.full_name || userData.email
+      )
+      console.log("[v0] Order confirmation email sent successfully")
+    } catch (emailError) {
+      // Don't fail the order if email fails
+      console.error("[v0] Failed to send order confirmation email (non-critical):", emailError)
+    }
+
     revalidatePath("/dashboard")
     revalidatePath("/dashboard/orders")
 
@@ -327,6 +347,7 @@ export async function syncOrderStatus(orderId: string) {
     else if (status.status === "Canceled") newStatus = "canceled"
 
     // Update order
+    const oldStatus = order.status
     await supabase
       .from("orders")
       .update({
@@ -336,6 +357,33 @@ export async function syncOrderStatus(orderId: string) {
         updated_at: new Date().toISOString(),
       })
       .eq("id", orderId)
+
+    // Send status update email if status changed
+    if (oldStatus !== newStatus) {
+      try {
+        console.log("[v0] Order status changed, sending email notification...")
+        const { data: userData } = await supabase
+          .from("users")
+          .select("email, full_name")
+          .eq("id", order.user_id)
+          .single()
+
+        if (userData) {
+          const { EmailService } = await import("@/lib/email")
+          await EmailService.sendOrderStatusUpdate(
+            userData.email,
+            orderId,
+            order.service.name || "Service",
+            oldStatus,
+            newStatus,
+            userData.full_name || userData.email
+          )
+          console.log("[v0] Order status update email sent successfully")
+        }
+      } catch (emailError) {
+        console.error("[v0] Failed to send order status update email (non-critical):", emailError)
+      }
+    }
 
     revalidatePath("/dashboard/orders")
     revalidatePath("/admin-panel-2024/orders")

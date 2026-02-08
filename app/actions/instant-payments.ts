@@ -280,7 +280,9 @@ export async function createInstantPayment(params: CreateInstantPaymentParams): 
         currency: "XAF",
         transaction_id: transaction.id,
         pass_digital_charge: true,
-        callback_url: `${APP_URL}/api/webhooks/instant-payment`,
+        // IMPORTANT: Swychr/AccountPe redirects USER to callback_url after payment
+        // Webhook notifications are configured separately in the payment gateway dashboard
+        callback_url: `${APP_URL}/dashboard/deposit/success?transaction_id=${transaction.id}`,
         success_url: `${APP_URL}/dashboard/deposit/success?transaction_id=${transaction.id}`,
         cancel_url: `${APP_URL}/dashboard/deposit/cancel`,
       }),
