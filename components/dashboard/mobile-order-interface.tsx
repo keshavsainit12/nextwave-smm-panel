@@ -437,11 +437,13 @@ export function MobileOrderInterface({
         <div className="space-y-2">
           <Label className="text-xs font-bold uppercase tracking-wider text-slate-600">Category</Label>
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-full h-11 bg-white/70 backdrop-blur-xl border border-white/30 rounded-xl text-sm font-medium">
+            <SelectTrigger className="w-full h-11 bg-white/70 backdrop-blur-xl border border-white/30 rounded-xl text-sm font-medium overflow-hidden">
               <SelectValue>
-                <span className="truncate block">
-                  {categories.find((c) => c.id === selectedCategory)?.name || "Select Category"}
-                </span>
+                <div className="overflow-hidden w-full">
+                  <span className="inline-block whitespace-nowrap animate-marquee">
+                    {categories.find((c) => c.id === selectedCategory)?.name || "Select Category"}
+                  </span>
+                </div>
               </SelectValue>
             </SelectTrigger>
             <SelectContent
@@ -495,11 +497,13 @@ export function MobileOrderInterface({
                 }
               }}
             >
-              <SelectTrigger className="w-full h-11 bg-white/70 backdrop-blur-xl border border-white/30 rounded-xl text-sm font-medium">
+              <SelectTrigger className="w-full h-11 bg-white/70 backdrop-blur-xl border border-white/30 rounded-xl text-sm font-medium overflow-hidden">
                 <SelectValue>
-                  <span className="truncate block">
-                    {selectedService?.name || "Select Service"}
-                  </span>
+                  <div className="overflow-hidden w-full">
+                    <span className="inline-block whitespace-nowrap animate-marquee">
+                      {selectedService?.name || "Select Service"}
+                    </span>
+                  </div>
                 </SelectValue>
               </SelectTrigger>
               <SelectContent
