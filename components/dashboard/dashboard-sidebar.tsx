@@ -20,6 +20,7 @@ const getTierInfo = (priceMultiplier: number | undefined | null) => {
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
+  { name: "Wallet", href: "/dashboard/wallet", icon: Wallet },
   { name: "My Orders", href: "/dashboard/orders", icon: Package },
   { name: "Transaction History", href: "/dashboard/transaction-history", icon: Receipt },
   { name: "API Access", href: "/dashboard/api", icon: Code },
