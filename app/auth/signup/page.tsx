@@ -11,7 +11,7 @@ import Script from "next/script"
 import { RECAPTCHA_SITE_KEY } from "@/lib/recaptcha-config"
 
 function SignupContent() {
-  // Helper to render reCAPTCHA widget reliably, with cleanup
+  // Helper to render reCAPTCHA widget reliably, with safe cleanup
   const renderRecaptcha = () => {
     if (typeof window === 'undefined' || !(window as any).grecaptcha) return false;
     const container = document.getElementById('recaptcha-container');
@@ -19,15 +19,6 @@ function SignupContent() {
     // Remove any orphaned widget if present
     while (container.firstChild) {
       container.removeChild(container.firstChild);
-    }
-    // Remove any previous widget from grecaptcha registry (if exists)
-    if ((window as any).___grecaptcha_cfg && Array.isArray((window as any).___grecaptcha_cfg.clients)) {
-      const clients = (window as any).___grecaptcha_cfg.clients;
-      for (const client of clients) {
-        if (client && client.widgetId !== undefined) {
-          try { (window as any).grecaptcha.reset(client.widgetId); } catch {}
-        }
-      }
     }
     // Render new widget
     (window as any).grecaptcha.render('recaptcha-container', {
