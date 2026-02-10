@@ -16,6 +16,35 @@ function SignupContent() {
   const [confirmPassword, setConfirmPassword] = useState("")
   const [fullName, setFullName] = useState("")
   const [referralCode, setReferralCode] = useState("")
+  const [referralStatus, setReferralStatus] = useState<string | null>(null)
+  const [isVerifyingReferral, setIsVerifyingReferral] = useState(false)
+
+  // Instant referral code verification
+  const verifyReferralCode = async () => {
+    setIsVerifyingReferral(true)
+    setReferralStatus(null)
+    if (!referralCode.trim()) {
+      setReferralStatus("Please enter a referral code.")
+      setIsVerifyingReferral(false)
+      return
+    }
+    try {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from("users")
+        .select("id, full_name, email")
+        .eq("referral_code", referralCode.trim().toUpperCase())
+        .single()
+      if (error || !data) {
+        setReferralStatus("Invalid referral code.")
+      } else {
+        setReferralStatus(`Referral code verified: ${data.full_name || data.email}`)
+      }
+    } catch (err) {
+      setReferralStatus("Error verifying referral code.")
+    }
+    setIsVerifyingReferral(false)
+  }
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -335,15 +364,33 @@ function SignupContent() {
               <label htmlFor="referralCode" className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-600">
                 Referral Code (Optional)
               </label>
-              <input
-                id="referralCode"
-                type="text"
-                placeholder="Enter referral code"
-                value={referralCode}
-                onChange={(e) => setReferralCode(e.target.value)}
-                disabled={isLoading}
-                className="w-full bg-white/50 border border-white/30 rounded-2xl px-4 sm:px-5 py-2.5 sm:py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all disabled:opacity-50"
-              />
+              <div className="flex gap-2">
+                <input
+                  id="referralCode"
+                  type="text"
+                  placeholder="Enter referral code"
+                  value={referralCode}
+                  onChange={(e) => {
+                    setReferralCode(e.target.value)
+                    setReferralStatus(null)
+                  }}
+                  disabled={isLoading || isVerifyingReferral}
+                  className="w-full bg-white/50 border border-white/30 rounded-2xl px-4 sm:px-5 py-2.5 sm:py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all disabled:opacity-50"
+                />
+                <button
+                  type="button"
+                  onClick={verifyReferralCode}
+                  disabled={isVerifyingReferral || !referralCode.trim()}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isVerifyingReferral ? "Verifying..." : "Verify"}
+                </button>
+              </div>
+              {referralStatus && (
+                <div className={`text-xs mt-2 ${referralStatus.includes("verified") ? "text-green-600" : "text-red-600"}`}>
+                  {referralStatus}
+                </div>
+              )}
             </div>
 
             {/* reCAPTCHA */}
