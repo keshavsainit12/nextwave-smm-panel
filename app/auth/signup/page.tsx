@@ -11,20 +11,7 @@ import Script from "next/script"
 import { RECAPTCHA_SITE_KEY } from "@/lib/recaptcha-config"
 
 function SignupContent() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [fullName, setFullName] = useState("")
-  const [referralCode, setReferralCode] = useState("")
-  const [referralStatus, setReferralStatus] = useState<string | null>(null)
-  const [isVerifyingReferral, setIsVerifyingReferral] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
-  const [recaptchaLoaded, setRecaptchaLoaded] = useState(false)
-  const router = useRouter()
+  // ...existing code...
 
   // ...existing code...
 
