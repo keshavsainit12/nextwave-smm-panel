@@ -11,24 +11,36 @@ import Script from "next/script"
 import { RECAPTCHA_SITE_KEY } from "@/lib/recaptcha-config"
 
 function SignupContent() {
-  // Helper to render reCAPTCHA widget reliably
+  // Helper to render reCAPTCHA widget reliably, with cleanup
   const renderRecaptcha = () => {
     if (typeof window === 'undefined' || !(window as any).grecaptcha) return false;
     const container = document.getElementById('recaptcha-container');
-    if (container && !container.hasChildNodes()) {
-      (window as any).grecaptcha.render('recaptcha-container', {
-        sitekey: RECAPTCHA_SITE_KEY,
-        callback: handleRecaptchaChange,
-        'expired-callback': () => handleRecaptchaChange(null),
-        'error-callback': () => {
-          console.error('[v0] reCAPTCHA error occurred');
-          setError('reCAPTCHA verification failed. Please try again.');
-        },
-      });
-      console.log('[v0] reCAPTCHA widget rendered');
-      return true;
+    if (!container) return false;
+    // Remove any orphaned widget if present
+    while (container.firstChild) {
+      container.removeChild(container.firstChild);
     }
-    return false;
+    // Remove any previous widget from grecaptcha registry (if exists)
+    if ((window as any).___grecaptcha_cfg && Array.isArray((window as any).___grecaptcha_cfg.clients)) {
+      const clients = (window as any).___grecaptcha_cfg.clients;
+      for (const client of clients) {
+        if (client && client.widgetId !== undefined) {
+          try { (window as any).grecaptcha.reset(client.widgetId); } catch {}
+        }
+      }
+    }
+    // Render new widget
+    (window as any).grecaptcha.render('recaptcha-container', {
+      sitekey: RECAPTCHA_SITE_KEY,
+      callback: handleRecaptchaChange,
+      'expired-callback': () => handleRecaptchaChange(null),
+      'error-callback': () => {
+        console.error('[v0] reCAPTCHA error occurred');
+        setError('reCAPTCHA verification failed. Please try again.');
+      },
+    });
+    console.log('[v0] reCAPTCHA widget rendered');
+    return true;
   };
 
   const [email, setEmail] = useState("")
@@ -105,7 +117,7 @@ function SignupContent() {
     }
   }
 
-  // Improved loadRecaptcha with retry
+  // Improved loadRecaptcha with retry and cleanup
   const loadRecaptcha = () => {
     if (!RECAPTCHA_SITE_KEY) {
       console.log('[v0] reCAPTCHA not configured - skipping');
@@ -125,12 +137,30 @@ function SignupContent() {
     tryRender();
   };
 
-  // Ensure reCAPTCHA renders after mount (for client navigation)
+  // Ensure reCAPTCHA renders after mount and on navigation
   useEffect(() => {
-    if (window.grecaptcha && document.getElementById('recaptcha-container')) {
-      renderRecaptcha();
-    }
-  }, []);
+    let mounted = true;
+    const tryRender = () => {
+      if (!mounted) return;
+      if (window.grecaptcha && document.getElementById('recaptcha-container')) {
+        renderRecaptcha();
+      } else {
+        setTimeout(tryRender, 200);
+      }
+    };
+    tryRender();
+    // Cleanup on unmount: remove widget and reset state
+    return () => {
+      mounted = false;
+      const container = document.getElementById('recaptcha-container');
+      if (container) {
+        while (container.firstChild) {
+          container.removeChild(container.firstChild);
+        }
+      }
+      setCaptchaToken(null);
+    };
+  }, [recaptchaLoaded]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
