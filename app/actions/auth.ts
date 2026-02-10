@@ -111,45 +111,8 @@ export async function signupUser(formData: {
       }
     }
 
-    // Create user profile
-    console.log("[v0] Creating user profile for ID:", authData.user.id)
-
-    const { error: profileError } = await supabaseAdmin.from("users").insert({
-      id: authData.user.id,
-      email: formData.email.toLowerCase(),
-      full_name: formData.fullName,
-      tier: 1,
-      referral_code: referralCode,
-      referred_by: referredById,
-      role: "user",
-      balance: 0,
-      total_spent: 0,
-      total_orders: 0,
-    })
-
-    if (profileError) {
-      console.error("[v0] Profile creation error:", profileError.message, "Code:", profileError.code)
-      // Try to clean up the auth user if profile creation fails
-      try {
-        await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
-        console.log("[v0] Cleaned up auth user after profile creation failure")
-      } catch (cleanupError) {
-        console.warn("[v0] Failed to cleanup auth user:", cleanupError)
-      }
-
-      // If duplicate key error, return a more helpful message
-      if (profileError.code === "23505" || (profileError.message && profileError.message.includes("duplicate key value"))) {
-        return {
-          success: false,
-          error: "Signup failed due to a stuck/duplicate user. Please try again after a few seconds. If the problem persists, contact support.",
-        }
-      }
-
-      return {
-        success: false,
-        error: `Failed to create user profile: ${profileError.message}`,
-      }
-    }
+    // User profile creation is now handled by the handle_new_user trigger in the database.
+    // No manual insert into users table here.
 
     console.log("[v0] User profile created successfully")
     revalidatePath("/auth")
