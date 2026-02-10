@@ -113,6 +113,7 @@ export async function signupUser(formData: {
 
     // Create user profile
     console.log("[v0] Creating user profile for ID:", authData.user.id)
+
     const { error: profileError } = await supabaseAdmin.from("users").insert({
       id: authData.user.id,
       email: formData.email.toLowerCase(),
@@ -135,7 +136,15 @@ export async function signupUser(formData: {
       } catch (cleanupError) {
         console.warn("[v0] Failed to cleanup auth user:", cleanupError)
       }
-      
+
+      // If duplicate key error, return a more helpful message
+      if (profileError.code === "23505" || (profileError.message && profileError.message.includes("duplicate key value"))) {
+        return {
+          success: false,
+          error: "Signup failed due to a stuck/duplicate user. Please try again after a few seconds. If the problem persists, contact support.",
+        }
+      }
+
       return {
         success: false,
         error: `Failed to create user profile: ${profileError.message}`,
