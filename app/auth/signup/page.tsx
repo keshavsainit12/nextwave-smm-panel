@@ -11,8 +11,33 @@ import Script from "next/script"
 import { RECAPTCHA_SITE_KEY } from "@/lib/recaptcha-config"
 
 function SignupContent() {
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [fullName, setFullName] = useState("")
+  const [referralCode, setReferralCode] = useState("")
+  const [referralStatus, setReferralStatus] = useState<string | null>(null)
+  const [isVerifyingReferral, setIsVerifyingReferral] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const [recaptchaLoaded, setRecaptchaLoaded] = useState(false)
+  const router = useRouter()
+
+  // ...existing code...
+
+  const handleRecaptchaChange = (token: string | null) => {
+    console.log("[v0] reCAPTCHA token received:", token ? "✓ Valid" : "✗ Null")
+    setCaptchaToken(token)
+    if (token) {
+      setError(null)
+    }
+  }
+
   // Helper to render reCAPTCHA widget reliably, with safe cleanup
-  const renderRecaptcha = () => {
+  const renderRecaptcha = React.useCallback(() => {
     if (typeof window === 'undefined' || !(window as any).grecaptcha) return false;
     const container = document.getElementById('recaptcha-container');
     if (!container) return false;
@@ -32,7 +57,7 @@ function SignupContent() {
     });
     console.log('[v0] reCAPTCHA widget rendered');
     return true;
-  };
+  }, [handleRecaptchaChange, setError]);
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
