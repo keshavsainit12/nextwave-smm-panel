@@ -19,15 +19,24 @@ function SignupContent() {
   };
 
   const renderRecaptcha = () => {
-    if (typeof window === 'undefined' || !(window as any).grecaptcha) return;
-    const container = document.getElementById('recaptcha-container');
-    if (container && !container.hasChildNodes()) {
-      (window as any).grecaptcha.render('recaptcha-container', {
-        sitekey: RECAPTCHA_SITE_KEY,
-        callback: handleRecaptchaChange,
-        'expired-callback': () => handleRecaptchaChange(null),
-        'error-callback': () => setError('reCAPTCHA verification failed. Please try again.'),
-      });
+    try {
+      if (typeof window === 'undefined') return;
+      // Defensive: Only render if grecaptcha is available
+      if (!(window as any).grecaptcha) return;
+      const container = document.getElementById('recaptcha-container');
+      // Only render if not already rendered
+      if (container && !container.hasChildNodes() && !(container as any)._recaptchaRendered) {
+        (window as any).grecaptcha.render('recaptcha-container', {
+          sitekey: RECAPTCHA_SITE_KEY,
+          callback: handleRecaptchaChange,
+          'expired-callback': () => handleRecaptchaChange(null),
+          'error-callback': () => setError('reCAPTCHA verification failed. Please try again.'),
+        });
+        (container as any)._recaptchaRendered = true;
+      }
+    } catch (err) {
+      setError('reCAPTCHA failed to render. Please refresh the page.');
+      console.error('[v0] reCAPTCHA render error:', err);
     }
   };
 
@@ -103,12 +112,13 @@ function SignupContent() {
   const loadRecaptcha = () => {
     if (!RECAPTCHA_SITE_KEY) return;
     setRecaptchaLoaded(true);
-    renderRecaptcha();
+    // Delay rendering to ensure grecaptcha is available
+    setTimeout(renderRecaptcha, 200);
   };
 
   // Render reCAPTCHA after mount (like login page)
   useEffect(() => {
-    if (window.grecaptcha && document.getElementById('recaptcha-container')) {
+    if (typeof window !== 'undefined' && (window as any).grecaptcha && document.getElementById('recaptcha-container')) {
       renderRecaptcha();
     }
   }, [recaptchaLoaded]);
