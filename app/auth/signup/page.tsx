@@ -23,28 +23,23 @@ function SignupContent() {
     }
   }
 
-  // Helper to render reCAPTCHA widget reliably, with safe cleanup
-  const renderRecaptcha = React.useCallback(() => {
-    if (typeof window === 'undefined' || !(window as any).grecaptcha) return false;
+  // Simple, reliable reCAPTCHA render (like login page)
+  const renderRecaptcha = () => {
+    if (typeof window === 'undefined' || !(window as any).grecaptcha) return;
     const container = document.getElementById('recaptcha-container');
-    if (!container) return false;
-    // Remove any orphaned widget if present
-    while (container.firstChild) {
-      container.removeChild(container.firstChild);
+    if (container && !container.hasChildNodes()) {
+      (window as any).grecaptcha.render('recaptcha-container', {
+        sitekey: RECAPTCHA_SITE_KEY,
+        callback: handleRecaptchaChange,
+        'expired-callback': () => handleRecaptchaChange(null),
+        'error-callback': () => {
+          console.error('[v0] reCAPTCHA error occurred');
+          setError('reCAPTCHA verification failed. Please try again.');
+        },
+      });
+      console.log('[v0] reCAPTCHA widget rendered');
     }
-    // Render new widget
-    (window as any).grecaptcha.render('recaptcha-container', {
-      sitekey: RECAPTCHA_SITE_KEY,
-      callback: handleRecaptchaChange,
-      'expired-callback': () => handleRecaptchaChange(null),
-      'error-callback': () => {
-        console.error('[v0] reCAPTCHA error occurred');
-        setError('reCAPTCHA verification failed. Please try again.');
-      },
-    });
-    console.log('[v0] reCAPTCHA widget rendered');
-    return true;
-  }, [handleRecaptchaChange, setError]);
+  };
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -120,49 +115,18 @@ function SignupContent() {
     }
   }
 
-  // Improved loadRecaptcha with retry and cleanup
+  // Simple loadRecaptcha (like login page)
   const loadRecaptcha = () => {
-    if (!RECAPTCHA_SITE_KEY) {
-      console.log('[v0] reCAPTCHA not configured - skipping');
-      return;
-    }
-    console.log('[v0] reCAPTCHA API script loaded successfully');
+    if (!RECAPTCHA_SITE_KEY) return;
     setRecaptchaLoaded(true);
-    // Try rendering immediately, then retry if not ready
-    let attempts = 0;
-    const maxAttempts = 10;
-    const tryRender = () => {
-      if (renderRecaptcha()) return;
-      attempts++;
-      if (attempts < maxAttempts) setTimeout(tryRender, 300);
-      else console.error('[v0] reCAPTCHA failed to render after retries');
-    };
-    tryRender();
+    renderRecaptcha();
   };
 
-  // Ensure reCAPTCHA renders after mount and on navigation
+  // Render reCAPTCHA after mount (like login page)
   useEffect(() => {
-    let mounted = true;
-    const tryRender = () => {
-      if (!mounted) return;
-      if (window.grecaptcha && document.getElementById('recaptcha-container')) {
-        renderRecaptcha();
-      } else {
-        setTimeout(tryRender, 200);
-      }
-    };
-    tryRender();
-    // Cleanup on unmount: remove widget and reset state
-    return () => {
-      mounted = false;
-      const container = document.getElementById('recaptcha-container');
-      if (container) {
-        while (container.firstChild) {
-          container.removeChild(container.firstChild);
-        }
-      }
-      setCaptchaToken(null);
-    };
+    if (window.grecaptcha && document.getElementById('recaptcha-container')) {
+      renderRecaptcha();
+    }
   }, [recaptchaLoaded]);
 
   const handleSignup = async (e: React.FormEvent) => {
