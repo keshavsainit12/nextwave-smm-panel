@@ -1,506 +1,89 @@
-"use client"
-
-import type React from "react"
-import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { ArrowLeft, Loader2 } from "lucide-react"
-import { signupUser } from "@/app/actions/auth"
-import Script from "next/script"
+@@ -11,6 +11,26 @@ import Script from "next/script"
 import { RECAPTCHA_SITE_KEY } from "@/lib/recaptcha-config"
 
 function SignupContent() {
-  // reCAPTCHA logic (exactly like login page)
-  const handleRecaptchaChange = (token: string | null) => {
-    setCaptchaToken(token);
-    if (token) setError(null);
-  };
-
+  // Helper to render reCAPTCHA widget reliably
   const renderRecaptcha = () => {
-    if (typeof window === 'undefined' || !(window as any).grecaptcha) return;
+    if (typeof window === 'undefined' || !(window as any).grecaptcha) return false;
     const container = document.getElementById('recaptcha-container');
     if (container && !container.hasChildNodes()) {
       (window as any).grecaptcha.render('recaptcha-container', {
         sitekey: RECAPTCHA_SITE_KEY,
         callback: handleRecaptchaChange,
         'expired-callback': () => handleRecaptchaChange(null),
-        'error-callback': () => setError('reCAPTCHA verification failed. Please try again.'),
+        'error-callback': () => {
+          console.error('[v0] reCAPTCHA error occurred');
+          setError('reCAPTCHA verification failed. Please try again.');
+        },
       });
+      console.log('[v0] reCAPTCHA widget rendered');
+      return true;
     }
+    return false;
   };
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-  const [fullName, setFullName] = useState("")
-  const [referralCode, setReferralCode] = useState("")
-  const [referralStatus, setReferralStatus] = useState<string | null>(null)
-  const [isVerifyingReferral, setIsVerifyingReferral] = useState(false)
-
-  // Instant referral code verification
-  const verifyReferralCode = async () => {
-    setIsVerifyingReferral(true)
-    setReferralStatus(null)
-    if (!referralCode.trim()) {
-      setReferralStatus("Please enter a referral code.")
-      setIsVerifyingReferral(false)
-      return
-    }
-    try {
-      const supabase = createClient()
-      const { data, error } = await supabase
-        .from("users")
-        .select("id, full_name, email")
-        .eq("referral_code", referralCode.trim().toUpperCase())
-        .single()
-      if (error || !data) {
-        setReferralStatus("Invalid referral code.")
-      } else {
-        setReferralStatus(`Referral code verified: ${data.full_name || data.email}`)
-      }
-    } catch (err) {
-      setReferralStatus("Error verifying referral code.")
-    }
-    setIsVerifyingReferral(false)
-  }
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
-  const [recaptchaLoaded, setRecaptchaLoaded] = useState(false)
-  const router = useRouter()
-
-  const validateForm = () => {
-    if (!fullName.trim()) {
-      setError("Full name is required")
-      return false
-    }
-    if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-      setError("Please enter a valid email")
-      return false
-    }
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters")
-      return false
-    }
-    if (password !== confirmPassword) {
-      setError("Passwords do not match")
-      return false
-    }
-    if (RECAPTCHA_SITE_KEY && !captchaToken) {
-      setError("Please complete the reCAPTCHA verification")
-      return false
-    }
-    return true
-  }
-
-  const handleRecaptchaChange = (token: string | null) => {
-    console.log("[v0] reCAPTCHA token received:", token ? "✓ Valid" : "✗ Null")
-    setCaptchaToken(token)
-    if (token) {
-      setError(null)
+@@ -85,38 +105,32 @@ function SignupContent() {
     }
   }
 
-  // Load reCAPTCHA script and render widget (like login page)
+  // Improved loadRecaptcha with retry
   const loadRecaptcha = () => {
-    if (!RECAPTCHA_SITE_KEY) return;
+    if (!RECAPTCHA_SITE_KEY) {
+      console.log("[v0] reCAPTCHA not configured - skipping")
+      return
+      console.log('[v0] reCAPTCHA not configured - skipping');
+      return;
+    }
+
+    console.log("[v0] reCAPTCHA API script loaded successfully")
+    setRecaptchaLoaded(true)
+    
+    // Wait for DOM to be ready, then render reCAPTCHA
+    setTimeout(() => {
+      if (typeof window !== 'undefined' && (window as any).grecaptcha) {
+        try {
+          const container = document.getElementById('recaptcha-container')
+          if (container && !container.hasChildNodes()) {
+            (window as any).grecaptcha.render('recaptcha-container', {
+              sitekey: RECAPTCHA_SITE_KEY,
+              callback: handleRecaptchaChange,
+              'expired-callback': () => handleRecaptchaChange(null),
+              'error-callback': () => {
+                console.error("[v0] reCAPTCHA error occurred")
+                setError("reCAPTCHA verification failed. Please try again.")
+              }
+            })
+            console.log("[v0] reCAPTCHA widget rendered")
+          }
+        } catch (err) {
+          console.error("[v0] reCAPTCHA render error:", err)
+        }
+      }
+    }, 100)
+  }
+    console.log('[v0] reCAPTCHA API script loaded successfully');
     setRecaptchaLoaded(true);
-    renderRecaptcha();
+    // Try rendering immediately, then retry if not ready
+    let attempts = 0;
+    const maxAttempts = 10;
+    const tryRender = () => {
+      if (renderRecaptcha()) return;
+      attempts++;
+      if (attempts < maxAttempts) setTimeout(tryRender, 300);
+      else console.error('[v0] reCAPTCHA failed to render after retries');
+    };
+    tryRender();
   };
 
-  // Render reCAPTCHA after mount (like login page)
+  // Ensure reCAPTCHA renders after mount (for client navigation)
   useEffect(() => {
     if (window.grecaptcha && document.getElementById('recaptcha-container')) {
       renderRecaptcha();
     }
-  }, [recaptchaLoaded]);
+  }, []);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("[v0] Signup form submitted")
-    
-    if (!validateForm()) {
-      console.log("[v0] Form validation failed")
-      return
-    }
-
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      console.log("[v0] Creating user account...")
-      const result = await signupUser({
-        email,
-        password,
-        fullName,
-        referralCode: referralCode || undefined,
-      })
-
-      if (!result.success) {
-        throw new Error(result.error || "Signup failed")
-      }
-
-      console.log("[v0] User account created successfully with ID:", result.userId)
-      setSuccess(true)
-      
-      // Wait a bit for profile to be fully created, then login
-      setTimeout(async () => {
-        try {
-          console.log("[v0] Attempting auto-login after signup...")
-          const supabase = createClient()
-          const { data, error: loginError } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-          })
-          
-          if (loginError) {
-            console.error("[v0] Login error:", loginError.message)
-            throw loginError
-          }
-          
-          if (data.session) {
-            console.log("[v0] Auto-login successful, redirecting to dashboard...")
-            router.push("/dashboard")
-          }
-        } catch (err) {
-          console.error("[v0] Auto-login failed:", err)
-          // Fallback to login page if auto-login fails
-          setTimeout(() => router.push("/auth/login"), 1500)
-        }
-      }, 1000)
-    } catch (error: unknown) {
-      let errorMessage = "An error occurred during signup"
-      if (error instanceof Error) {
-        console.error("[v0] Signup error:", error.message)
-        if (error.message.includes("already registered") || error.message.includes("already exists")) {
-          errorMessage = "This email is already registered. Please login instead."
-        } else {
-          errorMessage = error.message
-        }
-      }
-      setError(errorMessage)
-      setIsLoading(false)
-    }
-  }
-
-  const handleGoogleSignUp = async () => {
-    setIsGoogleLoading(true)
-    setError(null)
-    const supabase = createClient()
-
-    try {
-      console.log("[v0] Environment check:")
-      console.log("[v0] SUPABASE_URL exists:", !!process.env.NEXT_PUBLIC_SUPABASE_URL)
-      console.log("[v0] ANON_KEY exists:", !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
-
-      const callbackUrl = `${window.location.origin}/auth/callback`
-      console.log("[v0] Starting Google sign-up with callback URL:", callbackUrl)
-      console.log("[v0] Window origin:", window.location.origin)
-      
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: callbackUrl,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          }
-        },
-      })
-      
-      console.log("[v0] OAuth response:", { error: error?.message, hasData: !!data })
-      if (error) throw error
-    } catch (err: unknown) {
-      const errorMsg = err instanceof Error ? err.message : "Google sign-up failed"
-      console.error("[v0] Google sign-up error:", errorMsg, err)
-      setError(errorMsg)
-      setIsGoogleLoading(false)
-    }
-  }
-
-  if (success) {
-    return (
-      <div className="relative flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 overflow-hidden bg-transparent">
-        <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-          <div className="absolute w-96 h-96 rounded-full blur-3xl opacity-40 bg-blue-500 -top-32 -left-32"></div>
-          <div className="absolute w-96 h-96 rounded-full blur-3xl opacity-40 bg-cyan-500 top-1/3 -right-20"></div>
-          <div className="absolute w-80 h-80 rounded-full blur-3xl opacity-30 bg-blue-400 -bottom-20 left-1/4"></div>
-        </div>
-
-        <div className="relative w-full max-w-md z-10 text-center space-y-6">
-          <div className="space-y-4">
-            <div className="flex justify-center">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">Account created!</h2>
-              <p className="text-sm sm:text-base text-slate-600">Email verification skipped. Logging you in and redirecting...</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 overflow-hidden bg-transparent">
-      {/* Load reCAPTCHA script */}
-      {RECAPTCHA_SITE_KEY && (
-        <Script
-          src="https://www.google.com/recaptcha/api.js"
-          strategy="afterInteractive"
-          onLoad={loadRecaptcha}
-          onError={() => {
-            console.error("[v0] Failed to load reCAPTCHA script")
-            setError("Failed to load reCAPTCHA. Please refresh the page.")
-          }}
-        />
-      )}
-
-      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute w-96 h-96 rounded-full blur-3xl opacity-40 bg-blue-500 -top-32 -left-32"></div>
-        <div className="absolute w-96 h-96 rounded-full blur-3xl opacity-40 bg-cyan-500 top-1/3 -right-20"></div>
-        <div className="absolute w-80 h-80 rounded-full blur-3xl opacity-30 bg-blue-400 -bottom-20 left-1/4"></div>
-      </div>
-
-      <div className="relative w-full max-w-md z-10">
-        <div className="mb-8">
-          <Link
-            href="/"
-            className="inline-flex items-center text-sm text-slate-600 hover:text-slate-900 transition-colors font-medium"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to home
-          </Link>
-        </div>
-
-        <div className="bg-white/80 backdrop-blur rounded-3xl border border-white/50 shadow-2xl p-6 sm:p-8 space-y-6">
-          <div className="space-y-4 text-center">
-            <div className="flex justify-center">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-bold text-sm sm:text-base">✦</span>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Create account</h1>
-              <p className="text-sm sm:text-base text-slate-600 font-light">Join NextWave and start managing your services</p>
-            </div>
-          </div>
-
-          <form onSubmit={handleSignup} className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="fullName" className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-600">
-                Full Name
-              </label>
-              <input
-                id="fullName"
-                type="text"
-                placeholder="John Doe"
-                required
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                disabled={isLoading}
-                className="w-full bg-white/50 border border-white/30 rounded-2xl px-4 sm:px-5 py-2.5 sm:py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all disabled:opacity-50"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label htmlFor="email" className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-600">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                placeholder="name@example.com"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
-                className="w-full bg-white/50 border border-white/30 rounded-2xl px-4 sm:px-5 py-2.5 sm:py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all disabled:opacity-50"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label htmlFor="password" className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-600">
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
-                className="w-full bg-white/50 border border-white/30 rounded-2xl px-4 sm:px-5 py-2.5 sm:py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all disabled:opacity-50"
-              />
-              <p className="text-xs text-slate-500">Minimum 8 characters</p>
-            </div>
-
-            <div className="space-y-2">
-              <label htmlFor="confirmPassword" className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-600">
-                Confirm Password
-              </label>
-              <input
-                id="confirmPassword"
-                type="password"
-                placeholder="••••••••"
-                required
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                disabled={isLoading}
-                className="w-full bg-white/50 border border-white/30 rounded-2xl px-4 sm:px-5 py-2.5 sm:py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all disabled:opacity-50"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label htmlFor="referralCode" className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-600">
-                Referral Code (Optional)
-              </label>
-              <div className="flex gap-2">
-                <input
-                  id="referralCode"
-                  type="text"
-                  placeholder="Enter referral code"
-                  value={referralCode}
-                  onChange={(e) => {
-                    setReferralCode(e.target.value)
-                    setReferralStatus(null)
-                  }}
-                  disabled={isLoading || isVerifyingReferral}
-                  className="w-full bg-white/50 border border-white/30 rounded-2xl px-4 sm:px-5 py-2.5 sm:py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all disabled:opacity-50"
-                />
-                <button
-                  type="button"
-                  onClick={verifyReferralCode}
-                  disabled={isVerifyingReferral || !referralCode.trim()}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isVerifyingReferral ? "Verifying..." : "Verify"}
-                </button>
-              </div>
-              {referralStatus && (
-                <div className={`text-xs mt-2 ${referralStatus.includes("verified") ? "text-green-600" : "text-red-600"}`}>
-                  {referralStatus}
-                </div>
-              )}
-            </div>
-
-            {/* reCAPTCHA */}
-            {RECAPTCHA_SITE_KEY ? (
-              <div className="space-y-2">
-                <label className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-600">
-                  Verification
-                </label>
-                <div 
-                  id="recaptcha-container" 
-                  className="flex justify-center"
-                  data-sitekey={RECAPTCHA_SITE_KEY}
-                />
-                {recaptchaLoaded && !captchaToken && (
-                  <p className="text-xs text-slate-500">Please complete the verification above</p>
-                )}
-              </div>
-            ) : (
-              // Development notice when reCAPTCHA is not configured
-              process.env.NODE_ENV === 'development' && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-xs">
-                  <p className="text-yellow-800 font-semibold mb-1">⚠️ reCAPTCHA Not Configured</p>
-                  <p className="text-yellow-700">
-                    reCAPTCHA will show after you add <code className="bg-yellow-100 px-1 rounded">NEXT_PUBLIC_RECAPTCHA_SITE_KEY</code> in Vercel environment variables.
-                  </p>
-                </div>
-              )
-            )}
-
-            {error && (
-              <div className="text-sm text-red-600 bg-red-50/80 backdrop-blur border border-red-200/50 p-3 sm:p-4 rounded-2xl">
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={isLoading || (RECAPTCHA_SITE_KEY && !captchaToken)}
-              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-3 sm:py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Creating account...</span>
-                </>
-              ) : (
-                "Create account"
-              )}
-            </button>
-
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-300/50"></div>
-              </div>
-              <div className="relative flex justify-center text-xs">
-                <span className="px-3 bg-white/80 text-slate-500 font-medium">Or continue with</span>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleGoogleSignUp}
-              disabled={isGoogleLoading || isLoading}
-              className="w-full bg-white/60 hover:bg-white border border-white/50 text-slate-900 font-medium py-3 sm:py-4 rounded-2xl shadow transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
-            >
-              {isGoogleLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-sm">Connecting...</span>
-                </>
-              ) : (
-                <>
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
-                    <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                    <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                  </svg>
-                  <span className="text-sm">Google</span>
-                </>
-              )}
-            </button>
-          </form>
-
-          <div className="text-center text-sm text-slate-600">
-            Already have an account?{" "}
-            <Link href="/auth/login" className="text-blue-600 hover:text-blue-700 font-semibold transition-colors">
-              Sign in
-            </Link>
-          </div>
-        </div>
-
-        <div className="mt-8 flex justify-center gap-4 text-xs text-slate-500">
-          <Link href="/privacy-policy" className="hover:text-slate-700 transition-colors">
-            Privacy
-          </Link>
-          <span>•</span>
-          <Link href="/terms-of-service" className="hover:text-slate-700 transition-colors">
-            Terms
-          </Link>
-          <span>•</span>
-          <Link href="/contact" className="hover:text-slate-700 transition-colors">
-            Support
-          </Link>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export default function SignupPage() {
-  return <SignupContent />
-}
