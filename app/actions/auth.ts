@@ -127,7 +127,19 @@ export async function signupUser(formData: {
 
     // If referredById is set, update the referred_by field for this user
     if (referredById) {
-      await supabaseAdmin.from("users").update({ referred_by: referredById }).eq("id", authData.user.id)
+      let updateResult = await supabaseAdmin.from("users").update({ referred_by: referredById }).eq("id", authData.user.id)
+      if (updateResult.error || updateResult.count === 0) {
+        // Retry after short delay (profile may not be ready yet)
+        await new Promise((resolve) => setTimeout(resolve, 500))
+        updateResult = await supabaseAdmin.from("users").update({ referred_by: referredById }).eq("id", authData.user.id)
+        if (updateResult.error) {
+          console.error("[v0] Failed to update referred_by after retry:", updateResult.error)
+        } else {
+          console.log("[v0] referred_by updated after retry.")
+        }
+      } else {
+        console.log("[v0] referred_by updated successfully.")
+      }
     }
 
     console.log("[v0] User profile created successfully")
