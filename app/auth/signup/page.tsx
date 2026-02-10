@@ -15,13 +15,7 @@ function SignupContent() {
 
   // ...existing code...
 
-  const handleRecaptchaChange = (token: string | null) => {
-    console.log("[v0] reCAPTCHA token received:", token ? "✓ Valid" : "✗ Null")
-    setCaptchaToken(token)
-    if (token) {
-      setError(null)
-    }
-  }
+  // ...existing code...
 
   // Simple, reliable reCAPTCHA render (like login page)
   const renderRecaptcha = () => {
