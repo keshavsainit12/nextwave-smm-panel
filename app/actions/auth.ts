@@ -156,24 +156,8 @@ export async function handleOAuthCallback(userId: string, email: string, fullNam
       return { success: true, existing: true }
     }
 
-    const referralCode = "REF" + randomBytes(4).toString("hex").toUpperCase()
-
-    const { error: profileError } = await supabaseAdmin.from("users").insert({
-      id: userId,
-      email: email,
-      full_name: fullName,
-      tier: 1,
-      referral_code: referralCode,
-      role: "user",
-      balance: 0,
-      total_spent: 0,
-      total_orders: 0,
-    })
-
-    if (profileError) {
-      console.error("OAuth profile creation error:", profileError)
-      throw profileError
-    }
+    // User profile creation is now handled by the handle_new_user trigger in the database for OAuth users as well.
+    // No manual insert into users table here.
 
     return { success: true, existing: false }
   } catch (error) {
