@@ -177,6 +177,42 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
       console.warn("[v0] Transaction record failed (non-critical):", transactionError.message)
     }
 
+    // Referral commission logic
+    if (userData.referred_by) {
+      // Fetch referral commission percentage from system_settings
+      const { data: settings } = await supabase.from("system_settings").select("value").eq("key", "referral_commission").single()
+      const commissionPercent = settings ? Number(settings.value) : 5
+      const commissionAmount = Math.round((price * commissionPercent) / 100 * 100) / 100
+      if (commissionAmount > 0) {
+        // Insert referral_earnings record
+        await supabase.from("referral_earnings").insert({
+          referrer_id: userData.referred_by,
+          referred_id: user.id,
+          order_id: order.id,
+          commission_amount: commissionAmount,
+          commission_percentage: commissionPercent,
+        })
+        // Update referrer wallet
+        const { data: referrer } = await supabase.from("users").select("balance").eq("id", userData.referred_by).single()
+        if (referrer) {
+          const newRefBalance = Number(referrer.balance) + commissionAmount
+          await supabase.from("users").update({ balance: newRefBalance }).eq("id", userData.referred_by)
+          // Optionally, record transaction for referrer
+          await supabase.from("transactions").insert({
+            user_id: userData.referred_by,
+            order_id: order.id,
+            type: "referral",
+            amount: commissionAmount,
+            balance_before: referrer.balance,
+            balance_after: newRefBalance,
+            status: "completed",
+            notes: `Referral commission for order ${order.id}`,
+          })
+        }
+        console.log(`[v0] Referral commission of $${commissionAmount} credited to referrer ${userData.referred_by}`)
+      }
+    }
+
     // Record coupon usage if coupon was used
     if (couponId) {
       console.log("[v0] Recording coupon usage...")
