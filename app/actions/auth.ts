@@ -99,20 +99,36 @@ export async function signupUser(formData: {
       console.log("[v0] Looking up referrer for code:", formData.referralCode)
       const { data: referrerData, error: referrerError } = await supabaseAdmin
         .from("users")
-        .select("id")
+        .select("id, email")
         .eq("referral_code", formData.referralCode.toUpperCase().trim())
         .single()
 
       if (referrerData) {
+        // Prevent self-referral: check if email matches
+        if (referrerData.email.toLowerCase() === formData.email.toLowerCase()) {
+          return {
+            success: false,
+            error: "You cannot use your own referral code.",
+          }
+        }
         referredById = referrerData.id
         console.log("[v0] Found referrer:", referredById)
-      } else if (referrerError && referrerError.code !== "PGRST116") {
-        console.warn("[v0] Referrer lookup error:", referrerError.message)
+      } else {
+        // If code not found or error (other than not found), show clear error
+        return {
+          success: false,
+          error: "Invalid referral code. Please check and try again.",
+        }
       }
     }
 
     // User profile creation is now handled by the handle_new_user trigger in the database.
     // No manual insert into users table here.
+
+    // If referredById is set, update the referred_by field for this user
+    if (referredById) {
+      await supabaseAdmin.from("users").update({ referred_by: referredById }).eq("id", authData.user.id)
+    }
 
     console.log("[v0] User profile created successfully")
     revalidatePath("/auth")
