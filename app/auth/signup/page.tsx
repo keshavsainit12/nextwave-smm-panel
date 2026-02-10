@@ -11,13 +11,12 @@ import Script from "next/script"
 import { RECAPTCHA_SITE_KEY } from "@/lib/recaptcha-config"
 
 function SignupContent() {
-  // ...existing code...
+  // reCAPTCHA logic (exactly like login page)
+  const handleRecaptchaChange = (token: string | null) => {
+    setCaptchaToken(token);
+    if (token) setError(null);
+  };
 
-  // ...existing code...
-
-  // ...existing code...
-
-  // Simple, reliable reCAPTCHA render (like login page)
   const renderRecaptcha = () => {
     if (typeof window === 'undefined' || !(window as any).grecaptcha) return;
     const container = document.getElementById('recaptcha-container');
@@ -26,12 +25,8 @@ function SignupContent() {
         sitekey: RECAPTCHA_SITE_KEY,
         callback: handleRecaptchaChange,
         'expired-callback': () => handleRecaptchaChange(null),
-        'error-callback': () => {
-          console.error('[v0] reCAPTCHA error occurred');
-          setError('reCAPTCHA verification failed. Please try again.');
-        },
+        'error-callback': () => setError('reCAPTCHA verification failed. Please try again.'),
       });
-      console.log('[v0] reCAPTCHA widget rendered');
     }
   };
 
@@ -109,7 +104,7 @@ function SignupContent() {
     }
   }
 
-  // Simple loadRecaptcha (like login page)
+  // Load reCAPTCHA script and render widget (like login page)
   const loadRecaptcha = () => {
     if (!RECAPTCHA_SITE_KEY) return;
     setRecaptchaLoaded(true);
