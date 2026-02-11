@@ -7,7 +7,7 @@ import { toast } from "sonner"
 import { Copy, Check } from "lucide-react"
 
 interface CouponPasteCardProps {
-  onCouponApplied?: (couponCode: string) => void
+  onCouponApplied?: (couponCode: string, discount: number) => void
 }
 
 export function CouponPasteCard({ onCouponApplied }: CouponPasteCardProps) {
@@ -39,7 +39,7 @@ export function CouponPasteCard({ onCouponApplied }: CouponPasteCardProps) {
       if (data.valid) {
         setValidatedCoupon(data)
         toast.success(`${data.discount}% discount available!`)
-        onCouponApplied?.(couponCode.toUpperCase())
+        onCouponApplied?.(couponCode.toUpperCase(), data.discount)
       } else {
         toast.error(data.error || "Invalid coupon code")
       }

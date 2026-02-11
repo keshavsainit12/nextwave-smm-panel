@@ -6,43 +6,81 @@ import { createClient } from "@/lib/supabase/client"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, Loader2 } from "lucide-react"
-import { signupUser, verifyRecaptcha } from "@/app/actions/auth"
+import { signupUser } from "@/app/actions/auth"
 import Script from "next/script"
-
-// Declare global to avoid TypeScript errors
-declare global {
-  interface Window {
-    handleRecaptchaChange: (token: string) => void
-    grecaptcha?: any
-  }
-}
+import { RECAPTCHA_SITE_KEY } from "@/lib/recaptcha-config"
 
 function SignupContent() {
+  // reCAPTCHA logic (exactly like login page)
+  // reCAPTCHA handler (single definition)
+  const handleRecaptchaChange = (token: string | null) => {
+    setCaptchaToken(token);
+    if (token) setError(null);
+  };
+
+  const renderRecaptcha = () => {
+    try {
+      if (typeof window === 'undefined') return;
+      // Defensive: Only render if grecaptcha is available
+      if (!(window as any).grecaptcha) return;
+      const container = document.getElementById('recaptcha-container');
+      // Only render if not already rendered
+      if (container && !container.hasChildNodes() && !(container as any)._recaptchaRendered) {
+        (window as any).grecaptcha.render('recaptcha-container', {
+          sitekey: RECAPTCHA_SITE_KEY,
+          callback: handleRecaptchaChange,
+          'expired-callback': () => handleRecaptchaChange(null),
+          'error-callback': () => setError('reCAPTCHA verification failed. Please try again.'),
+        });
+        (container as any)._recaptchaRendered = true;
+      }
+    } catch (err) {
+      setError('reCAPTCHA failed to render. Please refresh the page.');
+      console.error('[v0] reCAPTCHA render error:', err);
+    }
+  };
+
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [fullName, setFullName] = useState("")
   const [referralCode, setReferralCode] = useState("")
+  const [referralStatus, setReferralStatus] = useState<string | null>(null)
+  const [isVerifyingReferral, setIsVerifyingReferral] = useState(false)
+
+  // Instant referral code verification
+  const verifyReferralCode = async () => {
+    setIsVerifyingReferral(true)
+    setReferralStatus(null)
+    if (!referralCode.trim()) {
+      setReferralStatus("Please enter a referral code.")
+      setIsVerifyingReferral(false)
+      return
+    }
+    try {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from("users")
+        .select("id, full_name, email")
+        .eq("referral_code", referralCode.trim().toUpperCase())
+        .single()
+      if (error || !data) {
+        setReferralStatus("Invalid referral code.")
+      } else {
+        setReferralStatus(`Referral code verified: ${data.full_name || data.email}`)
+      }
+    } catch (err) {
+      setReferralStatus("Error verifying referral code.")
+    }
+    setIsVerifyingReferral(false)
+  }
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const [recaptchaLoaded, setRecaptchaLoaded] = useState(false)
   const router = useRouter()
-
-  useEffect(() => {
-    // Setup reCAPTCHA callback - make it globally accessible
-    const handleRecaptchaChange = (token: string) => {
-      console.log("[v0] reCAPTCHA token received:", token ? "Valid" : "Invalid")
-      setCaptchaToken(token)
-      if (error === "Please complete the reCAPTCHA verification") {
-        setError(null)
-      }
-    }
-    
-    // Assign to window so reCAPTCHA can call it
-    window.handleRecaptchaChange = handleRecaptchaChange
-  }, [error])
 
   const validateForm = () => {
     if (!fullName.trim()) {
@@ -61,16 +99,33 @@ function SignupContent() {
       setError("Passwords do not match")
       return false
     }
-    if (!captchaToken) {
+    if (RECAPTCHA_SITE_KEY && !captchaToken) {
       setError("Please complete the reCAPTCHA verification")
       return false
     }
     return true
   }
 
+  // ...existing code...
+
+  // Load reCAPTCHA script and render widget (like login page)
+  const loadRecaptcha = () => {
+    if (!RECAPTCHA_SITE_KEY) return;
+    setRecaptchaLoaded(true);
+    // Delay rendering to ensure grecaptcha is available
+    setTimeout(renderRecaptcha, 200);
+  };
+
+  // Render reCAPTCHA after mount (like login page)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).grecaptcha && document.getElementById('recaptcha-container')) {
+      renderRecaptcha();
+    }
+  }, [recaptchaLoaded]);
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("[v0] Signup form submitted - Captcha token:", captchaToken ? "Present" : "Missing")
+    console.log("[v0] Signup form submitted")
     
     if (!validateForm()) {
       console.log("[v0] Form validation failed")
@@ -81,17 +136,6 @@ function SignupContent() {
     setError(null)
 
     try {
-      // Verify reCAPTCHA token
-      if (captchaToken) {
-        console.log("[v0] Verifying reCAPTCHA token...")
-        const recaptchaResult = await verifyRecaptcha(captchaToken)
-        console.log("[v0] reCAPTCHA verification result:", recaptchaResult)
-        
-        if (!recaptchaResult.success) {
-          throw new Error("reCAPTCHA verification failed. Please try again.")
-        }
-      }
-
       console.log("[v0] Creating user account...")
       const result = await signupUser({
         email,
@@ -104,19 +148,34 @@ function SignupContent() {
         throw new Error(result.error || "Signup failed")
       }
 
-      console.log("[v0] User account created, attempting auto-login...")
-      const supabase = createClient()
-      const { error: loginError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      if (loginError) throw loginError
-
+      console.log("[v0] User account created successfully with ID:", result.userId)
       setSuccess(true)
-      setTimeout(() => {
-        router.push("/dashboard")
-      }, 2000)
+      
+      // Wait a bit for profile to be fully created, then login
+      setTimeout(async () => {
+        try {
+          console.log("[v0] Attempting auto-login after signup...")
+          const supabase = createClient()
+          const { data, error: loginError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          })
+          
+          if (loginError) {
+            console.error("[v0] Login error:", loginError.message)
+            throw loginError
+          }
+          
+          if (data.session) {
+            console.log("[v0] Auto-login successful, redirecting to dashboard...")
+            router.push("/dashboard")
+          }
+        } catch (err) {
+          console.error("[v0] Auto-login failed:", err)
+          // Fallback to login page if auto-login fails
+          setTimeout(() => router.push("/auth/login"), 1500)
+        }
+      }, 1000)
     } catch (error: unknown) {
       let errorMessage = "An error occurred during signup"
       if (error instanceof Error) {
@@ -138,15 +197,26 @@ function SignupContent() {
     const supabase = createClient()
 
     try {
-      const callbackUrl = `${window.location.origin}/auth/callback?source=signup`
+      console.log("[v0] Environment check:")
+      console.log("[v0] SUPABASE_URL exists:", !!process.env.NEXT_PUBLIC_SUPABASE_URL)
+      console.log("[v0] ANON_KEY exists:", !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+
+      const callbackUrl = `${window.location.origin}/auth/callback`
       console.log("[v0] Starting Google sign-up with callback URL:", callbackUrl)
+      console.log("[v0] Window origin:", window.location.origin)
       
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: callbackUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
         },
       })
+      
+      console.log("[v0] OAuth response:", { error: error?.message, hasData: !!data })
       if (error) throw error
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : "Google sign-up failed"
@@ -176,7 +246,7 @@ function SignupContent() {
             </div>
             <div className="space-y-2">
               <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">Account created!</h2>
-              <p className="text-sm sm:text-base text-slate-600">Redirecting to your dashboard...</p>
+              <p className="text-sm sm:text-base text-slate-600">Email verification skipped. Logging you in and redirecting...</p>
             </div>
           </div>
         </div>
@@ -186,27 +256,18 @@ function SignupContent() {
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 overflow-hidden bg-transparent">
-      <Script
-        src="https://www.google.com/recaptcha/api.js"
-        strategy="afterInteractive"
-        async
-        defer
-        onLoad={() => {
-          console.log("[v0] reCAPTCHA API script loaded successfully")
-          // Force reCAPTCHA to render after script loads
-          if (window.grecaptcha && window.grecaptcha.render) {
-            setTimeout(() => {
-              window.grecaptcha.render("recaptcha-container", {
-                sitekey: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
-                callback: "handleRecaptchaChange",
-              })
-            }, 100)
-          }
-        }}
-        onError={() => {
-          console.error("[v0] Failed to load reCAPTCHA script")
-        }}
-      />
+      {/* Load reCAPTCHA script */}
+      {RECAPTCHA_SITE_KEY && (
+        <Script
+          src="https://www.google.com/recaptcha/api.js"
+          strategy="afterInteractive"
+          onLoad={loadRecaptcha}
+          onError={() => {
+            console.error("[v0] Failed to load reCAPTCHA script")
+            setError("Failed to load reCAPTCHA. Please refresh the page.")
+          }}
+        />
+      )}
 
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
         <div className="absolute w-96 h-96 rounded-full blur-3xl opacity-40 bg-blue-500 -top-32 -left-32"></div>
@@ -308,25 +369,61 @@ function SignupContent() {
               <label htmlFor="referralCode" className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-600">
                 Referral Code (Optional)
               </label>
-              <input
-                id="referralCode"
-                type="text"
-                placeholder="Enter referral code"
-                value={referralCode}
-                onChange={(e) => setReferralCode(e.target.value)}
-                disabled={isLoading}
-                className="w-full bg-white/50 border border-white/30 rounded-2xl px-4 sm:px-5 py-2.5 sm:py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all disabled:opacity-50"
-              />
+              <div className="flex gap-2">
+                <input
+                  id="referralCode"
+                  type="text"
+                  placeholder="Enter referral code"
+                  value={referralCode}
+                  onChange={(e) => {
+                    setReferralCode(e.target.value)
+                    setReferralStatus(null)
+                  }}
+                  disabled={isLoading || isVerifyingReferral}
+                  className="w-full bg-white/50 border border-white/30 rounded-2xl px-4 sm:px-5 py-2.5 sm:py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all disabled:opacity-50"
+                />
+                <button
+                  type="button"
+                  onClick={verifyReferralCode}
+                  disabled={isVerifyingReferral || !referralCode.trim()}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isVerifyingReferral ? "Verifying..." : "Verify"}
+                </button>
+              </div>
+              {referralStatus && (
+                <div className={`text-xs mt-2 ${referralStatus.includes("verified") ? "text-green-600" : "text-red-600"}`}>
+                  {referralStatus}
+                </div>
+              )}
             </div>
 
-            <div className="flex justify-center py-4">
-              <div
-                id="recaptcha-container"
-                className="g_recaptcha flex justify-center"
-                data-sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
-                data-callback="handleRecaptchaChange"
-              />
-            </div>
+            {/* reCAPTCHA */}
+            {RECAPTCHA_SITE_KEY ? (
+              <div className="space-y-2">
+                <label className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-600">
+                  Verification
+                </label>
+                <div 
+                  id="recaptcha-container" 
+                  className="flex justify-center"
+                  data-sitekey={RECAPTCHA_SITE_KEY}
+                />
+                {recaptchaLoaded && !captchaToken && (
+                  <p className="text-xs text-slate-500">Please complete the verification above</p>
+                )}
+              </div>
+            ) : (
+              // Development notice when reCAPTCHA is not configured
+              process.env.NODE_ENV === 'development' && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-xs">
+                  <p className="text-yellow-800 font-semibold mb-1">⚠️ reCAPTCHA Not Configured</p>
+                  <p className="text-yellow-700">
+                    reCAPTCHA will show after you add <code className="bg-yellow-100 px-1 rounded">NEXT_PUBLIC_RECAPTCHA_SITE_KEY</code> in Vercel environment variables.
+                  </p>
+                </div>
+              )
+            )}
 
             {error && (
               <div className="text-sm text-red-600 bg-red-50/80 backdrop-blur border border-red-200/50 p-3 sm:p-4 rounded-2xl">
@@ -336,7 +433,7 @@ function SignupContent() {
 
             <button
               type="submit"
-              disabled={isLoading || !captchaToken}
+              disabled={isLoading || (RECAPTCHA_SITE_KEY && !captchaToken)}
               className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-3 sm:py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isLoading ? (

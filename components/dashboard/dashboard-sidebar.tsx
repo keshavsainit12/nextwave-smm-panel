@@ -6,10 +6,21 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
-import { Home, Package, HeadphonesIcon, Gift, Code, LogOut, Settings, Receipt } from "lucide-react"
+import { Home, Package, HeadphonesIcon, Gift, Code, LogOut, Settings, Receipt, Crown, Star, Wallet, Shield } from "lucide-react"
+import { useCurrency } from "@/lib/currency-context"
+
+// Tier configuration based on price_multiplier
+const getTierInfo = (priceMultiplier: number | undefined | null) => {
+  const multiplier = priceMultiplier ?? 3.0
+  if (multiplier <= 1.5) return { name: "VIP Elite", color: "from-amber-500 to-yellow-400", textColor: "text-amber-600", bgColor: "bg-amber-100", icon: Crown }
+  if (multiplier <= 2) return { name: "Reseller", color: "from-purple-500 to-indigo-500", textColor: "text-purple-600", bgColor: "bg-purple-100", icon: Star }
+  if (multiplier <= 2.5) return { name: "Bulk Buyer", color: "from-blue-500 to-cyan-500", textColor: "text-blue-600", bgColor: "bg-blue-100", icon: Star }
+  return { name: "Basic User", color: "from-slate-400 to-slate-500", textColor: "text-slate-600", bgColor: "bg-slate-100", icon: null }
+}
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
+  { name: "Wallet", href: "/dashboard/wallet", icon: Wallet },
   { name: "My Orders", href: "/dashboard/orders", icon: Package },
   { name: "Transaction History", href: "/dashboard/transaction-history", icon: Receipt },
   { name: "API Access", href: "/dashboard/api", icon: Code },
@@ -18,9 +29,20 @@ const navigation = [
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ]
 
-export function DashboardSidebar({ userName = "User", userBalance = 0 }: { userName?: string; userBalance?: number }) {
+export function DashboardSidebar({ userName = "User", userBalance = 0, priceMultiplier, userRole }: { userName?: string; userBalance?: number; priceMultiplier?: number; userRole?: string }) {
+  const tierInfo = getTierInfo(priceMultiplier)
   const pathname = usePathname()
   const router = useRouter()
+  const { displayAmount } = useCurrency()
+  
+  // Add admin panel link if user is admin (after Dashboard, before My Orders)
+  const navigationWithAdmin = userRole === 'admin' 
+    ? [
+        navigation[0], // Dashboard
+        { name: "Admin Panel", href: "/admin-panel-2024", icon: Shield },
+        ...navigation.slice(1) // Rest of navigation
+      ]
+    : navigation
 
   const getCartoonAvatar = (name: string) => {
     const char = name.charAt(0).toUpperCase()
@@ -81,9 +103,14 @@ export function DashboardSidebar({ userName = "User", userBalance = 0 }: { userN
             </div>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              Basic User
-            </p>
+            <div className="flex items-center gap-1.5">
+              <p className={`text-xs font-semibold uppercase tracking-wider ${tierInfo.textColor}`}>
+                {tierInfo.name}
+              </p>
+              {tierInfo.icon && (
+                <tierInfo.icon className={`w-3.5 h-3.5 ${tierInfo.textColor}`} />
+              )}
+            </div>
             <p className="font-bold text-sm sm:text-base text-slate-900 dark:text-white truncate">{userName}</p>
           </div>
         </div>
@@ -91,7 +118,7 @@ export function DashboardSidebar({ userName = "User", userBalance = 0 }: { userN
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-4 sm:py-6 px-3 sm:px-4 space-y-1">
-        {navigation.map((item) => {
+        {navigationWithAdmin.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
           const IconComponent = item.icon
           return (

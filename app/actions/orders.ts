@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { SMMApiClient } from "@/lib/smm-api-client"
+import { ORDER_STATUSES, validateOrderStatus } from "@/lib/order-status"
 
 export async function placeOrder(serviceId: string, link: string, quantity: number, couponCode?: string, isBulkBuy = false) {
   try {
@@ -48,11 +49,15 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
 
     const baseMultiplier = userData.price_multiplier || 3.0
     const priceMultiplier = isBulkBuy ? 2.5 : baseMultiplier
-    const finalServicePrice = servicePrice * priceMultiplier
+    
+    // base_price is stored for normal users (3x markup)
+    // Calculate provider cost first, then apply user's multiplier
+    const providerPrice = servicePrice / 3.0
+    const finalServicePrice = providerPrice * priceMultiplier
     let price = (quantity / 1000) * finalServicePrice
 
     console.log(
-      `[v0] Order calculation: ${quantity} units × $${servicePrice}/1K × ${priceMultiplier}x (${isBulkBuy ? "BULK" : "REGULAR"}) = $${price.toFixed(4)}`,
+      `[v0] Order calculation: ${quantity} units × (${servicePrice}/3.0 = $${providerPrice.toFixed(4)}) × ${priceMultiplier}x (${isBulkBuy ? "BULK" : "REGULAR"}) = $${price.toFixed(4)}`,
     )
 
     // Apply coupon discount if provided
@@ -62,7 +67,7 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
     if (couponCode) {
       const { data: coupon, error: couponError } = await supabase
         .from("coupons")
-        .select("id, discount_percentage, active, expires_at, max_uses, used_count, per_user_limit")
+        .select("id, discount_type, discount_value, is_active, expires_at, max_uses, used_count, min_order_amount")
         .ilike("code", couponCode.trim())
         .single()
 
@@ -70,7 +75,7 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
         return { error: "Invalid coupon code" }
       }
 
-      if (!coupon.active) {
+      if (!coupon.is_active) {
         return { error: "This coupon is not active" }
       }
 
@@ -82,24 +87,23 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
         return { error: "This coupon has reached its usage limit" }
       }
 
-      // Check per-user limit
-      if (coupon.per_user_limit && coupon.per_user_limit > 0) {
-        const { data: userUsages } = await supabase
-          .from("coupon_usages")
-          .select("id")
-          .eq("coupon_id", coupon.id)
-          .eq("user_id", user.id)
-
-        if (userUsages && userUsages.length >= coupon.per_user_limit) {
-          return { error: `You have already used this coupon ${coupon.per_user_limit} time(s)` }
-        }
+      // Check minimum order amount
+      if (coupon.min_order_amount && price < coupon.min_order_amount) {
+        return { error: `Minimum order amount for this coupon is $${coupon.min_order_amount}` }
       }
 
       couponId = coupon.id
-      discountPercentage = coupon.discount_percentage || 0
-      price = price * (1 - discountPercentage / 100)
+      
+      // Calculate discount based on type
+      if (coupon.discount_type === "percentage") {
+        discountPercentage = Number(coupon.discount_value) || 0
+        price = price * (1 - discountPercentage / 100)
+      } else {
+        // Fixed discount
+        price = Math.max(0, price - Number(coupon.discount_value))
+      }
 
-      console.log(`[v0] Coupon applied: ${discountPercentage}% discount, new price: $${price.toFixed(2)}`)
+      console.log(`[v0] Coupon applied: ${coupon.discount_type} discount of ${coupon.discount_value}, new price: $${price.toFixed(2)}`)
     }
 
     if (isBulkBuy && quantity < 10000) {
@@ -107,12 +111,14 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
     }
 
     if (userData.balance < price) {
+      console.log(`[v0] Insufficient balance: need $${price.toFixed(2)}, have $${userData.balance.toFixed(2)}`)
       return { error: `Insufficient balance. You need $${price.toFixed(2)} but have $${userData.balance.toFixed(2)}` }
     }
 
     const balanceBefore = userData.balance
     const balanceAfter = balanceBefore - price
 
+    console.log(`[v0] Creating order in database...`)
     const orderResponse = await supabase
       .from("orders")
       .insert({
@@ -121,23 +127,23 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
         link,
         quantity,
         price,
-        status: "pending",
+        status: ORDER_STATUSES.PENDING, // Use constant to ensure valid status
         can_refill: service.has_refill || service.refill,
-        coupon_id: couponId,
-        discount_percentage: discountPercentage,
       })
       .select()
       .single()
     const order = orderResponse.data
     const orderError = orderResponse.error
 
-    if (orderError) {
-      console.error("[v0] Order creation error:", orderError)
-      return { error: orderError.message }
+    if (orderError || !order) {
+      console.error("[v0] Order creation error:", orderError?.message)
+      return { error: "Failed to create order in database" }
     }
 
-    // Deduct balance and update user stats
-    await supabase
+    console.log("[v0] Order created with ID:", order.id, "- Now deducting balance...")
+
+    // CRITICAL: Deduct balance FIRST before any other operations
+    const { error: balanceUpdateError } = await supabase
       .from("users")
       .update({
         balance: balanceAfter,
@@ -146,21 +152,18 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
       })
       .eq("id", user.id)
 
-    // Record coupon usage if coupon was used
-    if (couponId) {
-      await supabase.from("coupon_usages").insert({
-        coupon_id: couponId,
-        user_id: user.id,
-        order_id: order.id,
-        discount_amount: (quantity / 1000) * finalServicePrice * (discountPercentage / 100),
-      })
-
-      // Increment coupon usage count
-      await supabase.rpc("increment_coupon_usage", { coupon_id: couponId })
+    if (balanceUpdateError) {
+      console.error("[v0] Balance update error:", balanceUpdateError.message)
+      // Rollback order if balance update fails
+      await supabase.from("orders").delete().eq("id", order.id)
+      return { error: "Failed to deduct balance. Order cancelled." }
     }
 
-    // Create transaction record
-    await supabase.from("transactions").insert({
+    console.log(`[v0] Balance deducted successfully: $${balanceBefore.toFixed(2)} → $${balanceAfter.toFixed(2)}`)
+
+    // Record transaction
+    console.log("[v0] Recording transaction...")
+    const { error: transactionError } = await supabase.from("transactions").insert({
       user_id: user.id,
       order_id: order.id,
       type: "order",
@@ -170,33 +173,173 @@ export async function placeOrder(serviceId: string, link: string, quantity: numb
       status: "completed",
     })
 
-    console.log(`[v0] Balance deducted: $${balanceBefore.toFixed(2)} → $${balanceAfter.toFixed(2)}`)
+    if (transactionError) {
+      console.warn("[v0] Transaction record failed (non-critical):", transactionError.message)
+    }
+
+    // Referral commission logic
+    if (userData.referred_by) {
+      // Fetch referral commission percentage from system_settings
+      const { data: settings } = await supabase.from("system_settings").select("value").eq("key", "referral_commission").single()
+      const commissionPercent = settings ? Number(settings.value) : 5
+      const commissionAmount = Math.round((price * commissionPercent) / 100 * 100) / 100
+      if (commissionAmount > 0) {
+        // Insert referral_earnings record
+        await supabase.from("referral_earnings").insert({
+          referrer_id: userData.referred_by,
+          referred_id: user.id,
+          order_id: order.id,
+          commission_amount: commissionAmount,
+          commission_percentage: commissionPercent,
+        })
+        // Update referrer wallet
+        const { data: referrer } = await supabase.from("users").select("balance").eq("id", userData.referred_by).single()
+        if (referrer) {
+          const newRefBalance = Number(referrer.balance) + commissionAmount
+          await supabase.from("users").update({ balance: newRefBalance }).eq("id", userData.referred_by)
+          // Optionally, record transaction for referrer
+          await supabase.from("transactions").insert({
+            user_id: userData.referred_by,
+            order_id: order.id,
+            type: "referral",
+            amount: commissionAmount,
+            balance_before: referrer.balance,
+            balance_after: newRefBalance,
+            status: "completed",
+            notes: `Referral commission for order ${order.id}`,
+          })
+        }
+        console.log(`[v0] Referral commission of $${commissionAmount} credited to referrer ${userData.referred_by}`)
+      }
+    }
+
+    // Record coupon usage if coupon was used
+    if (couponId) {
+      console.log("[v0] Recording coupon usage...")
+      const { error: couponUsageError } = await supabase.from("coupon_usage").insert({
+        coupon_id: couponId,
+        user_id: user.id,
+        order_id: order.id,
+        discount_amount: (quantity / 1000) * finalServicePrice * (discountPercentage / 100),
+      })
+
+      if (couponUsageError) {
+        console.warn("[v0] Coupon usage record failed (non-critical):", couponUsageError.message)
+      }
+
+      // Increment coupon usage count
+      const { error: couponIncrementError } = await supabase.rpc("increment_coupon_usage", { coupon_id: couponId })
+      if (couponIncrementError) {
+        console.warn("[v0] Coupon increment failed (non-critical):", couponIncrementError.message)
+      }
+    }
 
     // Send to API provider
     if (service.provider && service.provider.is_active && service.external_service_id) {
       try {
+        console.log("[v0] ===== SENDING ORDER TO PROVIDER =====")
+        console.log("[v0] Provider Details:", {
+          provider_id: service.provider.id,
+          provider_name: service.provider.name,
+          api_url: service.provider.api_url,
+          is_active: service.provider.is_active,
+          auth_mode: (service.provider as any).auth_mode || "key (default)",
+          masked_api_key: service.provider.api_key
+            ? `${service.provider.api_key.slice(0, 4)}...${service.provider.api_key.slice(-4)}`
+            : "MISSING",
+        })
+        console.log("[v0] Order Details:", {
+          order_id: order.id,
+          external_service_id: service.external_service_id,
+          link: link,
+          quantity: quantity,
+        })
+
         const apiClient = new SMMApiClient(service.provider.api_url, service.provider.api_key)
+        
+        // Determine auth mode from provider settings
+        const authMode = (service.provider as any).auth_mode === "bearer" ? "bearer" : "key"
+        console.log("[v0] Using auth mode:", authMode)
+        
+        const apiResponse = await apiClient.createOrder(
+          Number.parseInt(service.external_service_id),
+          link,
+          quantity,
+          { authMode },
+        )
 
-        const apiResponse = await apiClient.createOrder(Number.parseInt(service.external_service_id), link, quantity)
+        console.log("[v0] ✅ SUCCESS! API order created with external ID:", apiResponse.order)
+        console.log("[v0] Full API Response:", apiResponse)
 
-        console.log("[v0] API order created:", apiResponse.order)
-
-        await supabase
+        const { error: apiUpdateError } = await supabase
           .from("orders")
           .update({
             external_order_id: String(apiResponse.order),
             status: "processing",
           })
           .eq("id", order.id)
-      } catch (error) {
-        console.error("[v0] Failed to send order to API:", error)
-        // Order stays in pending status if API fails
+
+        if (apiUpdateError) {
+          console.warn("[v0] Failed to update order with external ID (non-critical):", apiUpdateError.message)
+        } else {
+          console.log("[v0] ✅ Order updated in database with external_order_id:", apiResponse.order)
+        }
+      } catch (error: any) {
+        // Log comprehensive error details for diagnostics
+        const errorResponse = error.response || {}
+        console.error("[v0] ❌ FAILED to send order to API provider")
+        console.error("[v0] Error Details:", {
+          order_id: order.id,
+          provider_id: service.provider.id,
+          provider_name: service.provider.name,
+          provider_api_url: service.provider.api_url,
+          masked_api_key: service.provider.api_key
+            ? `${service.provider.api_key.slice(0, 4)}...${service.provider.api_key.slice(-4)}`
+            : "none",
+          service_external_id: service.external_service_id,
+          auth_mode: (service.provider as any).auth_mode || "key",
+          error_message: error.message,
+          provider_http_status: errorResponse.status,
+          provider_response_body: errorResponse.body,
+        })
+        console.error("[v0] Full Error Stack:", error.stack)
+        console.error("[v0] ===================================")
+        // Order stays in pending status if API fails - user still got charged and order is recorded
+        // Admin can use the resend utility to retry with updated credentials
       }
+    } else {
+      // Log why order is not being sent to provider
+      console.log("[v0] Order NOT sent to provider. Reason:", {
+        has_provider: !!service.provider,
+        provider_is_active: service.provider?.is_active,
+        has_external_service_id: !!service.external_service_id,
+      })
+    }
+
+    // Send order confirmation email
+    try {
+      console.log("[v0] Sending order confirmation email...")
+      const { EmailService } = await import("@/lib/email")
+      
+      await EmailService.sendOrderConfirmation(
+        userData.email,
+        order.id,
+        service.name,
+        quantity,
+        price,
+        "USD", // TODO: Use user's currency from settings
+        userData.full_name || userData.email
+      )
+      console.log("[v0] Order confirmation email sent successfully")
+    } catch (emailError) {
+      // Don't fail the order if email fails
+      console.error("[v0] Failed to send order confirmation email (non-critical):", emailError)
     }
 
     revalidatePath("/dashboard")
     revalidatePath("/dashboard/orders")
 
+    console.log("[v0] Order placement completed successfully!")
     return { success: true, orderId: order.id }
   } catch (error) {
     console.error("[v0] Place order error:", error)
@@ -227,7 +370,10 @@ export async function syncOrderStatus(orderId: string) {
 
   try {
     const apiClient = new SMMApiClient(provider.api_url, provider.api_key)
-    const status = await apiClient.getOrderStatus(Number.parseInt(order.external_order_id))
+    const authMode = (provider as any).auth_mode === "bearer" ? "bearer" : "key"
+    const status = await apiClient.getOrderStatus(Number.parseInt(order.external_order_id), {
+      authMode,
+    })
 
     // Map API status to our status
     let newStatus = order.status
@@ -237,6 +383,7 @@ export async function syncOrderStatus(orderId: string) {
     else if (status.status === "Canceled") newStatus = "canceled"
 
     // Update order
+    const oldStatus = order.status
     await supabase
       .from("orders")
       .update({
@@ -247,11 +394,49 @@ export async function syncOrderStatus(orderId: string) {
       })
       .eq("id", orderId)
 
+    // Send status update email if status changed
+    if (oldStatus !== newStatus) {
+      try {
+        console.log("[v0] Order status changed, sending email notification...")
+        const { data: userData } = await supabase
+          .from("users")
+          .select("email, full_name")
+          .eq("id", order.user_id)
+          .single()
+
+        if (userData) {
+          const { EmailService } = await import("@/lib/email")
+          await EmailService.sendOrderStatusUpdate(
+            userData.email,
+            orderId,
+            order.service.name || "Service",
+            oldStatus,
+            newStatus,
+            userData.full_name || userData.email
+          )
+          console.log("[v0] Order status update email sent successfully")
+        }
+      } catch (emailError) {
+        console.error("[v0] Failed to send order status update email (non-critical):", emailError)
+      }
+    }
+
     revalidatePath("/dashboard/orders")
     revalidatePath("/admin-panel-2024/orders")
 
     return { success: true, status: newStatus }
-  } catch (error) {
+  } catch (error: any) {
+    const errorResponse = error.response || {}
+    console.error("[v0] Failed to sync order status:", {
+      order_id: orderId,
+      external_order_id: order.external_order_id,
+      provider_id: provider.id,
+      provider_api_url: provider.api_url,
+      masked_api_key: provider.api_key ? `${provider.api_key.slice(0, 4)}...${provider.api_key.slice(-4)}` : "none",
+      error_message: error.message,
+      provider_response_status: errorResponse.status,
+      provider_response_body: errorResponse.body,
+    })
     return { error: String(error) }
   }
 }
@@ -319,8 +504,11 @@ export async function cancelOrder(orderId: string) {
   const user = userResponse.data.user
 
   if (!user) {
+    console.error("[v0] Cancel order - Unauthorized access attempt")
     return { error: "Unauthorized" }
   }
+
+  console.log(`[v0] Starting cancel for order ${orderId} by user ${user.id}`)
 
   const orderResponseData = await supabase
     .from("orders")
@@ -337,54 +525,95 @@ export async function cancelOrder(orderId: string) {
   const order = orderResponseData.data
 
   if (!order) {
+    console.error(`[v0] Order ${orderId} not found for user ${user.id}`)
     return { error: "Order not found" }
   }
 
+  console.log(`[v0] Order found - status: ${order.status}, price: ${order.price}, external_id: ${order.external_order_id}`)
+
   if (order.status === "completed" || order.status === "canceled") {
+    console.warn(`[v0] Cannot cancel order ${orderId} - status is ${order.status}`)
     return { error: "Cannot cancel this order" }
   }
 
   if (!order.external_order_id || !order.service?.provider) {
     // Just mark as canceled if no external order
-    await supabase.from("orders").update({ status: "canceled" }).eq("id", orderId)
+    console.log(`[v0] Canceling order ${orderId} - no external order, marking as canceled`)
+    await supabase
+      .from("orders")
+      .update({ status: ORDER_STATUSES.CANCELED }) // Use constant
+      .eq("id", orderId)
     revalidatePath("/dashboard/orders")
-    return { success: true }
+    return { success: true, message: "Order canceled" }
   }
 
   const provider = order.service.provider
 
   try {
+    console.log(`[v0] Canceling order ${order.external_order_id} with provider ${provider.name}`)
     const apiClient = new SMMApiClient(provider.api_url, provider.api_key)
     await apiClient.cancelOrder(Number.parseInt(order.external_order_id))
+    console.log(`[v0] Provider cancellation successful`)
 
     // Update order and refund
     const refundAmount = order.price
+    console.log(`[v0] Refunding ${refundAmount} to user ${user.id}`)
+    
     const userDataResponse = await supabase.from("users").select("balance").eq("id", user.id).single()
     const userData = userDataResponse.data
 
-    if (userData) {
-      const newBalance = userData.balance + refundAmount
-
-      await supabase.from("users").update({ balance: newBalance }).eq("id", user.id)
-
-      await supabase.from("transactions").insert({
-        user_id: user.id,
-        order_id: orderId,
-        type: "refund",
-        amount: refundAmount,
-        balance_before: userData.balance,
-        balance_after: newBalance,
-        status: "completed",
-      })
+    if (!userData) {
+      console.error(`[v0] User data not found for ${user.id}`)
+      return { error: "User data not found" }
     }
 
-    await supabase.from("orders").update({ status: "canceled" }).eq("id", orderId)
+    const newBalance = userData.balance + refundAmount
+    console.log(`[v0] Balance update: ${userData.balance} → ${newBalance}`)
+
+    const { error: balanceError } = await supabase.from("users").update({ balance: newBalance }).eq("id", user.id)
+    
+    if (balanceError) {
+      console.error(`[v0] Failed to update balance:`, balanceError)
+      return { error: "Failed to update balance" }
+    }
+
+    console.log(`[v0] Creating refund transaction`)
+    const { error: transactionError } = await supabase.from("transactions").insert({
+      user_id: user.id,
+      order_id: orderId,
+      type: "refund",
+      amount: refundAmount,
+      balance_before: userData.balance,
+      balance_after: newBalance,
+      status: "completed",
+    })
+
+    if (transactionError) {
+      console.error(`[v0] Failed to create transaction:`, transactionError)
+      // Continue anyway - balance was updated
+    } else {
+      console.log(`[v0] Transaction created successfully`)
+    }
+
+    console.log(`[v0] Updating order ${orderId} status to canceled`)
+    const { error: orderError } = await supabase
+      .from("orders")
+      .update({ status: ORDER_STATUSES.CANCELED }) // Use constant
+      .eq("id", orderId)
+
+    if (orderError) {
+      console.error(`[v0] Failed to update order status:`, orderError)
+      return { error: "Failed to update order status" }
+    }
+
+    console.log(`[v0] Order ${orderId} successfully canceled and refunded ${refundAmount}`)
 
     revalidatePath("/dashboard/orders")
     revalidatePath("/dashboard")
 
     return { success: true, message: "Order canceled and refunded" }
   } catch (error) {
+    console.error(`[v0] Error canceling order ${orderId}:`, error)
     return { error: String(error) }
   }
 }

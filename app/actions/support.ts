@@ -50,7 +50,7 @@ export async function replyToTicket(ticketId: string, message: string) {
 }
 
 export async function updateTicketStatus(ticketId: string, status: string) {
-  const supabase = await createAdminClient()
+  const supabase = createAdminClient()
 
   const { error } = await supabase
     .from("support_tickets")
@@ -65,7 +65,7 @@ export async function updateTicketStatus(ticketId: string, status: string) {
 }
 
 export async function closeTicket(ticketId: string) {
-  const supabase = await createAdminClient()
+  const supabase = createAdminClient()
 
   const { error } = await supabase
     .from("support_tickets")

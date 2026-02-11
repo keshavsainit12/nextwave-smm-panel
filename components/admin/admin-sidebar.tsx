@@ -10,6 +10,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { toast } from "react-toastify"
+import { createClient } from "@/lib/supabase/client"
 import {
   LayoutDashboard,
   Bitcoin,
@@ -45,11 +46,14 @@ const navigation = [
   { name: "Settings", href: "/admin-panel-2024/settings", icon: Settings },
 ]
 
-function SidebarContent({ pathname, handleLogout, onClose }: { pathname: string; handleLogout: () => Promise<void>; onClose?: () => void }) {
+function SidebarContent({ pathname, handleLogout, onClose, userEmail }: { pathname: string; handleLogout: () => Promise<void>; onClose?: () => void; userEmail?: string }) {
   return (
     <>
       <div className="flex h-20 items-center justify-center border-b bg-white/50 backdrop-blur-sm px-6">
-        {/* Removed NextWave logo from desktop sidebar, improved mobile header spacing, added user avatar section similar to user dashboard */}
+        <div className="flex flex-col items-center">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white">Admin Panel</h2>
+
+        </div>
       </div>
       <nav className="flex-1 space-y-1 overflow-y-auto p-4">
         {navigation.map((item) => {
@@ -90,69 +94,32 @@ function SidebarContent({ pathname, handleLogout, onClose }: { pathname: string;
   )
 }
 
-export function AdminSidebar() {
+export function AdminSidebar({ userEmail, isMobile, onClose }: { userEmail?: string; isMobile?: boolean; onClose?: () => void }) {
   const pathname = usePathname()
   const router = useRouter()
-  const [open, setOpen] = useState(false)
 
   const handleLogout = async () => {
     try {
-      const response = await fetch("/api/admin/logout", {
-        method: "POST",
-      })
-
-      if (response.ok) {
-        toast.success("Logged out successfully")
-        router.push("/admin-login")
-        router.refresh()
-      }
+      const supabase = createClient()
+      await supabase.auth.signOut()
+      
+      toast.success("Logged out successfully")
+      router.push("/auth/login")
+      router.refresh()
     } catch (error) {
       toast.error("Logout failed")
     }
   }
 
-  return (
-    <>
-      {/* Mobile Header with Hamburger Menu */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between h-16 px-3 sm:px-4 bg-white/90 backdrop-blur-md border-b shadow-sm">
-        <ImageIcon src="/logo.png" alt="NextWave SMM" width={160} height={40} className="h-10 w-auto" priority />
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild>
-            <Button variant="outline" size="icon" className="lg:hidden bg-transparent hover:bg-slate-100">
-              <Menu className="h-5 w-5" />
-              <span className="sr-only">Toggle menu</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-72 p-0 bg-white/95 backdrop-blur-lg">
-            <div className="flex h-full flex-col">
-              <div className="flex items-center gap-3 border-b py-4 px-6">
-                <Avatar className="h-10 w-10 bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                  A
-                </Avatar>
-                <div className="flex flex-col">
-                  <span className="text-sm font-semibold text-slate-900 dark:text-white">Admin</span>
-                  <span className="text-xs text-slate-500 dark:text-slate-400">Super Admin</span>
-                </div>
-              </div>
-              <SidebarContent pathname={pathname} handleLogout={handleLogout} onClose={() => setOpen(false)} />
-            </div>
-          </SheetContent>
-        </Sheet>
-      </div>
+  // For mobile view (inside Sheet), render only the content
+  if (isMobile) {
+    return <SidebarContent pathname={pathname} handleLogout={handleLogout} onClose={onClose} userEmail={userEmail} />
+  }
 
-      {/* Desktop Sidebar - visible on lg and larger screens */}
-      <div className="hidden lg:flex w-64 h-screen flex-col border-r bg-white/70 backdrop-blur-lg shadow-xl sticky top-0">
-        <div className="flex items-center gap-3 py-4 px-6 border-b">
-          <Avatar className="h-10 w-10 bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-            A
-          </Avatar>
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold text-slate-900 dark:text-white">Admin</span>
-            <span className="text-xs text-slate-500 dark:text-slate-400">Super Admin</span>
-          </div>
-        </div>
-        <SidebarContent pathname={pathname} handleLogout={handleLogout} />
-      </div>
-    </>
+  // For desktop view, render with container
+  return (
+    <div className="w-64 h-screen flex flex-col border-r bg-white/70 backdrop-blur-lg shadow-xl sticky top-0">
+      <SidebarContent pathname={pathname} handleLogout={handleLogout} userEmail={userEmail} />
+    </div>
   )
 }

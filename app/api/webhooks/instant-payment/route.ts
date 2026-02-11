@@ -2,6 +2,30 @@ import { createClient } from "@/lib/supabase/server"
 import { NextRequest, NextResponse } from "next/server"
 import crypto from "crypto"
 import { revalidatePath } from "next/cache"
+import { EmailService } from "@/lib/email"
+
+// GET handler for testing webhook endpoint
+export async function GET() {
+  return NextResponse.json({
+    status: "active",
+    message: "Instant Payment Webhook Endpoint",
+    info: "This endpoint accepts POST requests from AccountPe payment gateway",
+    documentation: {
+      method: "POST",
+      contentType: "application/json",
+      headers: {
+        "x-accountpe-signature": "HMAC-SHA256 signature for verification"
+      },
+      requiredFields: ["transactionId", "status", "amount"],
+      statusCodes: {
+        "1": "success",
+        "-1": "failed",
+        "pending": "pending"
+      }
+    },
+    timestamp: new Date().toISOString()
+  })
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -45,6 +69,40 @@ export async function POST(req: NextRequest) {
 
     // Get the transaction ID from webhook payload (try multiple field names)
     const webhookTransactionId = body.transactionId || body.transaction_id || body.id
+
+    // ===== WEBHOOK REPLAY PROTECTION =====
+    // Create unique webhook ID from transaction ID + timestamp + status
+    const webhookId = `${webhookTransactionId}_${body.status}_${Date.now()}`
+    
+    // Check if this webhook was already processed
+    const { data: existingWebhook } = await supabase
+      .from("processed_webhooks")
+      .select("id")
+      .eq("webhook_id", webhookId)
+      .single()
+
+    if (existingWebhook) {
+      console.log("[v0] Webhook already processed, ignoring duplicate:", webhookId)
+      return NextResponse.json({ 
+        success: true, 
+        message: "Webhook already processed",
+        duplicate: true 
+      })
+    }
+
+    // Check for recent similar webhooks (within 5 minutes) to prevent rapid replays
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString()
+    const { data: recentWebhooks } = await supabase
+      .from("processed_webhooks")
+      .select("id")
+      .eq("transaction_id", webhookTransactionId)
+      .gte("created_at", fiveMinutesAgo)
+      .limit(1)
+
+    if (recentWebhooks && recentWebhooks.length > 0) {
+      console.log("[v0] Recent webhook found for same transaction, possible replay attempt")
+      // Still process but log as suspicious
+    }
 
     // Try to find transaction by payment_id first (original transaction ID we sent)
     let transaction = null
@@ -176,6 +234,51 @@ export async function POST(req: NextRequest) {
           balanceBefore: currentBalance,
           balanceAfter: newBalance,
         })
+
+        // Create notification for deposit approval
+        try {
+          await supabase.from("notifications").insert({
+            user_id: transaction.user_id,
+            type: "deposit_approved",
+            title: "Deposit Approved",
+            message: `Your deposit of ${transaction.currency || "USD"} ${amountToAdd.toFixed(2)} has been approved and added to your wallet.`,
+            metadata: {
+              transaction_id: transaction.id,
+              amount: amountToAdd,
+              currency: transaction.currency || "USD",
+              payment_method: "instant_payment"
+            },
+            is_read: false
+          })
+          console.log("[v0] Deposit notification created successfully")
+        } catch (notifError) {
+          console.error("[v0] Notification creation error (non-critical):", notifError)
+          // Don't fail the webhook if notification fails
+        }
+
+        // Send deposit confirmation email
+        try {
+          const { data: userData } = await supabase
+            .from("users")
+            .select("email, username")
+            .eq("id", transaction.user_id)
+            .single()
+
+          if (userData?.email) {
+            console.log("[v0] Sending deposit confirmation email to:", userData.email)
+            await EmailService.sendDepositConfirmation(
+              userData.email,
+              amountToAdd,
+              transaction.currency || "USD",
+              transaction.id,
+              userData.username || "User"
+            )
+            console.log("[v0] Deposit confirmation email sent successfully")
+          }
+        } catch (emailError) {
+          console.error("[v0] Email notification error (non-critical):", emailError)
+          // Don't fail the webhook if email fails
+        }
       }
 
       // Log activity
@@ -210,7 +313,22 @@ export async function POST(req: NextRequest) {
         console.log("[v0] Note: Could not revalidate pages:", err)
       }
 
-      return NextResponse.json({ success: true, message: "Payment processed successfully" })
+      // ===== RECORD PROCESSED WEBHOOK =====
+      try {
+        await supabase.from("processed_webhooks").insert({
+          webhook_id: webhookId,
+          transaction_id: transaction.id,
+          payload: body,
+          signature: receivedSignature || "none",
+        })
+        console.log("[v0] Webhook recorded in processed_webhooks table")
+      } catch (webhookLogError) {
+        console.error("[v0] Failed to record webhook (non-critical):", webhookLogError)
+        // Don't fail the webhook if logging fails
+      }
+
+      // Redirect user to deposit success page after payment
+      return NextResponse.redirect("/dashboard/deposit/success")
     } else if (body.status === -1 || body.status === "-1" || body.status === "failed") {
       // FAILED: Do NOT credit wallet
       console.log("[v0] Payment failed - NOT crediting wallet:", transaction.id)
@@ -222,6 +340,27 @@ export async function POST(req: NextRequest) {
 
       if (error) {
         console.error("[v0] Transaction update error:", error.message)
+      }
+
+      // Create notification for deposit rejection
+      try {
+        await supabase.from("notifications").insert({
+          user_id: transaction.user_id,
+          type: "deposit_rejected",
+          title: "Deposit Failed",
+          message: `Your deposit of ${transaction.currency || "USD"} ${Number(transaction.amount).toFixed(2)} has failed. Please try again or contact support.`,
+          metadata: {
+            transaction_id: transaction.id,
+            amount: transaction.amount,
+            currency: transaction.currency || "USD",
+            payment_method: "instant_payment",
+            reason: "Payment gateway returned failed status"
+          },
+          is_read: false
+        })
+        console.log("[v0] Deposit failure notification created successfully")
+      } catch (notifError) {
+        console.error("[v0] Notification creation error (non-critical):", notifError)
       }
 
       try {

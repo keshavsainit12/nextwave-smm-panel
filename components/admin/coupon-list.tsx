@@ -1,9 +1,48 @@
+"use client"
+
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Edit, Trash2 } from "lucide-react"
+import { Trash2 } from "lucide-react"
+import { toast } from "sonner"
+import { EditCouponDialog } from "./edit-coupon-dialog"
+import { useState } from "react"
 
-export function CouponList({ coupons }: { coupons: any[] }) {
+interface CouponListProps {
+  coupons: any[]
+  onCouponDeleted?: () => void
+  onCouponUpdated?: () => void
+}
+
+export function CouponList({ coupons, onCouponDeleted, onCouponUpdated }: CouponListProps) {
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  const handleDelete = async (couponId: string) => {
+    if (!window.confirm("Are you sure you want to delete this coupon?")) {
+      return
+    }
+
+    setDeletingId(couponId)
+    try {
+      const response = await fetch(`/api/v1/coupons/${couponId}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to delete coupon")
+      }
+
+      toast.success("Coupon deleted successfully!")
+      onCouponDeleted?.()
+    } catch (error: any) {
+      console.error("[v0] Delete coupon error:", error)
+      toast.error(error.message || "Failed to delete coupon")
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
   if (coupons.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
@@ -30,22 +69,26 @@ export function CouponList({ coupons }: { coupons: any[] }) {
             <TableRow key={coupon.id}>
               <TableCell className="font-mono font-medium text-sm">{coupon.code}</TableCell>
               <TableCell className="text-sm">
-                {coupon.discount_percentage || coupon.discount_value}%
+                {coupon.discount_value}%
               </TableCell>
               <TableCell className="text-sm">
                 {coupon.used_count || 0} / {coupon.max_uses || "∞"}
               </TableCell>
               <TableCell>
-                <Badge variant={coupon.active ? "default" : "secondary"} className="text-xs">
-                  {coupon.active ? "Active" : "Inactive"}
+                <Badge variant={coupon.is_active ? "default" : "secondary"} className="text-xs">
+                  {coupon.is_active ? "Active" : "Inactive"}
                 </Badge>
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-1">
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <Edit className="h-3 w-3" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <EditCouponDialog coupon={coupon} onCouponUpdated={onCouponUpdated} />
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8"
+                    onClick={() => handleDelete(coupon.id)}
+                    disabled={deletingId === coupon.id}
+                  >
                     <Trash2 className="h-3 w-3 text-destructive" />
                   </Button>
                 </div>

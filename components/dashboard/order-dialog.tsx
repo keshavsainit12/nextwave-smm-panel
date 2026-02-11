@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,6 +16,20 @@ import { useToast } from "@/hooks/use-toast"
 export function OrderDialog({ service, open, onClose }: { service: any; open: boolean; onClose: () => void }) {
   const [link, setLink] = useState("")
   const [quantity, setQuantity] = useState(service.min_quantity || 100)
+  
+  // Debug: Log service data when dialog opens
+  useEffect(() => {
+    if (open) {
+      console.log("[v0] OrderDialog opened with service:", {
+        id: service.id,
+        name: service.name,
+        price: service.price,
+        base_price: service.base_price,
+        min_quantity: service.min_quantity,
+        price_multiplier: service.price_multiplier,
+      })
+    }
+  }, [open, service])
   const [couponCode, setCouponCode] = useState("")
   const [couponDiscount, setCouponDiscount] = useState(0)
   const [couponError, setCouponError] = useState<string | null>(null)
@@ -25,9 +39,51 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
   const router = useRouter()
   const { toast } = useToast()
 
-  const servicePrice = Number(service.price || service.base_price || 0)
-  const totalPrice = ((quantity / 1000) * servicePrice).toFixed(2)
-  const discountedTotal = (Number(totalPrice) * (1 - couponDiscount / 100)).toFixed(2)
+  // Determine if bulk pricing is applicable
+  // Bulk pricing: available only if service min_quantity > 10 AND quantity >= 10000
+  const minQuantityForBulk = (service.min_quantity || 100) > 10 ? 10000 : Infinity
+  const isBulkEligible = quantity >= 10000 && (service.min_quantity || 100) > 10
+  
+  // Debug bulk pricing
+  useEffect(() => {
+    console.log("[v0] Bulk pricing calculation:", {
+      quantity,
+      min_quantity: service.min_quantity,
+      isBulkEligible,
+      minQuantityForBulk,
+      check1: quantity >= 10000,
+      check2: (service.min_quantity || 100) > 10,
+    })
+  }, [quantity, isBulkEligible, service.min_quantity])
+  
+  // Memoize price calculations to ensure they update reactively
+  const servicePrice = useMemo(() => Number(service.price || service.base_price || 0), [service])
+  const priceMultiplier = useMemo(() => {
+    // Bulk pricing: 2.5x if eligible, otherwise use user's multiplier (or default 3.0)
+    return isBulkEligible ? 2.5 : (service.price_multiplier || 3.0)
+  }, [service, isBulkEligible])
+  const finalServicePrice = useMemo(() => servicePrice * priceMultiplier, [servicePrice, priceMultiplier])
+  
+  const totalPrice = useMemo(() => {
+    const price = ((quantity / 1000) * finalServicePrice)
+    console.log("[v0] Price calculation:", {
+      quantity,
+      finalServicePrice,
+      servicePrice,
+      priceMultiplier,
+      isBulkEligible,
+      totalPrice: price.toFixed(2),
+    })
+    return price.toFixed(2)
+  }, [quantity, finalServicePrice, servicePrice, priceMultiplier, isBulkEligible])
+  
+  const discountedTotal = useMemo(() => {
+    const total = Number(totalPrice)
+    if (couponDiscount > 0) {
+      return (total * (1 - couponDiscount / 100)).toFixed(2)
+    }
+    return total.toFixed(2)
+  }, [totalPrice, couponDiscount])
 
   useEffect(() => {
     if (open) {
@@ -38,7 +94,7 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
       setCouponError(null)
       setError(null)
     }
-  }, [open, service.min_quantity])
+  }, [open, service.id, service.min_quantity])
 
   const handleValidateCoupon = async () => {
     if (!couponCode.trim()) {
@@ -79,10 +135,13 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
       const data = await response.json()
 
       if (data.valid) {
-        setCouponDiscount(data.discount || 0)
+        const discountValue = data.discount || 0
+        setCouponDiscount(discountValue)
+        setCouponCode(couponCode.toUpperCase())
+        setCouponError(null)
         toast({
           title: "Coupon Applied",
-          description: `${data.discount}% discount applied to your order`,
+          description: `${discountValue}% discount applied to your order`,
           duration: 3000,
         })
       } else {
@@ -96,7 +155,6 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
         setCouponError(err instanceof Error ? err.message : "Failed to validate coupon")
       }
       setCouponDiscount(0)
-      console.error("[v0] Coupon validation error:", err)
     } finally {
       setValidateCouponLoading(false)
     }
@@ -122,26 +180,37 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
         throw new Error(`Minimum quantity is ${service.min_quantity || 100}`)
       }
 
-      console.log("[v0] Placing order with coupon:", couponCode || "none")
-      const result = await placeOrder(service.id, link, quantity, couponCode || undefined)
+      console.log("[v0] Submitting order with bulk flag:", {
+        serviceId: service.id,
+        quantity,
+        isBulkEligible,
+        totalPrice: discountedTotal,
+      })
+
+      const result = await placeOrder(service.id, link, quantity, couponCode || undefined, isBulkEligible)
 
       if (result.error) {
         throw new Error(result.error)
       }
 
+      if (!result.success) {
+        throw new Error("Order placement failed - please try again")
+      }
+
       toast({
         title: "Order Placed Successfully!",
-        description: `Your order has been placed and will be processed shortly.`,
+        description: `Your order #${result.orderId} has been placed and will be processed shortly.`,
         duration: 5000,
       })
 
       onClose()
-      router.push("/dashboard/orders")
-      router.refresh()
+      setTimeout(() => {
+        router.refresh()
+        router.push("/dashboard/orders")
+      }, 500)
     } catch (err: any) {
       const errorMessage = err instanceof Error ? err.message : "An error occurred while placing your order"
       setError(errorMessage)
-      console.error("[v0] Order placement error:", err)
       toast({
         title: "Order Failed",
         description: errorMessage,
@@ -246,7 +315,6 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
                   value={couponCode}
                   onChange={(e) => {
                     setCouponCode(e.target.value.toUpperCase())
-                    if (couponDiscount > 0) setCouponDiscount(0)
                   }}
                   disabled={loading || validateCouponLoading}
                   className="h-11 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500/20 uppercase font-semibold"
@@ -274,11 +342,37 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
             </p>
           </div>
 
+          {/* Bulk Pricing Info */}
+          {isBulkEligible && (
+            <Alert className="border-green-200/50 bg-green-50">
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-sm text-green-700">
+                ✓ <strong>Bulk Pricing Active!</strong> You get 2.5x multiplier (instead of {(service.price_multiplier || 3.0).toFixed(1)}x) on this order
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {(service.min_quantity || 100) <= 10 && (
+            <Alert className="border-amber-200/50 bg-amber-50">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-sm text-amber-700">
+                ℹ️ Bulk pricing not available for services with min quantity ≤ 10
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Price Breakdown Card */}
-          <div className="rounded-xl border border-blue-200/50 bg-gradient-to-br from-blue-50 to-blue-50/50 p-4 space-y-3">
+          <div key={`price-${couponDiscount}-${quantity}-${isBulkEligible}`} className="rounded-xl border border-blue-200/50 bg-gradient-to-br from-blue-50 to-blue-50/50 p-4 space-y-3">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-600">Price per 1000:</span>
+              <span className="text-slate-600">Base Price per 1000:</span>
               <span className="font-semibold text-slate-900">${servicePrice.toFixed(2)}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-slate-600">
+                Final Price per 1000:
+                {isBulkEligible && <span className="ml-2 text-green-600 font-bold">(Bulk: 2.5x)</span>}
+              </span>
+              <span className={`font-semibold ${isBulkEligible ? 'text-green-600' : 'text-blue-600'}`}>${finalServicePrice.toFixed(2)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-slate-600">Quantity:</span>
@@ -287,20 +381,20 @@ export function OrderDialog({ service, open, onClose }: { service: any; open: bo
             <div className="border-t border-blue-200 pt-3 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-slate-700">Subtotal:</span>
-                <span className="text-slate-900">${totalPrice}</span>
+                <span key={`subtotal-${totalPrice}`} className="text-slate-900">${totalPrice}</span>
               </div>
-              {couponDiscount > 0 && (
-                <div className="flex items-center justify-between text-green-700">
-                  <span className="text-sm">Discount ({couponDiscount}%):</span>
-                  <span className="font-semibold">-${(Number(totalPrice) * couponDiscount / 100).toFixed(2)}</span>
-                </div>
-              )}
+              <div className="flex items-center justify-between" key={`discount-display-${couponDiscount}`}>
+                <span className="text-sm text-slate-600">Discount:</span>
+                <span className={`font-semibold ${couponDiscount > 0 ? 'text-green-700' : 'text-slate-600'}`}>
+                  {couponDiscount > 0 ? `-$${(Number(totalPrice) * couponDiscount / 100).toFixed(2)}` : '$0.00'}
+                </span>
+              </div>
               <div className="flex items-center justify-between pt-2 border-t border-blue-200">
                 <span className="font-semibold text-slate-700 flex items-center gap-2">
                   <Wallet className="h-4 w-4 text-blue-600" />
                   Total:
                 </span>
-                <span className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">${discountedTotal}</span>
+                <span key={`total-${discountedTotal}`} className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">${discountedTotal}</span>
               </div>
             </div>
           </div>

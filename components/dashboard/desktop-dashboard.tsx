@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { placeOrder } from "@/app/actions/orders"
@@ -9,6 +9,7 @@ import Link from "next/link"
 import { ServiceCards } from "./service-cards-section"
 import { DashboardFooter } from "./dashboard-footer"
 import { CouponPasteCard } from "./coupon-paste-card"
+import { useCurrency } from "@/lib/currency-context"
 import {
   Info,
   Star,
@@ -21,7 +22,17 @@ import {
   ShoppingCart,
   ArrowRight,
   Loader2,
+  Crown,
 } from "lucide-react"
+
+// Tier configuration based on price_multiplier
+const getTierInfo = (priceMultiplier: number | undefined | null) => {
+  const multiplier = priceMultiplier ?? 3.0
+  if (multiplier <= 1.5) return { name: "VIP Elite", color: "from-amber-500 to-yellow-400", textColor: "text-amber-600", bgColor: "bg-amber-100", icon: Crown, isVip: true }
+  if (multiplier <= 2) return { name: "Reseller", color: "from-purple-500 to-indigo-500", textColor: "text-purple-600", bgColor: "bg-purple-100", icon: Star, isVip: true }
+  if (multiplier <= 2.5) return { name: "Bulk Buyer", color: "from-blue-500 to-cyan-500", textColor: "text-blue-600", bgColor: "bg-blue-100", icon: Star, isVip: false }
+  return { name: "Basic User", color: "from-slate-400 to-slate-500", textColor: "text-slate-600", bgColor: "bg-slate-100", icon: null, isVip: false }
+}
 import {
   Select,
   SelectContent,
@@ -38,6 +49,7 @@ export function DesktopDashboard({
   totalOrders,
   totalSpent,
   recentOrders,
+  priceMultiplier,
 }: {
   services: any[]
   categories: any[]
@@ -46,13 +58,17 @@ export function DesktopDashboard({
   totalOrders: number
   totalSpent: number
   recentOrders: any[]
+  priceMultiplier?: number
 }) {
+  const tierInfo = getTierInfo(priceMultiplier)
+  const { displayAmount } = useCurrency()
   const [selectedCategory, setSelectedCategory] = useState<any>(null)
   const [selectedService, setSelectedService] = useState<any>(null)
   const [link, setLink] = useState("")
   const [quantity, setQuantity] = useState(1000)
   const [isBulkBuy, setIsBulkBuy] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [appliedCouponDiscount, setAppliedCouponDiscount] = useState(0)
   const router = useRouter()
   const { toast } = useToast()
 
@@ -93,12 +109,32 @@ export function DesktopDashboard({
     }
   }
 
+  // Auto-reset bulk mode when service or category changes
+  useEffect(() => {
+    if (isBulkBuy) {
+      setIsBulkBuy(false)
+      console.log("[v0] Bulk mode auto-reset due to service/category change")
+    }
+  }, [selectedService?.id, selectedCategory?.id])
+
   const totalPrice = useMemo(() => {
     if (!selectedService) return 0
     const servicePrice = Number(selectedService.price || selectedService.base_price || 0)
-    const multiplier = isBulkBuy ? 2.5 : 3.0
-    return (quantity / 1000) * servicePrice * multiplier
-  }, [selectedService, quantity, isBulkBuy])
+    const baseMultiplier = priceMultiplier ?? 3.0
+    const bulkMultiplier = Math.min(baseMultiplier, 2.5)
+    const multiplier = isBulkBuy ? bulkMultiplier : baseMultiplier
+    const priceBeforeDiscount = (quantity / 1000) * servicePrice * multiplier
+    if (appliedCouponDiscount > 0) {
+      return priceBeforeDiscount * (1 - appliedCouponDiscount / 100)
+    }
+    return priceBeforeDiscount
+  }, [selectedService, quantity, isBulkBuy, appliedCouponDiscount, priceMultiplier])
+
+  const handleCouponApplied = useCallback((couponCode: string, discount: number) => {
+    if (typeof discount === 'number' && discount > 0) {
+      setAppliedCouponDiscount(discount)
+    }
+  }, [])
 
   const categoriesWithServices = useMemo(() => {
     return categories.filter((category) => services.some((s) => s.category_id === category.id))
@@ -177,7 +213,7 @@ export function DesktopDashboard({
     if (userBalance < totalPrice) {
       toast({
         title: "Insufficient Balance",
-        description: `You need $${totalPrice.toFixed(2)}. Please add funds.`,
+        description: `You need ${displayAmount(totalPrice)}. Please add funds.`,
         variant: "destructive",
       })
       return
@@ -186,7 +222,7 @@ export function DesktopDashboard({
     setLoading(true)
 
     try {
-      const result = await placeOrder(selectedService.id, link, quantity, isBulkBuy)
+      const result = await placeOrder(selectedService.id, link, quantity, undefined, isBulkBuy)
 
       if (result.error) {
         toast({
@@ -254,7 +290,7 @@ export function DesktopDashboard({
               </div>
             </div>
             <h2 className="text-4xl md:text-5xl font-extrabold mb-6 md:mb-8 tracking-tight">
-              ${(userBalance || 0).toFixed(2)}
+              {displayAmount(userBalance || 0)}
             </h2>
             <div className="flex gap-3">
               <Link href="/dashboard/deposit" className="flex-1">
@@ -292,7 +328,7 @@ export function DesktopDashboard({
               Lifetime Spent
             </div>
             <div className="flex items-end justify-between">
-              <span className="text-2xl md:text-3xl font-bold">${(totalSpent || 0).toFixed(2)}</span>
+              <span className="text-2xl md:text-3xl font-bold">{displayAmount(totalSpent || 0)}</span>
               <span className="bg-green-100 text-green-600 text-xs md:text-sm font-bold px-2 py-1 rounded-lg">
                 Total
               </span>
@@ -303,7 +339,86 @@ export function DesktopDashboard({
 
       {/* Coupon Paste Card */}
       <div className="max-w-2xl">
-        <CouponPasteCard />
+        <CouponPasteCard onCouponApplied={handleCouponApplied} />
+      </div>
+
+      {/* VIP Membership Progress Card */}
+      <div className={`rounded-2xl p-6 border ${tierInfo.isVip ? 'bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200/50' : 'bg-white border-slate-200'} shadow-sm`}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${tierInfo.color} flex items-center justify-center shadow-lg`}>
+              {tierInfo.icon ? <tierInfo.icon className="w-6 h-6 text-white" /> : <Star className="w-6 h-6 text-white" />}
+            </div>
+            <div>
+              <p className={`text-lg font-bold ${tierInfo.isVip ? 'text-amber-800' : 'text-slate-900'}`}>{tierInfo.name}</p>
+              <p className="text-sm text-slate-500">Your current membership tier</p>
+            </div>
+          </div>
+          {!tierInfo.isVip && (
+            <div className="bg-gradient-to-r from-amber-500 to-yellow-400 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2">
+              <Crown className="w-4 h-4" />
+              Upgrade to VIP
+            </div>
+          )}
+        </div>
+        
+        {!tierInfo.isVip ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Progress Section */}
+            <div className="space-y-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600 font-medium">Progress to VIP Elite</span>
+                <span className="text-slate-900 font-bold">{Math.min(Math.round((totalSpent / 500) * 100), 100)}%</span>
+              </div>
+              <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-amber-500 to-yellow-400 rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min((totalSpent / 500) * 100, 100)}%` }}
+                />
+              </div>
+              <p className="text-sm text-slate-500">
+                Spend <span className="font-bold text-amber-600">{displayAmount(Math.max(0, 500 - totalSpent))}</span> more to unlock VIP benefits
+              </p>
+            </div>
+            
+            {/* VIP Benefits Preview */}
+            <div className="flex gap-3">
+              <div className="flex-1 bg-amber-50 rounded-xl p-3 text-center border border-amber-100">
+                <p className="text-amber-600 font-bold text-lg">50%</p>
+                <p className="text-slate-600 text-xs">Discount</p>
+              </div>
+              <div className="flex-1 bg-amber-50 rounded-xl p-3 text-center border border-amber-100">
+                <p className="text-amber-600 font-bold text-lg">Priority</p>
+                <p className="text-slate-600 text-xs">Processing</p>
+              </div>
+              <div className="flex-1 bg-amber-50 rounded-xl p-3 text-center border border-amber-100">
+                <p className="text-amber-600 font-bold text-lg">24/7</p>
+                <p className="text-slate-600 text-xs">VIP Support</p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-4 bg-amber-100 rounded-xl">
+              <Check className="w-6 h-6 text-amber-600" />
+              <div>
+                <p className="text-amber-800 font-bold">You're a VIP member!</p>
+                <p className="text-amber-700 text-sm">Enjoying exclusive benefits on all orders.</p>
+              </div>
+            </div>
+            
+            {/* Tier Discount Indicator */}
+            <div className="flex justify-center">
+              <div className="bg-white rounded-xl p-4 text-center border-2 border-amber-300 shadow-sm min-w-[160px]">
+                <p className="text-amber-600 font-bold text-2xl">
+                  {priceMultiplier ? ((3.0 - priceMultiplier) / 3.0 * 100).toFixed(0) : 50}%
+                </p>
+                <p className="text-slate-600 text-sm font-medium">Your Discount</p>
+                <p className="text-slate-500 text-xs mt-1">(You save {priceMultiplier ? ((3.0 - priceMultiplier) / 3.0 * 100).toFixed(0) : 50}% off!)</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Order Section */}
@@ -417,7 +532,7 @@ export function DesktopDashboard({
                                   }}
                                 />
                               )}
-                              <span>{service.name} - ${Number(service.price || service.base_price || 0).toFixed(2)}/1k</span>
+                              <span>{service.name} - {displayAmount(Number(service.price || service.base_price || 0))}/1k</span>
                             </div>
                           </SelectItem>
                         )
@@ -530,7 +645,7 @@ export function DesktopDashboard({
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-slate-700">Total Price</label>
                     <div className="bg-blue-50 border-2 border-blue-200 rounded-xl py-3 md:py-3.5 px-4 flex items-center justify-between">
-                      <span className="text-xl md:text-2xl font-extrabold text-blue-700">${totalPrice.toFixed(2)}</span>
+                      <span className="text-xl md:text-2xl font-extrabold text-blue-700">{displayAmount(totalPrice)}</span>
                       {isBulkBuy && (
                         <span className="bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">
                           -16%
@@ -614,7 +729,7 @@ export function DesktopDashboard({
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-slate-500">{(order.quantity || 0).toLocaleString()} units</span>
                     <span className="font-bold text-slate-900">
-                      ${(order.total_price || order.price || 0).toFixed(2)}
+                      {displayAmount(order.total_price || order.price || 0)}
                     </span>
                   </div>
                 </div>

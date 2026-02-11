@@ -4,42 +4,7 @@ import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 import { COMPANY_NAME, EMAIL_CONFIG } from "@/lib/constants/company"
-
-// Verify reCAPTCHA token
-export async function verifyRecaptcha(token: string) {
-  try {
-    const secretKey = process.env.RECAPTCHA_SECRET_KEY
-    if (!secretKey) {
-      console.error("[v0] RECAPTCHA_SECRET_KEY not configured")
-      return { success: false, error: "reCAPTCHA not configured" }
-    }
-
-    console.log("[v0] Verifying reCAPTCHA token with Google API...")
-    const response = await fetch("https://www.google.com/recaptcha/api/siteverify", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: `secret=${secretKey}&response=${token}`,
-    })
-
-    const data = await response.json()
-    console.log("[v0] reCAPTCHA API response:", { success: data.success, score: data.score, action: data.action })
-
-    // For reCAPTCHA v2 (checkbox), just check success flag
-    // For reCAPTCHA v3, also check score > 0.5
-    if (data.success) {
-      console.log("[v0] reCAPTCHA verification successful")
-      return { success: true }
-    }
-
-    console.error("[v0] reCAPTCHA verification failed:", data)
-    return { success: false, error: "reCAPTCHA verification failed" }
-  } catch (error) {
-    console.error("[v0] reCAPTCHA verification error:", error)
-    return { success: false, error: "reCAPTCHA verification failed" }
-  }
-}
+import { randomBytes } from "crypto"
 
 export async function signupUser(formData: {
   email: string
@@ -65,21 +30,26 @@ export async function signupUser(formData: {
   )
 
   try {
-    const { data: existingProfile } = await supabaseAdmin
+    console.log("[v0] Starting signup for email:", formData.email)
+    
+    // Check if user already exists
+    const { data: existingProfile, error: existingError } = await supabaseAdmin
       .from("users")
       .select("id, email")
-      .eq("email", formData.email)
+      .eq("email", formData.email.toLowerCase())
       .single()
 
     if (existingProfile) {
+      console.error("[v0] Email already exists:", formData.email)
       return {
         success: false,
         error: "An account with this email already exists. Please login instead.",
       }
     }
 
+    console.log("[v0] Creating auth user...")
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: formData.email,
+      email: formData.email.toLowerCase(),
       password: formData.password,
       email_confirm: true, // Skip email verification - user can login immediately
       user_metadata: {
@@ -90,64 +60,99 @@ export async function signupUser(formData: {
     })
 
     if (authError) {
+      console.error("[v0] Auth creation error:", authError.message, "Code:", authError.code)
       return {
         success: false,
-        error: authError.message,
+        error: authError.message || "Failed to create account",
       }
     }
 
     if (!authData.user) {
+      console.error("[v0] Auth user creation returned no user data")
       return {
         success: false,
-        error: "User creation failed",
+        error: "User creation failed - no user data returned",
       }
     }
 
-    const { data: profileCheck } = await supabaseAdmin.from("users").select("id").eq("id", authData.user.id).single()
+    console.log("[v0] Auth user created with ID:", authData.user.id)
+
+    // Check if profile already exists (shouldn't happen, but safety check)
+    const { data: profileCheck, error: profileCheckError } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("id", authData.user.id)
+      .single()
 
     if (profileCheck) {
-      return { success: true, userId: authData.user.id }
+      console.log("[v0] Profile already exists for user ID:", authData.user.id)
+      return { success: true, userId: authData.user.id, message: "Account already created" }
     }
 
-    const referralCode = "REF" + Math.random().toString(36).substring(2, 10).toUpperCase()
+    // Generate referral code using cryptographically secure random bytes
+    const referralCode = "REF" + randomBytes(4).toString("hex").toUpperCase()
+    console.log("[v0] Generated referral code:", referralCode)
 
+    // Check for referrer if referral code provided
     let referredById = null
-    if (formData.referralCode) {
-      const { data: referrerData } = await supabaseAdmin
+    if (formData.referralCode && formData.referralCode.trim()) {
+      console.log("[v0] Looking up referrer for code:", formData.referralCode)
+      const { data: referrerData, error: referrerError } = await supabaseAdmin
         .from("users")
-        .select("id")
-        .eq("referral_code", formData.referralCode.toUpperCase())
+        .select("id, email")
+        .eq("referral_code", formData.referralCode.toUpperCase().trim())
         .single()
 
       if (referrerData) {
+        // Prevent self-referral: check if email matches
+        if (referrerData.email.toLowerCase() === formData.email.toLowerCase()) {
+          return {
+            success: false,
+            error: "You cannot use your own referral code.",
+          }
+        }
         referredById = referrerData.id
+        console.log("[v0] Found referrer:", referredById)
+      } else {
+        // If code not found or error (other than not found), show clear error
+        return {
+          success: false,
+          error: "Invalid referral code. Please check and try again.",
+        }
       }
     }
 
-    const { error: profileError } = await supabaseAdmin.from("users").insert({
-      id: authData.user.id,
-      email: formData.email,
-      full_name: formData.fullName,
-      tier: 1,
-      referral_code: referralCode,
-      referred_by: referredById,
-      role: "user",
-      balance: 0,
-      total_spent: 0,
-      total_orders: 0,
-    })
+    // User profile creation is now handled by the handle_new_user trigger in the database.
+    // No manual insert into users table here.
 
-    if (profileError) {
-      return {
-        success: false,
-        error: `Failed to create user profile: ${profileError.message}`,
+    // If referredById is set, update the referred_by field for this user
+    if (referredById) {
+      let updateResult = await supabaseAdmin.from("users").update({ referred_by: referredById }).eq("id", authData.user.id)
+      let retries = 0;
+      const maxRetries = 5;
+      while ((updateResult.error || updateResult.count === 0) && retries < maxRetries) {
+        console.warn(`[v0] referred_by update failed (attempt ${retries + 1}):`, updateResult.error || 'No rows updated');
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        updateResult = await supabaseAdmin.from("users").update({ referred_by: referredById }).eq("id", authData.user.id);
+        retries++;
+      }
+      if (updateResult.error || updateResult.count === 0) {
+        console.error("[v0] Failed to update referred_by after retries:", updateResult.error || 'No rows updated');
+      } else {
+        console.log("[v0] referred_by updated successfully after", retries, "retries.");
       }
     }
 
+    console.log("[v0] User profile created successfully")
     revalidatePath("/auth")
 
-    return { success: true, userId: authData.user.id, message: "Account created successfully! You can now login." }
+    return { 
+      success: true, 
+      userId: authData.user.id, 
+      message: "Account created successfully! Email verification skipped. You can now login." 
+    }
   } catch (error) {
+    console.error("[v0] Signup catch error:", error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Signup failed",
@@ -180,24 +185,8 @@ export async function handleOAuthCallback(userId: string, email: string, fullNam
       return { success: true, existing: true }
     }
 
-    const referralCode = "REF" + Math.random().toString(36).substring(2, 8).toUpperCase()
-
-    const { error: profileError } = await supabaseAdmin.from("users").insert({
-      id: userId,
-      email: email,
-      full_name: fullName,
-      tier: 1,
-      referral_code: referralCode,
-      role: "user",
-      balance: 0,
-      total_spent: 0,
-      total_orders: 0,
-    })
-
-    if (profileError) {
-      console.error("OAuth profile creation error:", profileError)
-      throw profileError
-    }
+    // User profile creation is now handled by the handle_new_user trigger in the database for OAuth users as well.
+    // No manual insert into users table here.
 
     return { success: true, existing: false }
   } catch (error) {
@@ -242,7 +231,7 @@ export async function createAdminUser(email: string, password: string, fullName:
       throw authError || new Error("Failed to create auth user")
     }
 
-    const referralCode = "ADMIN" + Math.random().toString(36).substring(2, 8).toUpperCase()
+    const referralCode = "ADMIN" + randomBytes(4).toString("hex").toUpperCase()
 
     const { error: profileError } = await supabaseAdmin.from("users").insert({
       id: authData.user.id,

@@ -41,10 +41,6 @@ export default async function SettingsPage() {
             id: user.id,
             email: user.email || "",
             full_name: userData.full_name || "",
-            username: userData.username || "",
-            language: userData.language || "English",
-            currency: userData.currency || "USD",
-            two_factor_enabled: userData.two_factor_enabled || false,
           }}
         />
       </div>

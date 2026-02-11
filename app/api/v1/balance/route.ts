@@ -12,7 +12,16 @@ export async function GET(request: Request) {
     const supabase = await createClient()
 
     // Find user by API key
-    const { data: user } = await supabase.from("users").select("id, balance").eq("api_key", apiKey).single()
+    const { data: user, error: userError } = await supabase
+      .from("users")
+      .select("id, balance")
+      .eq("api_key", apiKey)
+      .single()
+
+    if (userError) {
+      console.error("[v0] Balance API - User lookup error:", userError)
+      return NextResponse.json({ status: "error", message: "Invalid API key" }, { status: 401 })
+    }
 
     if (!user) {
       return NextResponse.json({ status: "error", message: "Invalid API key" }, { status: 401 })
@@ -20,9 +29,10 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       status: "success",
-      balance: user.balance,
+      balance: user.balance || 0,
     })
   } catch (error) {
+    console.error("[v0] Balance API error:", error)
     return NextResponse.json({ status: "error", message: "Internal server error" }, { status: 500 })
   }
 }

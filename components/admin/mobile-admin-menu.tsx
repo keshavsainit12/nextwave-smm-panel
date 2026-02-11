@@ -5,7 +5,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Menu } from "lucide-react"
 import { AdminSidebar } from "./admin-sidebar"
 
-export function MobileAdminMenu() {
+export function MobileAdminMenu({ userEmail }: { userEmail?: string }) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -16,7 +16,7 @@ export function MobileAdminMenu() {
         </button>
       </SheetTrigger>
       <SheetContent side="left" className="w-64 p-0">
-        <AdminSidebar />
+        <AdminSidebar isMobile={true} onClose={() => setOpen(false)} userEmail={userEmail} />
       </SheetContent>
     </Sheet>
   )

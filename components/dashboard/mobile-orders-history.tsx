@@ -4,7 +4,7 @@ import React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Download, Search, Info, MessageCircle, RefreshCw } from "lucide-react"
+import { Download, Search, Info, MessageCircle, RefreshCw, X, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -19,19 +19,23 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { createTicket } from "@/app/actions/tickets"
+import { requestRefill, cancelOrder } from "@/app/actions/orders"
 import { toast } from "sonner"
 
+import { displayAmount } from "@/lib/currency"
 interface Order {
   id: string
-  order_id: string
   status: string
   quantity: number
-  total_price: number
+  price: number
   start_count?: number
   created_at: string
+  can_refill?: boolean
   services: {
     name: string
     platform: string | null
+    can_cancel?: boolean
+    cancel?: boolean
   }
 }
 
@@ -59,6 +63,12 @@ const statusConfig = {
     bg: "bg-slate-100",
     text: "text-slate-600",
     progress: 10,
+  },
+  canceled: {
+    label: "Canceled",
+    bg: "bg-red-100",
+    text: "text-red-700",
+    progress: 0,
   },
   cancelled: {
     label: "Canceled",
@@ -104,19 +114,36 @@ const getIconUrl = (serviceName: string): string | undefined => {
   return undefined
 }
 
-export function MobileOrdersHistory({ orders }: { orders: Order[] }) {
+export function MobileOrdersHistory({ orders, currency, currencySymbol }: { orders: Order[], currency: string, currencySymbol: string }) {
   const [searchQuery, setSearchQuery] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
   const [ticketDialogOpen, setTicketDialogOpen] = useState(false)
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
   const [ticketLoading, setTicketLoading] = useState(false)
+  const [refillLoading, setRefillLoading] = useState<string | null>(null)
+  const [cancelLoading, setCancelLoading] = useState<string | null>(null)
   const router = useRouter()
 
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
-      order.order_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.services?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesFilter = filterStatus === "all" || order.status?.toLowerCase() === filterStatus
+    
+    // Fix status matching to handle in_progress -> processing and canceled/cancelled
+    let matchesFilter = filterStatus === "all"
+    if (!matchesFilter) {
+      const orderStatus = order.status?.toLowerCase() || ""
+      if (filterStatus === "in_progress") {
+        // Match both "processing" and "in_progress" statuses
+        matchesFilter = orderStatus === "processing" || orderStatus === "in_progress"
+      } else if (filterStatus === "cancelled") {
+        // Match both "canceled" and "cancelled" spellings
+        matchesFilter = orderStatus === "canceled" || orderStatus === "cancelled"
+      } else {
+        matchesFilter = orderStatus === filterStatus
+      }
+    }
+    
     return matchesSearch && matchesFilter
   })
 
@@ -145,6 +172,44 @@ export function MobileOrdersHistory({ orders }: { orders: Order[] }) {
       toast.error(error instanceof Error ? error.message : "Failed to create ticket. Please try again.")
     } finally {
       setTicketLoading(false)
+    }
+  }
+
+  const handleRefill = async (orderId: string) => {
+    setRefillLoading(orderId)
+    try {
+      const result = await requestRefill(orderId)
+      if (result.success) {
+        toast.success(result.message || "Refill requested successfully")
+        router.refresh()
+      } else {
+        toast.error(result.error || "Failed to request refill")
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to request refill")
+    } finally {
+      setRefillLoading(null)
+    }
+  }
+
+  const handleCancel = async (orderId: string) => {
+    if (!confirm("Are you sure you want to cancel this order? You will be refunded.")) {
+      return
+    }
+
+    setCancelLoading(orderId)
+    try {
+      const result = await cancelOrder(orderId)
+      if (result.success) {
+        toast.success(result.message || "Order cancelled successfully")
+        router.refresh()
+      } else {
+        toast.error(result.error || "Failed to cancel order")
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to cancel order")
+    } finally {
+      setCancelLoading(null)
     }
   }
 
@@ -233,7 +298,7 @@ export function MobileOrdersHistory({ orders }: { orders: Order[] }) {
                           {order.services?.name}
                         </h3>
                         <p className="text-xs text-slate-500 uppercase font-semibold tracking-wider truncate">
-                          Order #{order.order_id}
+                          Order #{order.id.slice(0, 8)}
                         </p>
                       </div>
                     </div>
@@ -268,7 +333,7 @@ export function MobileOrdersHistory({ orders }: { orders: Order[] }) {
                     </div>
                     <div className="bg-slate-50 rounded-lg p-3">
                       <p className="text-xs text-slate-600 font-medium mb-1">Total Price</p>
-                      <p className="text-sm font-bold text-slate-900">${(order.total_price || 0).toFixed(2)}</p>
+                      <p className="text-sm font-bold text-slate-900">{displayAmount(order.price, currency)}</p>
                     </div>
                   </div>
 
@@ -288,7 +353,7 @@ export function MobileOrdersHistory({ orders }: { orders: Order[] }) {
                     <Button
                       type="button"
                       onClick={() => {
-                        setSelectedOrderId(order.order_id)
+                        setSelectedOrderId(order.id)
                         setTicketDialogOpen(true)
                       }}
                       className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold h-9 flex items-center justify-center gap-2"
@@ -296,14 +361,40 @@ export function MobileOrdersHistory({ orders }: { orders: Order[] }) {
                       <MessageCircle size={16} />
                       Get Support
                     </Button>
-                    {status === "completed" && (
+                    
+                    {/* Cancel Button - Priority for pending/processing orders */}
+                    {(order.services?.can_cancel || order.services?.cancel) && (status === "pending" || status === "processing") && (
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        onClick={() => handleCancel(order.id)}
+                        disabled={cancelLoading === order.id || refillLoading === order.id}
+                        aria-busy={cancelLoading === order.id}
+                        aria-label={cancelLoading === order.id ? "Cancelling order" : "Cancel order"}
+                        className="flex-1 h-9 flex items-center justify-center gap-2"
+                      >
+                        {cancelLoading === order.id ? (
+                          <Loader2 size={16} className="animate-spin" />
+                        ) : (
+                          <X size={16} />
+                        )}
+                        {cancelLoading === order.id ? "Cancelling..." : "Cancel"}
+                      </Button>
+                    )}
+                    
+                    {/* Refill Button - Only for completed orders (use common sense!) */}
+                    {(order.can_refill || order.services?.has_refill) && status === "completed" && (
                       <Button
                         type="button"
                         variant="outline"
+                        onClick={() => handleRefill(order.id)}
+                        disabled={refillLoading === order.id || cancelLoading === order.id}
+                        aria-busy={refillLoading === order.id}
+                        aria-label={refillLoading === order.id ? "Refilling order" : "Refill order"}
                         className="flex-1 border-slate-200 text-slate-700 hover:bg-slate-50 font-semibold h-9 flex items-center justify-center gap-2 bg-transparent"
                       >
-                        <RefreshCw size={16} />
-                        Refill
+                        <RefreshCw size={16} className={refillLoading === order.id ? "animate-spin" : ""} />
+                        {refillLoading === order.id ? "Refilling..." : "Refill"}
                       </Button>
                     )}
                   </div>

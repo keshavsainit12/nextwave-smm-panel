@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { CouponPasteCard } from '@/components/dashboard/coupon-paste-card'
 
 export default function LandingPage() {
   const router = useRouter()
@@ -19,6 +20,7 @@ export default function LandingPage() {
   const [contactFormData, setContactFormData] = useState({ name: '', email: '', subject: '', message: '' })
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
   const [showServiceDropdown, setShowServiceDropdown] = useState(false)
+  const [couponDiscount, setCouponDiscount] = useState(0)
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -66,7 +68,8 @@ export default function LandingPage() {
   }
 
   const selectedServiceData = services.find((s) => s.id === selectedService)
-  const totalPrice = selectedServiceData ? ((quantity / 1000) * Number(selectedServiceData.price)).toFixed(2) : '0.00'
+  const basePrice = selectedServiceData ? ((quantity / 1000) * Number(selectedServiceData.price)) : 0
+  const finalPrice = couponDiscount > 0 ? (basePrice * (1 - couponDiscount / 100)).toFixed(2) : basePrice.toFixed(2)
 
   return (
     <div className="bg-white text-slate-900">
@@ -137,16 +140,34 @@ export default function LandingPage() {
             {/* Action Buttons */}
             <div className="flex flex-col md:flex-row gap-4 px-4 md:px-0 md:justify-center md:max-w-2xl md:mx-auto">
               <button onClick={handlePlaceOrder} className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 md:py-5 md:px-12 rounded-2xl font-bold text-lg md:text-base active:scale-95 transition-all shadow-lg hover:shadow-xl md:flex-1 lg:flex-none">
-                Get Started
+                Order Now
               </button>
-              <button className="bg-white/70 backdrop-blur-md border border-blue-200 text-slate-900 py-4 md:py-5 md:px-12 rounded-2xl font-bold text-lg md:text-base active:scale-95 transition-all shadow-md hover:bg-white/80 md:flex-1 lg:flex-none">
-                Explore
-              </button>
+              <Link href="/auth/signup" className="bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-900 py-4 md:py-5 md:px-12 rounded-2xl font-bold text-lg md:text-base active:scale-95 transition-all shadow-lg hover:shadow-xl md:flex-1 lg:flex-none text-center flex items-center justify-center gap-2">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                Become VIP
+              </Link>
+            </div>
+            
+            {/* Starting Price Badge */}
+            <div className="mt-6 flex justify-center">
+              <div className="bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-2">
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                Services starting from just $0.01
+              </div>
             </div>
           </div>
 
           {/* Quick Order Section */}
           <section className="mb-12 md:mb-20">
+            {/* Coupon Card */}
+            <div className="md:max-w-5xl md:mx-auto mb-6">
+              <CouponPasteCard onCouponApplied={(couponCode, discount) => {
+                if (typeof discount === 'number' && discount > 0) {
+                  setCouponDiscount(discount)
+                }
+              }} />
+            </div>
+
             <div className="bg-white/40 backdrop-blur-[40px] rounded-[2.5rem] p-8 md:p-12 lg:p-16 overflow-hidden border border-white/20 shadow-lg md:max-w-5xl md:mx-auto">
               {/* Header */}
               <div className="flex items-center gap-3 mb-8">
@@ -214,16 +235,12 @@ export default function LandingPage() {
                           <div className="px-4 py-3 text-sm text-slate-500">No services available</div>
                         ) : (
                           services
-                            .filter((s: any) => {
-                              console.log('[v0] Filtering service:', s.name, 'category:', s.category, 'selectedCategory:', selectedCategory, 'match:', s.category === selectedCategory)
-                              return s.category === selectedCategory
-                            })
+                            .filter((s: any) => s.category === selectedCategory)
                             .map((service) => (
                               <button
                                 key={service.id}
                                 type="button"
                                 onClick={() => {
-                                  console.log('[v0] Service selected:', service.id, service.name, 'min quantity:', service.min)
                                   setSelectedService(service.id)
                                   setQuantity(service.min || 100)
                                   setShowServiceDropdown(false)
@@ -267,7 +284,12 @@ export default function LandingPage() {
                 <div className="bg-white/50 rounded-3xl p-6 flex justify-between items-end border border-white/50 shadow-inner mt-6">
                   <div>
                     <p className="text-[10px] uppercase font-bold text-slate-400 mb-1 tracking-wider">Estimate</p>
-                    <p className="text-3xl font-extrabold text-slate-900">${totalPrice}</p>
+                    {couponDiscount > 0 && (
+                      <p className="text-xs text-green-600 font-semibold mb-1">
+                        {couponDiscount}% Discount Applied
+                      </p>
+                    )}
+                    <p className="text-3xl font-extrabold text-slate-900">${finalPrice}</p>
                   </div>
                   <button onClick={handlePlaceOrder} className="bg-gradient-to-r from-blue-600 to-blue-700 text-white w-14 h-14 rounded-2xl flex items-center justify-center active:scale-90 transition-all shadow-lg hover:shadow-xl">
                     →
@@ -351,6 +373,98 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
+
+          {/* VIP Membership Section */}
+          <section className="mb-20 md:mb-32 md:max-w-5xl md:mx-auto">
+            <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-[2.5rem] p-8 md:p-12 border border-amber-200/50 shadow-lg overflow-hidden relative">
+              {/* Decorative elements */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-400/20 to-yellow-400/20 rounded-full blur-2xl"></div>
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-br from-amber-400/20 to-yellow-400/20 rounded-full blur-2xl"></div>
+              
+              <div className="relative z-10">
+                {/* Header */}
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-yellow-400 flex items-center justify-center shadow-lg">
+                    <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900">VIP Membership</h2>
+                    <p className="text-sm text-amber-700 font-medium">Unlock exclusive benefits</p>
+                  </div>
+                </div>
+
+                {/* Benefits Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
+                  <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 border border-amber-200/50">
+                    <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center mb-3">
+                      <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="font-bold text-slate-900 mb-1">Up to 50% Off</h3>
+                    <p className="text-xs text-slate-600">Exclusive VIP pricing on all services</p>
+                  </div>
+
+                  <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 border border-amber-200/50">
+                    <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center mb-3">
+                      <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </div>
+                    <h3 className="font-bold text-slate-900 mb-1">Priority Processing</h3>
+                    <p className="text-xs text-slate-600">Your orders get processed first</p>
+                  </div>
+
+                  <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 border border-amber-200/50">
+                    <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center mb-3">
+                      <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="font-bold text-slate-900 mb-1">24/7 VIP Support</h3>
+                    <p className="text-xs text-slate-600">Dedicated support team for VIPs</p>
+                  </div>
+                </div>
+
+                {/* Upgrade Criteria */}
+                <div className="bg-white/50 rounded-2xl p-5 mb-6 border border-amber-200/30">
+                  <h4 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
+                    <svg className="w-4 h-4 text-amber-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                    How to Become VIP
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 text-xs font-bold">1</div>
+                      <span className="text-slate-700">Spend $500+ total on orders</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 text-xs font-bold">2</div>
+                      <span className="text-slate-700">Complete 50+ orders</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 text-xs font-bold">3</div>
+                      <span className="text-slate-700">Or contact support for bulk deals</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-xs font-bold">✓</div>
+                      <span className="text-slate-700">Auto-upgrade when eligible</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* CTA */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Link href="/auth/signup" className="flex-1 bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-900 py-4 px-8 rounded-2xl font-bold text-center active:scale-95 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                    Start Your VIP Journey
+                  </Link>
+                  <button onClick={handlePlaceOrder} className="flex-1 bg-white border-2 border-amber-300 text-amber-700 py-4 px-8 rounded-2xl font-bold text-center active:scale-95 transition-all hover:bg-amber-50">
+                    Order Now
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
         </main>
 
         {/* Footer */}

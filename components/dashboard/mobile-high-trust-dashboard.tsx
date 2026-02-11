@@ -1,8 +1,10 @@
 "use client"
 
+// Changes applied in VS Code
+
 import type React from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { placeOrder } from "@/app/actions/orders"
@@ -10,6 +12,7 @@ import Link from "next/link"
 import { MobileServiceCarousel } from "./mobile-service-carousel"
 import { DashboardFooter } from "./dashboard-footer"
 import { CouponPasteCard } from "./coupon-paste-card"
+import { useCurrency } from "@/lib/currency-context"
 import {
   Wallet,
   ShoppingCart,
@@ -30,7 +33,17 @@ import {
   Home,
   ListOrdered,
   UserCircle,
+  Crown,
 } from "lucide-react"
+
+// Tier configuration based on price_multiplier
+const getTierInfo = (priceMultiplier: number | undefined | null) => {
+  const multiplier = priceMultiplier ?? 3.0
+  if (multiplier <= 1.5) return { name: "VIP Elite", color: "from-amber-500 to-yellow-400", textColor: "text-amber-600", bgColor: "bg-amber-100", icon: Crown, isVip: true }
+  if (multiplier <= 2) return { name: "Reseller", color: "from-purple-500 to-indigo-500", textColor: "text-purple-600", bgColor: "bg-purple-100", icon: Star, isVip: true }
+  if (multiplier <= 2.5) return { name: "Bulk Buyer", color: "from-blue-500 to-cyan-500", textColor: "text-blue-600", bgColor: "bg-blue-100", icon: Star, isVip: false }
+  return { name: "Basic User", color: "from-slate-400 to-slate-500", textColor: "text-slate-600", bgColor: "bg-slate-100", icon: null, isVip: false }
+}
 
 // Declare getIconEmoji function or import it from the correct module
 const getIconEmoji = (categoryOrService: any) => {
@@ -46,6 +59,7 @@ export function MobileHighTrustDashboard({
   totalOrders,
   totalSpent,
   recentOrders,
+  priceMultiplier,
 }: {
   services: any[]
   categories: any[]
@@ -54,30 +68,40 @@ export function MobileHighTrustDashboard({
   totalOrders: number
   totalSpent: number
   recentOrders: any[]
+  priceMultiplier?: number
 }) {
+  const tierInfo = getTierInfo(priceMultiplier)
+  const { displayAmount } = useCurrency()
   const [selectedCategory, setSelectedCategory] = useState<any>(null)
   const [selectedService, setSelectedService] = useState<any>(null)
   const [link, setLink] = useState("")
   const [quantity, setQuantity] = useState(1000)
   const [isBulkBuy, setIsBulkBuy] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [appliedCouponDiscount, setAppliedCouponDiscount] = useState(0)
   const router = useRouter()
   const { toast } = useToast()
 
   const totalPrice = useMemo(() => {
     if (!selectedService) return 0
     const servicePrice = Number(selectedService.price || selectedService.base_price || 0)
-    const multiplier = isBulkBuy ? 2.5 : 3.0
-    return (quantity / 1000) * servicePrice * multiplier
-  }, [selectedService, quantity, isBulkBuy])
+    const baseMultiplier = priceMultiplier ?? 3.0
+    const bulkMultiplier = Math.min(baseMultiplier, 2.5)
+    const multiplier = isBulkBuy ? bulkMultiplier : baseMultiplier
+    const priceBeforeDiscount = (quantity / 1000) * servicePrice * multiplier
+    const finalPrice = appliedCouponDiscount > 0 ? priceBeforeDiscount * (1 - appliedCouponDiscount / 100) : priceBeforeDiscount
+    return finalPrice
+  }, [selectedService, quantity, isBulkBuy, appliedCouponDiscount, priceMultiplier])
 
   const savings = useMemo(() => {
     if (!selectedService || !isBulkBuy) return 0
     const servicePrice = Number(selectedService.price || selectedService.base_price || 0)
-    const regularPrice = (quantity / 1000) * servicePrice * 3.0
-    const bulkPrice = (quantity / 1000) * servicePrice * 2.5
+    const baseMultiplier = priceMultiplier ?? 3.0
+    const bulkMultiplier = Math.min(baseMultiplier, 2.5)
+    const regularPrice = (quantity / 1000) * servicePrice * baseMultiplier
+    const bulkPrice = (quantity / 1000) * servicePrice * bulkMultiplier
     return regularPrice - bulkPrice
-  }, [selectedService, quantity, isBulkBuy])
+  }, [selectedService, quantity, isBulkBuy, priceMultiplier])
 
   const categoriesWithServices = useMemo(() => {
     return categories.filter((category) => services.some((s) => s.category_id === category.id))
@@ -95,6 +119,12 @@ export function MobileHighTrustDashboard({
     LinkedIn: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/linkedin-x8OqmW2CILJ7lo8H5FhKD888W7Z6eN.png",
     Spotify: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/spotify-7ygXrRUZpZh0pQSmRoDdDCRstAA6Oa.png",
   }
+
+  const handleCouponApplied = useCallback((couponCode: string, discount: number) => {
+    if (typeof discount === 'number' && discount > 0) {
+      setAppliedCouponDiscount(discount)
+    }
+  }, [])
 
   const getIconUrl = (nameOrObject: string | any): string | undefined => {
     let platformName = typeof nameOrObject === 'string' ? nameOrObject : nameOrObject?.name || ''
@@ -136,6 +166,14 @@ export function MobileHighTrustDashboard({
       }
     }
   }, [categoriesWithServices, services, selectedCategory])
+
+  // Auto-reset bulk mode when service or category changes
+  useEffect(() => {
+    if (isBulkBuy) {
+      setIsBulkBuy(false)
+      console.log("[v0] Bulk mode auto-reset due to service/category change")
+    }
+  }, [selectedService?.id, selectedCategory?.id])
 
   const handleQuantityChange = (newQuantity: number) => {
     const minQty = selectedService?.min_quantity || 100
@@ -187,7 +225,7 @@ export function MobileHighTrustDashboard({
     if (userBalance < totalPrice) {
       toast({
         title: "Insufficient Balance",
-        description: `You need $${totalPrice.toFixed(2)}. Please add funds.`,
+        description: `You need ${displayAmount(totalPrice)}. Please add funds.`,
         variant: "destructive",
       })
       return
@@ -196,7 +234,7 @@ export function MobileHighTrustDashboard({
     setLoading(true)
 
     try {
-      const result = await placeOrder(selectedService.id, link, quantity, isBulkBuy)
+      const result = await placeOrder(selectedService.id, link, quantity, undefined, isBulkBuy)
 
       if (result.error) {
         toast({
@@ -261,7 +299,10 @@ export function MobileHighTrustDashboard({
               </div>
             </div>
             <div>
-              <p className="text-slate-500 text-xs font-medium">Premium Member</p>
+              <div className="flex items-center gap-1.5">
+                <p className={`text-xs font-semibold uppercase tracking-wider ${tierInfo.textColor}`}>{tierInfo.name}</p>
+                {tierInfo.icon && <tierInfo.icon className={`w-3 h-3 ${tierInfo.textColor}`} />}
+              </div>
               <h2 className="text-slate-900 text-base font-bold leading-tight tracking-tight">Welcome, {userName}</h2>
             </div>
           </div>
@@ -302,7 +343,7 @@ export function MobileHighTrustDashboard({
                     <Info className="w-3.5 h-3.5" />
                   </p>
                   <p className="text-white text-3xl font-bold leading-tight tracking-tight mt-1">
-                    ${userBalance.toFixed(2)}
+                    {displayAmount(userBalance)}
                   </p>
                 </div>
                 <div className="bg-white/20 px-3 py-1.5 rounded-full backdrop-blur-sm">
@@ -348,7 +389,7 @@ export function MobileHighTrustDashboard({
                 <p className="text-xs font-medium uppercase tracking-wider">Lifetime Spent</p>
               </div>
               <div className="flex items-end justify-between mt-1">
-                <p className="text-slate-900 text-2xl font-bold leading-none">${totalSpent.toFixed(2)}</p>
+                <p className="text-slate-900 text-2xl font-bold leading-none">{displayAmount(totalSpent)}</p>
                 <p className="text-emerald-600 text-sm font-bold flex items-center bg-emerald-50 px-1.5 py-0.5 rounded">
                   12%
                 </p>
@@ -356,9 +397,84 @@ export function MobileHighTrustDashboard({
             </div>
           </div>
 
+          {/* VIP Membership Progress Card */}
+          <div className="px-4 py-3">
+            <div className={`rounded-xl p-4 border ${tierInfo.isVip ? 'bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200/50' : 'bg-white border-slate-200'} shadow-sm`}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${tierInfo.color} flex items-center justify-center`}>
+                    {tierInfo.icon ? <tierInfo.icon className="w-4 h-4 text-white" /> : <Star className="w-4 h-4 text-white" />}
+                  </div>
+                  <div>
+                    <p className={`text-sm font-bold ${tierInfo.isVip ? 'text-amber-800' : 'text-slate-900'}`}>{tierInfo.name}</p>
+                    <p className="text-xs text-slate-500">Your current tier</p>
+                  </div>
+                </div>
+                {!tierInfo.isVip && (
+                  <div className="bg-amber-100 text-amber-700 px-2 py-1 rounded-full text-xs font-semibold">
+                    Upgrade
+                  </div>
+                )}
+              </div>
+              
+              {!tierInfo.isVip ? (
+                <>
+                  {/* Progress to VIP */}
+                  <div className="space-y-2 mb-3">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-600">Progress to VIP</span>
+                      <span className="text-slate-900 font-semibold">{Math.min(Math.round((totalSpent / 500) * 100), 100)}%</span>
+                    </div>
+                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-amber-500 to-yellow-400 rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min((totalSpent / 500) * 100, 100)}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-slate-500">Spend {displayAmount(Math.max(0, 500 - totalSpent))} more to unlock VIP</p>
+                  </div>
+                  
+                  {/* VIP Benefits Preview */}
+                  <div className="flex gap-2 text-xs">
+                    <div className="flex-1 bg-slate-50 rounded-lg p-2 text-center">
+                      <p className="text-amber-600 font-bold">50% Off</p>
+                      <p className="text-slate-500">All Services</p>
+                    </div>
+                    <div className="flex-1 bg-slate-50 rounded-lg p-2 text-center">
+                      <p className="text-amber-600 font-bold">Priority</p>
+                      <p className="text-slate-500">Processing</p>
+                    </div>
+                    <div className="flex-1 bg-slate-50 rounded-lg p-2 text-center">
+                      <p className="text-amber-600 font-bold">24/7</p>
+                      <p className="text-slate-500">VIP Support</p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-amber-700">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>You're enjoying VIP benefits!</span>
+                  </div>
+                  
+                  {/* Tier Discount Indicator */}
+                  <div className="flex justify-center mt-2">
+                    <div className="bg-white rounded-lg p-3 text-center border-2 border-amber-300 shadow-sm">
+                      <p className="text-amber-600 font-bold text-xl">
+                        {priceMultiplier ? ((3.0 - priceMultiplier) / 3.0 * 100).toFixed(0) : 50}%
+                      </p>
+                      <p className="text-slate-600 text-xs font-medium">Your Discount</p>
+                      <p className="text-slate-500 text-[10px] mt-0.5">(Save {priceMultiplier ? ((3.0 - priceMultiplier) / 3.0 * 100).toFixed(0) : 50}% off!)</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Coupon Paste Card */}
           <div className="px-4 py-4">
-            <CouponPasteCard />
+            <CouponPasteCard onCouponApplied={handleCouponApplied} />
           </div>
 
           {/* Section Header */}
@@ -408,9 +524,11 @@ export function MobileHighTrustDashboard({
                   >
                     {categoriesWithServices.map((category) => {
                       const iconUrl = getIconUrl(category)
+                      const categoryLabel = category.name
+                      const shouldAnimate = categoryLabel.length > 28
                       return (
                         <SelectItem key={category.id} value={category.id}>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 w-full">
                             {iconUrl && (
                               <img
                                 src={iconUrl || "/placeholder.svg"}
@@ -422,7 +540,20 @@ export function MobileHighTrustDashboard({
                                 }}
                               />
                             )}
-                            <span className="truncate">{category.name}</span>
+                            <div className="flex-1 min-w-0 overflow-hidden">
+                              <div
+                                className={`inline-flex whitespace-nowrap ${
+                                  shouldAnimate ? "animate-marquee motion-reduce:animate-none" : ""
+                                }`}
+                              >
+                                <span className="pr-6">{categoryLabel}</span>
+                                {shouldAnimate && (
+                                  <span className="pr-6" aria-hidden="true">
+                                    {categoryLabel}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           </div>
                         </SelectItem>
                       )
@@ -471,9 +602,11 @@ export function MobileHighTrustDashboard({
                       >
                         {filteredServices.map((service) => {
                           const iconUrl = getIconUrl(service)
+                          const serviceLabel = `${service.name} - ${displayAmount(Number(service.price || service.base_price || 0))}/1k`
+                          const shouldAnimate = serviceLabel.length > 32
                           return (
                             <SelectItem key={service.id} value={service.id}>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 w-full">
                                 {iconUrl && (
                                   <img
                                     src={iconUrl || "/placeholder.svg"}
@@ -485,7 +618,20 @@ export function MobileHighTrustDashboard({
                                     }}
                                   />
                                 )}
-                                <span className="truncate">{service.name} - ${Number(service.price || service.base_price || 0).toFixed(2)}/1k</span>
+                                <div className="flex-1 min-w-0 overflow-hidden">
+                                  <div
+                                    className={`inline-flex whitespace-nowrap ${
+                                      shouldAnimate ? "animate-marquee motion-reduce:animate-none" : ""
+                                    }`}
+                                  >
+                                    <span className="pr-6">{serviceLabel}</span>
+                                    {shouldAnimate && (
+                                      <span className="pr-6" aria-hidden="true">
+                                        {serviceLabel}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
                             </SelectItem>
                           )
@@ -498,7 +644,7 @@ export function MobileHighTrustDashboard({
                           <span>Min: {selectedService.min_quantity}</span>
                           <span>Max: {selectedService.max_quantity?.toLocaleString()}</span>
                           <span className="font-bold text-blue-600">
-                            ${Number(selectedService.price || selectedService.base_price || 0).toFixed(4)}/1k
+                            {displayAmount(Number(selectedService.price || selectedService.base_price || 0))}/1k
                           </span>
                         </div>
                       </div>
@@ -536,7 +682,9 @@ export function MobileHighTrustDashboard({
                       <Sparkles className="w-4 h-4 text-emerald-600" />
                       <div className="flex-1">
                         <p className="text-xs font-bold text-emerald-700">You're saving ${savings.toFixed(2)}!</p>
-                        <p className="text-[10px] text-slate-500 font-medium">Bulk pricing: 2.5x vs Regular: 3x</p>
+                        <p className="text-[10px] text-slate-500 font-medium">
+                          Bulk pricing: {Math.min(priceMultiplier ?? 3.0, 2.5)}x vs Regular: {priceMultiplier ?? 3.0}x
+                        </p>
                       </div>
                     </div>
                   )}
@@ -626,7 +774,7 @@ export function MobileHighTrustDashboard({
                       <CreditCard className="w-5 h-5 text-blue-600" />
                       <span className="text-slate-900 text-sm font-semibold">Total Charge</span>
                     </div>
-                    <span className="text-xl font-bold text-blue-600">${totalPrice.toFixed(2)}</span>
+                    <span className="text-xl font-bold text-blue-600">{displayAmount(totalPrice)}</span>
                   </div>
 
                   <button

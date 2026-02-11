@@ -25,27 +25,70 @@ export default async function AdminDashboardPage() {
     supabase.from("orders").select("id", { count: "exact", head: true }).limit(0),
     supabase.from("orders").select("id", { count: "exact", head: true }).in("status", ["pending", "processing"]).limit(0),
     supabase.from("crypto_deposits").select("id", { count: "exact", head: true }).eq("status", "pending").limit(0),
-    supabase.from("orders").select("id, price, quantity, services!inner(provider_price)", { head: false }).eq("status", "completed").limit(500),
-    supabase.from("users").select("id", { count: "exact", head: false }).gte("last_login", thirtyDaysAgo.toISOString()).limit(100),
+    supabase
+      .from("orders")
+      .select("id, price, quantity, base_price, services(provider_price)", { head: false })
+      .eq("status", "completed")
+      .order("created_at", { ascending: false })
+      .limit(1000),
+    supabase
+      .from("users")
+      .select("id", { count: "exact", head: false })
+      .gte("last_login", thirtyDaysAgo.toISOString())
+      .limit(100),
   ])
 
+  // Revenue calculation constants
+  const DEFAULT_MARKUP_RATIO = 3 // Standard markup for normal users
+  
+  console.log("[v0] Admin dashboard - Loaded", ordersData?.length || 0, "completed orders for revenue calculation")
+
   // Calculate Order Revenue & Profit (Only from completed orders)
-  // Revenue = orders.price (this is TOTAL PRICE already - what customer PAID)
+  // Revenue = orders.price (what customer PAID)
   const orderRevenue = ordersData?.reduce((sum, order) => {
-    return sum + Number(order.price || 0)
+    const price = Number(order.price || 0)
+    console.log("[v0] Order", order.id, "- price:", price)
+    return sum + price
   }, 0) || 0
 
-  // Cost = provider_price per 1K × (quantity / 1000) = what API CHARGED you
+  // Cost = Calculate from provider_price or base_price
   const orderCost = ordersData?.reduce((sum, order) => {
-    const providerPrice = Number(order.services?.provider_price || 0)
+    let cost = 0
+    
+    // Try to get provider_price from services relation
+    const providerPrice = Number((order.services as any)?.provider_price || 0)
     const quantity = Number(order.quantity || 0)
-    const cost = (quantity / 1000) * providerPrice
+    
+    if (providerPrice > 0 && quantity > 0) {
+      // Use provider price per 1K (correct calculation)
+      cost = (quantity / 1000) * providerPrice
+      console.log("[v0] Order", order.id, "- provider cost:", cost, "(", quantity, "@", providerPrice, "per 1K)")
+    } else {
+      // Fallback: estimate cost from order base_price or assume standard markup
+      const basePrice = Number(order.base_price || 0)
+      if (basePrice > 0) {
+        cost = (quantity / 1000) * (basePrice / DEFAULT_MARKUP_RATIO)
+        console.log("[v0] Order", order.id, "- estimated cost from base_price:", cost)
+      } else {
+        // Very rough estimate when no pricing data available
+        cost = Number(order.price || 0) / DEFAULT_MARKUP_RATIO
+        console.log("[v0] Order", order.id, "- rough estimated cost:", cost)
+      }
+    }
+    
     return sum + cost
   }, 0) || 0
 
   const orderProfit = orderRevenue - orderCost
 
-  // Total Revenue = Order Revenue only (deposits tracked separately)
+  console.log("[v0] ===== REVENUE SUMMARY =====")
+  console.log("[v0] Total Orders:", ordersData?.length || 0)
+  console.log("[v0] Order Revenue:", orderRevenue.toFixed(2))
+  console.log("[v0] Order Cost:", orderCost.toFixed(2))
+  console.log("[v0] Order Profit:", orderProfit.toFixed(2))
+  console.log("[v0] ============================")
+
+  // Total Revenue = Order Revenue only (deposits tracked separately in transaction history)
   const totalRevenue = orderRevenue
 
   // Total Profit = Order Profit

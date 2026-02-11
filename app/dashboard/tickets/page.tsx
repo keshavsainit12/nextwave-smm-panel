@@ -8,10 +8,14 @@ export default async function TicketsPage() {
     data: { user },
   } = await supabase.auth.getUser()
 
+  if (!user) {
+    return null
+  }
+
   const { data: tickets } = await supabase
     .from("support_tickets")
     .select("*")
-    .eq("user_id", user!.id)
+    .eq("user_id", user.id)
     .order("created_at", { ascending: false })
 
   return (

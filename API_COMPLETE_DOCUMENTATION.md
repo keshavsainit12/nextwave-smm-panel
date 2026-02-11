@@ -309,6 +309,183 @@ curl -X GET "https://nextwavesmm.com/api/v1/order?order_id=order-uuid" \
 
 ---
 
+## Debugging & Admin Tools
+
+### Provider API Diagnostics
+
+The system now includes enhanced logging for debugging order delivery issues:
+
+**Debug Logging:**
+Set environment variable `DEBUG_SMM_API=true` to enable detailed logging of all provider API requests and responses. When enabled, logs include:
+- Request URL, action, and authentication mode
+- Masked API keys (showing first 4 and last 4 characters only)
+- Request payload
+- Response status and body
+- Retry attempts
+
+**Production Logging:**
+Even without debug mode, all provider API failures are logged with comprehensive context:
+- Order ID
+- Provider ID and API URL
+- Masked API key
+- External service ID
+- Error message and provider response
+
+### Test Provider API Connection (Admin)
+
+**IMPORTANT: Use this FIRST to diagnose why orders are not reaching provider!**
+
+Test your provider API connection and find exactly where the issue is:
+
+\`\`\`bash
+# Test provider connection
+curl -X POST "https://nextwavesmm.com/api/admin/test-provider" \\
+  -H "Authorization: Bearer YOUR_ADMIN_SESSION_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -d '{"provider_id": "YOUR_PROVIDER_ID"}'
+\`\`\`
+
+**Response shows:**
+- Configuration validity (API URL, API key present)
+- URL format check
+- Balance check (tests authentication) ✅ or ❌
+- Services list retrieval ✅ or ❌
+- Overall status and suggestions
+
+**Example Success Response:**
+\`\`\`json
+{
+  "success": true,
+  "diagnostics": {
+    "overall_status": "ALL_TESTS_PASSED",
+    "message": "Provider API working correctly!",
+    "tests": [
+      {
+        "test": "Balance Check (Auth Test)",
+        "status": "PASSED",
+        "message": "Authentication successful",
+        "data": { "balance": "150.50", "currency": "USD" }
+      }
+    ]
+  }
+}
+\`\`\`
+
+**Example Failure Response (401 Unauthorized):**
+\`\`\`json
+{
+  "success": false,
+  "diagnostics": {
+    "overall_status": "TESTS_FAILED",
+    "message": "Provider API has issues. Check failed tests.",
+    "tests": [
+      {
+        "test": "Balance Check (Auth Test)",
+        "status": "FAILED",
+        "error": "Provider API request failed (401): Invalid API key",
+        "http_status": 401,
+        "provider_response": { "error": "Invalid API key" },
+        "suggestion": "API key invalid/expired. Regenerate on provider dashboard."
+      }
+    ]
+  }
+}
+\`\`\`
+
+### Manual Provider API Testing
+
+To manually test if your provider API is working, use curl with values from your database:
+
+\`\`\`bash
+# Get provider details from database first
+# provider.api_url, provider.api_key, service.external_service_id
+
+# Test balance endpoint
+curl -X POST "https://provider.example.com/api/v2" \\
+  -H "Content-Type: application/x-www-form-urlencoded" \\
+  -d "key=YOUR_PROVIDER_API_KEY&action=balance"
+
+# Test order creation
+curl -X POST "https://provider.example.com/api/v2" \\
+  -H "Content-Type: application/x-www-form-urlencoded" \\
+  -d "key=YOUR_PROVIDER_API_KEY&action=add&service=123&link=https://instagram.com/test&quantity=100"
+
+# For Bearer token authentication (if provider.auth_mode = 'bearer')
+curl -X POST "https://provider.example.com/api/v2" \\
+  -H "Authorization: Bearer YOUR_PROVIDER_API_KEY" \\
+  -H "Content-Type: application/x-www-form-urlencoded" \\
+  -d "action=balance"
+\`\`\`
+
+**Common Provider Errors:**
+- `401 Unauthorized`: API key is invalid or expired (regenerate on provider dashboard)
+- `400 Bad Request`: Check service ID, link format, or quantity limits
+- `500 Server Error`: Provider system issue (retry automatically handled)
+
+### Detailed Order Placement Logs
+
+When placing an order, check your server logs for detailed output:
+
+\`\`\`
+[v0] ===== SENDING ORDER TO PROVIDER =====
+[v0] Provider Details: { provider_id, api_url, auth_mode, masked_api_key }
+[v0] Order Details: { order_id, external_service_id, link, quantity }
+[v0] Using auth mode: key
+[v0] ✅ SUCCESS! API order created with external ID: 12345
+\`\`\`
+
+If order fails, you'll see:
+\`\`\`
+[v0] ❌ FAILED to send order to API provider
+[v0] Error Details: { provider_http_status: 401, provider_response_body: "Invalid API key" }
+\`\`\`
+
+### Resending Failed Orders (Admin Only)
+
+If orders fail to reach the provider (remain in "pending" status), admins can resend them using the current provider API key.
+
+**Admin Resend Endpoint:**
+\`\`\`
+POST /api/admin/resend-order
+Authorization: Bearer YOUR_ADMIN_SESSION_TOKEN
+Content-Type: application/json
+
+{
+  "order_id": "order-uuid-here"
+}
+\`\`\`
+
+**Response:**
+\`\`\`json
+{
+  "success": true,
+  "message": "Order successfully sent to provider",
+  "external_order_id": "12345"
+}
+\`\`\`
+
+**Error Response:**
+\`\`\`json
+{
+  "success": false,
+  "error": "Provider API error: 401 Unauthorized",
+  "details": { "error": "Invalid API key" }
+}
+\`\`\`
+
+**When to Use:**
+- Order stuck in "pending" status after provider API key rotation
+- Network failure during initial order placement
+- Provider temporary downtime resolved
+
+**How to Test Locally:**
+1. Find a pending order ID from database
+2. Use your admin session cookie or token
+3. Send POST request to `/api/admin/resend-order` with the order ID
+4. Check server logs for detailed provider response
+
+---
+
 ## Best Practices
 
 1. **Keep Your API Key Secure**

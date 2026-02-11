@@ -22,8 +22,9 @@ export function InstantPaymentForm({ userId, userEmail, userName, currentBalance
   const [amount, setAmount] = useState("")
   const [loading, setLoading] = useState(false)
 
-  // Convert XAF to USD
-  const balanceInUSD = currentBalance / 600
+  // Convert USD balance to XAF for display (1 USD = 620 XAF)
+  const XAF_TO_USD_RATE = 620
+  const balanceInXAF = currentBalance * XAF_TO_USD_RATE
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -41,6 +42,12 @@ export function InstantPaymentForm({ userId, userEmail, userName, currentBalance
     setLoading(true)
 
     try {
+      console.log("[v0] Submitting payment request:", {
+        userId,
+        amount: Number(amount),
+        email: userEmail,
+      })
+
       const result = await createInstantPayment({
         userId,
         amount: Number(amount),
@@ -49,13 +56,24 @@ export function InstantPaymentForm({ userId, userEmail, userName, currentBalance
         userName,
       })
 
+      console.log("[v0] Payment result received:", {
+        success: result.success,
+        hasPaymentLink: !!result.paymentLink,
+        paymentLink: result.paymentLink,
+        transactionId: result.transactionId,
+        error: result.error
+      })
+
       if (result.success && result.paymentLink) {
+        console.log("[v0] Redirecting to payment URL:", result.paymentLink)
         toast.success("Redirecting to payment...")
-        setTimeout(() => {
-          window.location.href = result.paymentLink!
-        }, 500)
+        
+        // Immediate redirect for better UX
+        window.location.href = result.paymentLink
       } else {
-        toast.error(result.error || "Failed to create payment")
+        const errorMsg = result.error || "Failed to create payment"
+        console.error("[v0] Payment creation failed:", errorMsg)
+        toast.error(errorMsg)
       }
     } catch (error) {
       console.error("[v0] Payment error:", error)
@@ -81,8 +99,12 @@ export function InstantPaymentForm({ userId, userEmail, userName, currentBalance
 
           <div className="bg-white dark:bg-slate-900 rounded-lg p-3 space-y-2 text-sm border border-purple-100 dark:border-purple-900">
             <div className="flex justify-between">
-              <span className="text-slate-600 dark:text-slate-400">Current Balance:</span>
-              <span className="font-semibold text-purple-600 dark:text-purple-400">${balanceInUSD.toFixed(2)} USD</span>
+              <span className="text-slate-600 dark:text-slate-400">Current Balance (USD):</span>
+              <span className="font-semibold text-purple-600 dark:text-purple-400">${currentBalance.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-500 dark:text-slate-500">≈ in XAF:</span>
+              <span className="text-slate-600 dark:text-slate-400">{balanceInXAF.toFixed(0)} FCFA</span>
             </div>
           </div>
         </CardContent>

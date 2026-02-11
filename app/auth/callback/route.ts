@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { COMPANY_NAME } from "@/lib/constants/company"
+import { randomBytes } from "crypto"
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,23 +10,27 @@ export async function GET(request: NextRequest) {
     const code = requestUrl.searchParams.get("code")
     const error = requestUrl.searchParams.get("error")
     const errorDescription = requestUrl.searchParams.get("error_description")
-    const source = requestUrl.searchParams.get("source") // Track if from signup
+    const next = requestUrl.searchParams.get("next") || "/dashboard"
 
-    console.log("[v0] OAuth callback received:", { code: !!code, error, errorDescription, source })
+    console.log("[v0] OAuth callback received:", { 
+      code: code ? code.substring(0, 10) + "..." : null, 
+      error, 
+      errorDescription,
+      next,
+      fullUrl: request.url 
+    })
 
     // Handle OAuth errors
     if (error) {
       console.error("[v0] OAuth error:", { error, errorDescription })
-      const redirectUrl = source === "signup" ? "/auth/signup" : "/auth/login"
       return NextResponse.redirect(
-        new URL(`${redirectUrl}?error=${encodeURIComponent(errorDescription || error)}`, request.url)
+        new URL(`/auth/login?error=${encodeURIComponent(errorDescription || error)}`, requestUrl.origin)
       )
     }
 
     if (!code) {
       console.error("[v0] No code provided in OAuth callback")
-      const redirectUrl = source === "signup" ? "/auth/signup" : "/auth/login"
-      return NextResponse.redirect(new URL(`${redirectUrl}?error=No authorization code`, request.url))
+      return NextResponse.redirect(new URL("/auth/login?error=No authorization code", requestUrl.origin))
     }
 
     const cookieStore = await cookies()
@@ -50,9 +54,8 @@ export async function GET(request: NextRequest) {
 
     if (exchangeError) {
       console.error("[v0] Exchange error:", exchangeError)
-      const redirectUrl = source === "signup" ? "/auth/signup" : "/auth/login"
       return NextResponse.redirect(
-        new URL(`${redirectUrl}?error=${encodeURIComponent(exchangeError.message)}`, request.url)
+        new URL(`/auth/login?error=${encodeURIComponent(exchangeError.message)}`, requestUrl.origin)
       )
     }
 
@@ -64,7 +67,7 @@ export async function GET(request: NextRequest) {
 
     if (userError || !user) {
       console.error("[v0] Failed to get user:", userError)
-      return NextResponse.redirect(new URL("/auth/login?error=Failed to get user", request.url))
+      return NextResponse.redirect(new URL("/auth/login?error=Failed to get user", requestUrl.origin))
     }
 
     console.log("[v0] User authenticated:", { userId: user.id, email: user.email })
@@ -93,27 +96,19 @@ export async function GET(request: NextRequest) {
 
     if (userCheckError && userCheckError.code !== "PGRST116") {
       console.error("[v0] User check error:", userCheckError)
-      const redirectUrl = source === "signup" ? "/auth/signup" : "/auth/login"
-      return NextResponse.redirect(new URL(`${redirectUrl}?error=Database error`, request.url))
+      return NextResponse.redirect(new URL("/auth/login?error=Database error", requestUrl.origin))
     }
 
     if (!existingUser) {
       console.log("[v0] Creating new user profile for OAuth user")
-      // Create user profile for OAuth user
-      const { data: tierData } = await supabaseAdmin
-        .from("user_tiers")
-        .select("id")
-        .eq("name", "Regular")
-        .single()
-
-      const referralCode = "REF" + Math.random().toString(36).substring(2, 10).toUpperCase()
+      
+      const referralCode = "REF" + randomBytes(4).toString("hex").toUpperCase()
 
       const { error: insertError } = await supabaseAdmin.from("users").insert({
         id: user.id,
         email: user.email!,
         full_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email!.split("@")[0],
-        company: COMPANY_NAME,
-        tier_id: tierData?.id || null,
+        tier: 1,
         referral_code: referralCode,
         role: "user",
         balance: 0,
@@ -123,25 +118,26 @@ export async function GET(request: NextRequest) {
 
       if (insertError) {
         console.error("[v0] Failed to create user profile:", insertError)
-        return NextResponse.redirect(new URL("/auth/login?error=Failed to create profile", request.url))
+        console.error("[v0] Insert error details:", insertError.message)
+        return NextResponse.redirect(new URL("/auth/login?error=Failed to create profile", requestUrl.origin))
       }
 
       console.log("[v0] User profile created successfully")
-      return NextResponse.redirect(new URL("/dashboard", request.url))
+      return NextResponse.redirect(new URL("/dashboard", requestUrl.origin))
     }
 
     console.log("[v0] User already exists, redirecting based on role:", existingUser.role)
 
     if (existingUser.role === "admin") {
-      return NextResponse.redirect(new URL("/admin-panel-2024", request.url))
+      return NextResponse.redirect(new URL("/admin-panel-2024", requestUrl.origin))
     }
 
-    return NextResponse.redirect(new URL("/dashboard", request.url))
+    return NextResponse.redirect(new URL("/dashboard", requestUrl.origin))
   } catch (error) {
     console.error("[v0] OAuth callback exception:", error)
     const errorMessage = error instanceof Error ? error.message : "Unknown error"
     return NextResponse.redirect(
-      new URL(`/auth/login?error=${encodeURIComponent(errorMessage)}`, request.url)
+      new URL(`/auth/login?error=${encodeURIComponent(errorMessage)}`, requestUrl.origin)
     )
   }
 }

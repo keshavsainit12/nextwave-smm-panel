@@ -4,20 +4,25 @@ import { OrderList } from "@/components/admin/order-list"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ExportCsvButton } from "@/components/admin/export-csv-button"
 
+
 export default async function AdminOrdersPage() {
   const supabase = createAdminClient()
-  const { data: orders } = await supabase
+  const { data: orders, error } = await supabase
     .from("orders")
-    .select("*, users(email, full_name), services(name, icon, platform, service_categories(name, icon))")
+    .select("*, users(email, full_name), services(name, icon, platform)")
     .order("created_at", { ascending: false })
     .limit(100)
 
-  // Transform orders to use category icon if service icon is missing
+  if (error) {
+    console.error("[v0] Admin orders fetch error:", error)
+  }
+
+  // Transform orders - service icon fallback no longer needed
   const transformedOrders = orders?.map((order: any) => ({
     ...order,
     services: {
       ...order.services,
-      icon: order.services?.icon || order.services?.service_categories?.icon,
+      icon: order.services?.icon,
     },
   })) || []
 

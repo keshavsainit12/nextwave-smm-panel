@@ -2,10 +2,29 @@
 
 import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
+import { SMMApiClient } from "@/lib/smm-api-client"
 
 export async function updateOrderStatus(orderId: string, status: string, adminNotes?: string) {
   try {
     const supabase = createAdminClient()
+
+    // Get current order status and user info for email
+    const { data: order, error: fetchError } = await supabase
+      .from("orders")
+      .select(`
+        *,
+        user:users(email, full_name),
+        service:services(name)
+      `)
+      .eq("id", orderId)
+      .single()
+
+    if (fetchError || !order) {
+      console.error("[v0] Failed to fetch order:", fetchError)
+      return { error: "Order not found" }
+    }
+
+    const oldStatus = order.status
 
     const updateData: any = {
       status,
@@ -21,6 +40,25 @@ export async function updateOrderStatus(orderId: string, status: string, adminNo
     if (error) {
       console.error("[v0] Update order status error:", error)
       return { error: error.message }
+    }
+
+    // Send status update email if status changed
+    if (oldStatus !== status && order.user) {
+      try {
+        console.log("[v0] Order status changed by admin, sending email notification...")
+        const { EmailService } = await import("@/lib/email")
+        await EmailService.sendOrderStatusUpdate(
+          order.user.email,
+          orderId,
+          order.service?.name || "Service",
+          oldStatus,
+          status,
+          order.user.full_name || order.user.email
+        )
+        console.log("[v0] Order status update email sent successfully")
+      } catch (emailError) {
+        console.error("[v0] Failed to send order status update email (non-critical):", emailError)
+      }
     }
 
     revalidatePath("/admin-panel-2024")
@@ -47,7 +85,7 @@ export async function cancelOrder(orderId: string, reason: string) {
     // Get order details for refund with error handling
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .select("id, user_id, total_price, status")
+      .select("id, user_id, price, status")
       .eq("id", orderId)
       .single()
 
@@ -71,7 +109,7 @@ export async function cancelOrder(orderId: string, reason: string) {
       return { error: "Order not found - order data is empty" }
     }
 
-    console.log("[v0] Order found successfully:", { orderId, userId: order.user_id, amount: order.total_price, status: order.status })
+    console.log("[v0] Order found successfully:", { orderId, userId: order.user_id, amount: order.price, status: order.status })
 
     // Check if order is already cancelled
     if (order.status === "cancelled" || order.status === "canceled") {
@@ -91,7 +129,7 @@ export async function cancelOrder(orderId: string, reason: string) {
     }
 
     // Calculate new balance
-    const newBalance = (userData.balance || 0) + order.total_price
+    const newBalance = (userData.balance || 0) + order.price
 
     // Update user balance
     const { error: updateBalanceError } = await supabase
@@ -106,11 +144,29 @@ export async function cancelOrder(orderId: string, reason: string) {
 
     console.log("[v0] Balance refunded successfully for user:", order.user_id, "new balance:", newBalance)
 
+    // Create transaction record for refund
+    const { error: transactionError } = await supabase.from("transactions").insert({
+      user_id: order.user_id,
+      order_id: orderId,
+      type: "refund",
+      amount: order.price,
+      balance_before: userData.balance || 0,
+      balance_after: newBalance,
+      status: "completed",
+    })
+
+    if (transactionError) {
+      console.error("[v0] Transaction record error (non-critical):", transactionError)
+      // Don't fail the whole operation if transaction log fails
+    } else {
+      console.log("[v0] Transaction record created for refund")
+    }
+
     // Update order status
     const { error: updateError } = await supabase
       .from("orders")
       .update({
-        status: "cancelled",
+        status: "canceled",  // Use US spelling to match database constraint
         admin_notes: reason || "Cancelled by admin",
         updated_at: new Date().toISOString(),
       })
@@ -124,17 +180,21 @@ export async function cancelOrder(orderId: string, reason: string) {
     console.log("[v0] Order cancelled successfully:", orderId)
 
     // Log activity
-    await supabase.from("activity_logs").insert({
+    const activityResult = await supabase.from("activity_logs").insert({
       user_id: order.user_id,
       action: "order_cancelled",
       entity_type: "order",
       entity_id: orderId,
       details: {
         reason,
-        refund_amount: order.total_price,
+        refund_amount: order.price,
       },
       ip_address: "admin",
-    }).catch((err) => console.log("[v0] Activity log error (non-critical):", err))
+    })
+    
+    if (activityResult.error) {
+      console.log("[v0] Activity log error (non-critical):", activityResult.error)
+    }
 
     revalidatePath("/admin-panel-2024")
     revalidatePath("/admin-panel-2024/orders")
@@ -143,5 +203,151 @@ export async function cancelOrder(orderId: string, reason: string) {
   } catch (error: any) {
     console.error("[v0] Cancel order exception:", error)
     return { error: error.message || "Failed to cancel order" }
+  }
+}
+
+/**
+ * Resend a failed order to the external SMM provider
+ * This uses the current provider API key from the database
+ * Useful when provider credentials were rotated
+ */
+export async function resendOrderToProvider(orderId: string) {
+  try {
+    if (!orderId || orderId.trim() === "") {
+      return { error: "Invalid order ID" }
+    }
+
+    const supabase = createAdminClient()
+
+    // Get order with provider details
+    const { data: order, error: orderError } = await supabase
+      .from("orders")
+      .select(
+        `
+        id,
+        user_id,
+        link,
+        quantity,
+        status,
+        external_order_id,
+        service:services(
+          id,
+          external_service_id,
+          provider:api_providers(*)
+        )
+      `,
+      )
+      .eq("id", orderId)
+      .single()
+
+    if (orderError || !order) {
+      console.error("[ADMIN] Failed to fetch order for resend:", orderError)
+      return { error: "Order not found" }
+    }
+
+    // Validate order can be resent
+    if (order.status === "completed") {
+      return { error: "Cannot resend completed order" }
+    }
+
+    if (!order.service?.provider || !order.service.external_service_id) {
+      return { error: "Order has no provider or external service ID configured" }
+    }
+
+    const provider = order.service.provider
+    const service = order.service
+
+    console.log("[ADMIN] Attempting to resend order to provider:", {
+      order_id: orderId,
+      provider_id: provider.id,
+      provider_api_url: provider.api_url,
+      masked_api_key: provider.api_key ? `${provider.api_key.slice(0, 4)}...${provider.api_key.slice(-4)}` : "none",
+      service_external_id: service.external_service_id,
+      link: order.link,
+      quantity: order.quantity,
+    })
+
+    try {
+      const apiClient = new SMMApiClient(provider.api_url, provider.api_key)
+      const authMode = (provider as any).auth_mode === "bearer" ? "bearer" : "key"
+
+      const apiResponse = await apiClient.createOrder(
+        Number.parseInt(service.external_service_id),
+        order.link,
+        order.quantity,
+        { authMode },
+      )
+
+      console.log("[ADMIN] Order successfully sent to provider, external order ID:", apiResponse.order)
+
+      // Update order with new external ID and status
+      const { error: updateError } = await supabase
+        .from("orders")
+        .update({
+          external_order_id: String(apiResponse.order),
+          status: "processing",
+          admin_notes: `Resent to provider at ${new Date().toISOString()}`,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", orderId)
+
+      if (updateError) {
+        console.error("[ADMIN] Failed to update order after successful resend:", updateError)
+        return {
+          success: true,
+          warning: "Order sent to provider but failed to update database. External order ID: " + apiResponse.order,
+          external_order_id: apiResponse.order,
+        }
+      }
+
+      // Log activity
+      const activityLogResult = await supabase
+        .from("activity_logs")
+        .insert({
+          user_id: order.user_id,
+          action: "order_resent",
+          entity_type: "order",
+          entity_id: orderId,
+          details: {
+            provider_id: provider.id,
+            external_order_id: String(apiResponse.order),
+            previous_external_order_id: order.external_order_id,
+          },
+          ip_address: "admin",
+        })
+      
+      if (activityLogResult.error) {
+        console.error("[ADMIN] Activity log error (non-critical):", activityLogResult.error)
+      }
+
+      revalidatePath("/admin-panel-2024")
+      revalidatePath("/admin-panel-2024/orders")
+
+      return {
+        success: true,
+        message: "Order successfully sent to provider",
+        external_order_id: apiResponse.order,
+      }
+    } catch (providerError: any) {
+      const errorResponse = providerError.response || {}
+      console.error("[ADMIN] Failed to send order to provider:", {
+        order_id: orderId,
+        provider_id: provider.id,
+        provider_api_url: provider.api_url,
+        masked_api_key: provider.api_key ? `${provider.api_key.slice(0, 4)}...${provider.api_key.slice(-4)}` : "none",
+        service_external_id: service.external_service_id,
+        error_message: providerError.message,
+        provider_response_status: errorResponse.status,
+        provider_response_body: errorResponse.body,
+      })
+
+      return {
+        error: `Provider API error: ${providerError.message}`,
+        details: errorResponse.body,
+      }
+    }
+  } catch (error: any) {
+    console.error("[ADMIN] Resend order exception:", error)
+    return { error: error.message || "Failed to resend order" }
   }
 }

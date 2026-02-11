@@ -6,13 +6,11 @@ import { Button } from "@/components/ui/button"
 import { Check, X, ImageIcon } from "lucide-react"
 import { formatDistance } from "date-fns"
 import { approveDeposit, rejectDeposit } from "@/app/actions/deposits"
-import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { toast } from "sonner"
 
 export function CryptoDepositList({ deposits }: { deposits: any[] }) {
-  const router = useRouter()
   const [selectedScreenshot, setSelectedScreenshot] = useState<string | null>(null)
   const [loading, setLoading] = useState<string | null>(null)
 
@@ -20,16 +18,20 @@ export function CryptoDepositList({ deposits }: { deposits: any[] }) {
     if (confirm("Approve this deposit and credit user balance?")) {
       setLoading(id)
       try {
+        console.log("[v0] Approving deposit:", id)
         const result = await approveDeposit(id)
+        
         if (result.success) {
+          console.log("[v0] Deposit approved successfully")
           toast.success("Deposit approved! User balance updated.")
-          router.refresh()
+          // No redirect - stay on current page
         } else {
+          console.error("[v0] Approval failed:", result.error)
           toast.error(result.error || "Failed to approve deposit")
         }
       } catch (error: any) {
-        console.error("[v0] Approve error:", error)
-        toast.error(error?.message || "Failed to approve deposit")
+        console.error("[v0] Approve error caught:", error)
+        toast.error(error?.message || "An unexpected error occurred")
       } finally {
         setLoading(null)
       }
@@ -41,16 +43,20 @@ export function CryptoDepositList({ deposits }: { deposits: any[] }) {
     if (reason && reason.trim()) {
       setLoading(id)
       try {
+        console.log("[v0] Rejecting deposit:", id, "Reason:", reason)
         const result = await rejectDeposit(id, reason)
+        
         if (result.success) {
+          console.log("[v0] Deposit rejected successfully")
           toast.success("Deposit rejected successfully")
-          router.refresh()
+          // No redirect - stay on current page
         } else {
+          console.error("[v0] Rejection failed:", result.error)
           toast.error(result.error || "Failed to reject deposit")
         }
       } catch (error: any) {
-        console.error("[v0] Reject error:", error)
-        toast.error(error?.message || "Failed to reject deposit")
+        console.error("[v0] Reject error caught:", error)
+        toast.error(error?.message || "An unexpected error occurred")
       } finally {
         setLoading(null)
       }
@@ -81,13 +87,13 @@ export function CryptoDepositList({ deposits }: { deposits: any[] }) {
             <TableRow key={deposit.id}>
               <TableCell>
                 <div>
-                  <div className="font-medium">{deposit.user_id?.full_name || deposit.user_id?.email?.split("@")[0]}</div>
-                  <div className="text-xs text-muted-foreground">{deposit.user_id?.email}</div>
+                  <div className="font-medium">{deposit.user_data?.full_name || deposit.user_data?.email?.split("@")[0]}</div>
+                  <div className="text-xs text-muted-foreground">{deposit.user_data?.email}</div>
                 </div>
               </TableCell>
               <TableCell>
-                <div className="font-medium">{deposit.crypto_currency_id?.symbol}</div>
-                <div className="text-xs text-muted-foreground">{deposit.crypto_currency_id?.name}</div>
+                <div className="font-medium">{deposit.crypto_data?.symbol}</div>
+                <div className="text-xs text-muted-foreground">{deposit.crypto_data?.name}</div>
               </TableCell>
               <TableCell className="font-mono font-semibold text-green-600">${deposit.amount}</TableCell>
               <TableCell className="font-mono text-sm">{deposit.crypto_amount}</TableCell>
