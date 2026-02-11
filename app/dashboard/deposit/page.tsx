@@ -137,35 +137,6 @@ export default async function DepositPage() {
           </TabsTrigger>
         </TabsList>
 
-        {/* Instant Payment Tab */}
-        <TabsContent value="instant" className="space-y-6">
-          <Alert className="border-purple-200 bg-purple-50 dark:border-purple-900 dark:bg-purple-950/20">
-            <Zap className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-            <AlertTitle className="text-purple-900 dark:text-purple-100">Instant Global Payment</AlertTitle>
-            <AlertDescription className="text-purple-800 dark:text-purple-200">
-              Pay instantly using AccountPe. Balance will be credited within seconds!
-            </AlertDescription>
-          </Alert>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Global Instant Payment</CardTitle>
-              <CardDescription>Fast, secure, and instant balance top-up</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {user && userData ? (
-                <InstantPaymentForm
-                  userId={user.id}
-                  userEmail={user.email || ""}
-                  userName={userData.full_name || "User"}
-                  currentBalance={userData.balance || 0}
-                />
-              ) : (
-                <p className="text-muted-foreground">Loading form...</p>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         {/* Crypto Deposit Tab */}
         <TabsContent value="crypto" className="space-y-6">
