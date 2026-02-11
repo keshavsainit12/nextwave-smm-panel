@@ -23,9 +23,8 @@ export default function AdminLoginPage() {
       if (username === "admin202502" && password === "admin@123") {
         // Set a cookie to maintain session
         document.cookie = `admin_session=authenticated; path=/; max-age=${60 * 60 * 24 * 7}` // 7 days
-        
-        toast.success("Login successful!")
-        router.push("/admin-panel-2024")
+        toast.success("Login successful!\nAdmin Email: keshavsainit1@GMAIL.COM")
+        setTimeout(() => router.push("/admin-panel-2024"), 2000)
       } else {
         toast.error("Invalid credentials")
       }
