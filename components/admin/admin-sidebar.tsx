@@ -52,9 +52,7 @@ function SidebarContent({ pathname, handleLogout, onClose, userEmail }: { pathna
       <div className="flex h-20 items-center justify-center border-b bg-white/50 backdrop-blur-sm px-6">
         <div className="flex flex-col items-center">
           <h2 className="text-lg font-bold text-slate-900 dark:text-white">Admin Panel</h2>
-          {userEmail && (
-            <p className="text-xs text-slate-600 dark:text-slate-400 truncate max-w-full">{userEmail}</p>
-          )}
+
         </div>
       </div>
       <nav className="flex-1 space-y-1 overflow-y-auto p-4">
