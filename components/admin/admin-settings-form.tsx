@@ -151,10 +151,7 @@ export default function AdminSettingsForm({ userId, userEmail }: AdminSettingsFo
           <CardDescription>Your admin account details</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
-            <Label className="text-muted-foreground text-sm">Admin Email</Label>
-            <p className="font-medium mt-1">{userEmail}</p>
-          </div>
+
           <div>
             <Label className="text-muted-foreground text-sm">Admin Username</Label>
             <p className="font-medium mt-1">{currentUsername}</p>
