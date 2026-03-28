@@ -239,6 +239,25 @@ curl https://nextwavesmm.com/api/admin/login
 
 ---
 
+## INSTANT PAYMENT FIX (Feb 7, 2025)
+
+### Critical Bugs Fixed
+- ✅ Data model mismatch (transactions vs instant_payments table)
+- ✅ Transaction ID generation for webhook lookup
+- ✅ Webhook transaction matching logic
+- ✅ Cron job verification simplified
+
+### Instant Payment Verification Checklist
+- [ ] Transaction created in `transactions` table when payment initiated
+- [ ] Webhook successfully finds transaction by ID
+- [ ] Webhook credits user balance on status=1
+- [ ] Cron job runs every 30 minutes without errors
+- [ ] Test payment flow end-to-end
+
+**See:** `INSTANT_PAYMENT_FIXES_APPLIED.md` for detailed fixes
+
+---
+
 ## Post-Launch Tasks
 
 - [ ] Monitor error logs daily

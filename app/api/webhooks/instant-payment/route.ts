@@ -104,25 +104,11 @@ export async function POST(req: NextRequest) {
       // Still process but log as suspicious
     }
 
-    // Try to find transaction by payment_id first (original transaction ID we sent)
+    // Try to find transaction by ID first
     let transaction = null
-    let searchField = "payment_id"
+    let searchField = "direct_id"
     
     if (webhookTransactionId) {
-      const { data } = await supabase
-        .from("transactions")
-        .select("*")
-        .eq("payment_id", webhookTransactionId)
-        .single()
-      
-      if (data) {
-        transaction = data
-        console.log("[v0] Transaction found by payment_id:", transaction.id)
-      }
-    }
-
-    // If not found by payment_id, try by notes (fallback)
-    if (!transaction && webhookTransactionId) {
       const { data } = await supabase
         .from("transactions")
         .select("*")
@@ -131,8 +117,22 @@ export async function POST(req: NextRequest) {
       
       if (data) {
         transaction = data
-        searchField = "transaction_id (direct)"
         console.log("[v0] Transaction found by direct ID:", transaction.id)
+      }
+    }
+
+    // If not found by direct ID, try by payment_id (AccountPe external transaction ID)
+    if (!transaction && webhookTransactionId) {
+      const { data } = await supabase
+        .from("transactions")
+        .select("*")
+        .eq("payment_id", webhookTransactionId)
+        .single()
+      
+      if (data) {
+        transaction = data
+        searchField = "payment_id"
+        console.log("[v0] Transaction found by payment_id:", transaction.id)
       }
     }
 
